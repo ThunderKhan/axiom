@@ -185,7 +185,28 @@ class QualityRegressionTests(unittest.TestCase):
             stderr="",
         )
         with patch.object(gate.subprocess, "run", return_value=fake):
-            with self.assertRaisesRegex(gate.QualityError, "zero executed tests"):
+            with self.assertRaisesRegex(gate.QualityError, "zero successfully executed tests"):
+                gate.run_application(self.root, [source])
+
+    def test_go_all_skipped_tests_are_not_success_evidence(self):
+        self.make_package(manifest="go.mod", lockfile="go.sum", test_file="main_test.go")
+        config_file = self.root / "ci/quality.toml"
+        config_file.write_text(
+            config_file.read_text().replace(
+                'test = ["tool", "test"]',
+                'test = ["go", "test", "-json", "./..."]'
+            ), encoding="utf-8",
+        )
+        source = self.root / "apps/web/main_test.go"
+        fake = subprocess.CompletedProcess(
+            args=["go", "test", "-json", "./..."],
+            returncode=0,
+            stdout='{"Action":"run","Package":"example","Test":"TestSkipped"}\\n'
+                   '{"Action":"skip","Package":"example","Test":"TestSkipped"}\\n',
+            stderr="",
+        )
+        with patch.object(gate.subprocess, "run", return_value=fake):
+            with self.assertRaisesRegex(gate.QualityError, "zero successfully executed tests"):
                 gate.run_application(self.root, [source])
 
     def test_go_success_with_actual_test_events_is_accepted(self):
