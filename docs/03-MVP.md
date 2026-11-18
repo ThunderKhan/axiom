@@ -3,10 +3,11 @@
 **File:** docs/03-MVP.md  
 **Project:** Axiom  
 **Program:** YARC Builder Fellowship 2027 — Track 04 (Acquire + Differentiate)  
-**Version:** 0.1 — review draft  
+**Version:** 1.0 — approved  
 **Prepared:** 18 November 2026  
+**Approved:** 18 November 2026  
 **Release deadline:** 26 November 2026, 11:59 PM IST  
-**Status:** DRAFT / NOT YET APPROVED  
+**Status:** APPROVED  
 **Source of truth:** [Approved PRD](02-PRD.md)
 
 > **Release thesis:** A founder can sign in, describe a proposed or existing product, find a real expression of customer demand, examine sourced competitor evidence, reach an explainable pursue/research/skip decision, explore alternative product strategies, and save the opportunity and next action — using one working, coherent application.
@@ -303,4 +304,4 @@ No silently waived requirements. A failed experiment is information, not evidenc
 
 ---
 
-**Approval requested:** Confirm this November 26 MVP's **P0 verification floor**, the preserved **R0 objectives**, and the owner-controlled cutline rule. This draft does **not** itself waive or change any requirement in [02-PRD.md](02-PRD.md).
+**Approval record:** Founder approved this MVP scope on 18 November 2026. The **P0 verification floor**, all **R0 objectives**, and the requirement for explicit owner approval before reducing scope remain in force. This approval does **not** waive or change any requirement in [02-PRD.md](02-PRD.md).
