@@ -1,0 +1,13 @@
+# Initial ownership until independent team reviewers are designated.
+# CODEOWNERS does not replace independent security review.
+* @ThunderKhan
+
+# Governance / execution controls need explicit maintainer review.
+/AGENTS.md @ThunderKhan
+/ENGINEERING.md @ThunderKhan
+/.github/ @ThunderKhan
+/ci/ @ThunderKhan
+/scripts/sync_labels.py @ThunderKhan
+
+# Product decisions and architecture source of truth.
+/docs/ @ThunderKhan
