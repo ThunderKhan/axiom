@@ -46,6 +46,6 @@ body:
     id: dependencies
     attributes:
       label: Blockers and dependencies
-      description: Provider access, another PR, credentials, schema or human decision.
+      description: Describe missing access, approval, dependencies or schema changes. Never include credentials, tokens, keys or other secret values.
     validations:
       required: false
