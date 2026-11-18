@@ -1,0 +1,45 @@
+name: "Feature request"
+description: "Propose a new or revised user-facing Axiom capability"
+title: "[Feature] "
+labels: ["type:feature", "status:needs-triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Proposals do not modify approved scope by themselves. Link the PRD/MVP
+        requirement and seek a reviewed decision for incompatible changes.
+  - type: textarea
+    id: user_problem
+    attributes:
+      label: User problem and persona
+      description: Who has the problem? What evidence supports it?
+    validations:
+      required: true
+  - type: textarea
+    id: outcome
+    attributes:
+      label: Desired behavior and acceptance criteria
+      description: Describe observable outcomes, including negative/error states.
+    validations:
+      required: true
+  - type: input
+    id: requirement
+    attributes:
+      label: Related requirement or decision
+      placeholder: "FR-XX, MVP-XX, ADR link or new requirement"
+    validations:
+      required: false
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives and scope boundaries
+      description: What simpler option was considered? What is intentionally excluded?
+    validations:
+      required: false
+  - type: textarea
+    id: data_security
+    attributes:
+      label: Security, data, external providers and migration impact
+      description: Mention any new permissions, retention, quota, cost or backwards-compatibility requirements.
+    validations:
+      required: false
