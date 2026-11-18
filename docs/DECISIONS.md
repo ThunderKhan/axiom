@@ -42,6 +42,8 @@
 | DEC-008 | Use [edviro-clone](https://github.com/ThunderKhan/edviro-clone) layout, typography, spacing, navigation and landing animations as Axiom design **reference**, with Axiom-specific content | **Owner direction** | Final colors and user-supplied design-system file pending; [13-DESIGN.md](13-DESIGN.md) **ON HOLD** |
 | DEC-009 | Remove accidental T-shirt effort-sizing document; maintain necessary effort/risk notes in roadmap | **Owner clarification** | [16-IMPLEMENTATION-ROADMAP.md](16-IMPLEMENTATION-ROADMAP.md) records sizing |
 
+| DEC-010 | Founder-approved Axiom palette (`--bg` #FAF7F1, `--band` #F1EAE2, `--ink` #302B32, `--text` #655B61, `--muted` #766B70, `--line` #302B3221, `--green` #AC4E30, `--deep` #271F28, `--leaf` #F2A487, `--tint` #F6E2D7) applies to all public and authenticated pages | **Approved — 18 Nov 2026** | [13-DESIGN.md](13-DESIGN.md) Section 3; **full design still ON HOLD** |
+
 ## 4. ADR template and procedure
 
 When a consequential decision is resolved, create `docs/decisions/NNN-topic.md` containing:
