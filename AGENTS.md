@@ -68,4 +68,29 @@ At completion, report concisely:
 - Changes to documentation and migrations/deployment status.
 - Status: `VERIFIED FOR DEFINED SCOPE`, `INCOMPLETE VERIFICATION`, `BLOCKED`, or `REQUIRES HUMAN REVIEW`.
 
+
+## 7. Code Review Rules
+
+### Correctness
+- Identify changes that violate approved behavioral
+  requirements or documented invariants.
+- Identify regressions in existing API contracts.
+
+### Authorization and data integrity
+- Ensure protected operations enforce permissions
+  on the server, not only in the frontend.
+- Flag cross-tenant data access and unsafe
+  partial database operations.
+
+### Failure handling
+- Check whether retries, concurrent requests,
+  and partial failures can corrupt application state.
+
+### Review evidence
+- Explain the concrete failure scenario.
+- Identify affected files and relevant requirements.
+- Prioritize actionable, high-impact findings.
+- Avoid stylistic comments already covered by CI.
+
+
 Do not call a task complete solely because code was committed. See `ENGINEERING.md` for the acceptance policy.
