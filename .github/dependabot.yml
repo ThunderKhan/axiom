@@ -1,0 +1,13 @@
+version: 2
+updates:
+  # Application package ecosystems are added only after their manifests
+  # and reproducible lockfiles have been committed.
+  - package-ecosystem: github-actions
+    directory: "/"
+    schedule:
+      interval: weekly
+      day: monday
+    open-pull-requests-limit: 3
+    labels:
+      - "type:chore"
+      - "area:infra"
