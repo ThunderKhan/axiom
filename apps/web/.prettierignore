@@ -4,5 +4,6 @@ out/
 build/
 test-results/
 playwright-report/
+playwright-artifacts/
 package-lock.json
 next-env.d.ts

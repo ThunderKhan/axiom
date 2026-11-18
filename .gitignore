@@ -34,6 +34,7 @@ pnpm-debug.log*
 
 # Tests and local tooling
 playwright-report/
+playwright-artifacts/
 test-results/
 .cache/
 *.log

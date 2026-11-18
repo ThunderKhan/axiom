@@ -41,6 +41,12 @@ JUnit XML to `test-results/junit.xml`. The repo-level quality gate intentionally
 removes a prior report before every test invocation and rejects missing, empty,
 skipped-only or failing reports.
 
+In CI, Playwright uses the HTML reporter with tracing enabled. The `test:ci` script
+verifies the HTML report and attached trace archives after the browser tests,
+with artifacts isolated in `playwright-artifacts/` rather than inside
+`playwright-report/` or `test-results/`. The generated reports are ignored
+by Git.
+
 The smoke suite uses a private local development server at
 `http://127.0.0.1:3100` to avoid clashing with a manual server on port 3000.
 It requires Chromium downloaded by Playwright. It does not contact external
