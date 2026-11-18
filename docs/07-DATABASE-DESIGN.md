@@ -14,41 +14,41 @@ Invariants:
 4. A "verified source-backed" competitor claim cites a real stored source/locator. Unknown remains null/unknown.
 5. Scenario comparisons replay against **the same frozen evidence snapshot**.
 6. Lead saves and job executions are safe under duplicates/retries.
-7. Demo records have clear §seeded§ provenance, never impersonate live research.
+7. Demo records have clear `seeded` provenance, never impersonate live research.
 
 ## 2. Proposed table catalogue
 
 | Table | Required fields / examples | Constraints/relationships |
 |---|---|---|
-| §workspaces§ | id, owner_user_id, name, created_at | PK UUID; owner index; names nonempty |
-| §product_profiles§ | id, workspace_id, name, stage, current_version_id | stage idea/live |
-| §profile_versions§ | id, workspace_id, profile_id, revision, audience, problem, capabilities jsonb, limitations jsonb, confirmed_at | unique(profile_id, revision); immutable once referenced |
-| §research_runs§ | id, workspace_id, profile_version_id, query, status, created_at, finished_at | queued/running/partial/completed/failed/cancelled |
-| §source_records§ | id, workspace_id, provider, provider_record_id, canonical_url, origin, excerpt, published_at, retrieved_at, digest | source, timestamps and origin mandatory; bounded excerpts |
-| §signals§ | id, workspace_id, run_id, source_record_id, summary, needs jsonb, relevance, intent, fit, evidence_quality | scores 0–1 or null, foreign keys |
-| §competitors§ | id, workspace_id, name, site_url, user_confirmed | suggestions cannot be assumed direct |
-| §competitor_claims§ | id, workspace_id, competitor_id, source_record_id?, claim_type, text, locator, provenance | missing facts unverified/unknown |
-| §evidence_snapshots§ | id, workspace_id, digest, source_revision_set jsonb, created_at | frozen assessment source list |
-| §assessments§ | id, workspace_id, signal_id, profile_version_id, evidence_snapshot_id, verdict, reasons jsonb | four-verdict enum |
-| §evidence_nodes§ | id, workspace_id, assessment_id, node_type, label, claim/source pointer, origin | type, provenance constraints |
-| §evidence_edges§ | id, workspace_id, assessment_id, from_node_id, to_node_id, type, reason, source pointer | endpoints same workspace and assessment |
-| §scenarios§ | id, workspace_id, baseline_assessment_id, name, revision, assumptions jsonb, result jsonb, created_at | baseline immutable, explicit assumption patch |
-| §leads§ | id, workspace_id, signal_id?, assessment_id?, title, stage, created_at, updated_at | unique(workspace_id,signal_id) when present |
-| §lead_notes§ | id, workspace_id, lead_id, author_id, text, created_at | append/audit |
-| §followups§ | id, workspace_id, lead_id, due_at, state, note | due/completed/cancelled |
-| §outreach_drafts§ | id, workspace_id, lead_id, content, version, status | only unsent drafts in MVP |
-| §jobs§ | id, workspace_id, initiator_id, kind, status, payload, progress, lease_until, attempts, next_attempt_at, idempotency_key | durable leased queue, unique request key |
-| §audit_events§ | id, workspace_id, actor_kind, actor_id, object_id, action, safe_metadata, request_id, created_at | redact secrets |
+| `workspaces` | id, owner_user_id, name, created_at | PK UUID; owner index; names nonempty |
+| `product_profiles` | id, workspace_id, name, stage, current_version_id | stage idea/live |
+| `profile_versions` | id, workspace_id, profile_id, revision, audience, problem, capabilities jsonb, limitations jsonb, confirmed_at | unique(profile_id, revision); immutable once referenced |
+| `research_runs` | id, workspace_id, profile_version_id, query, status, created_at, finished_at | queued/running/partial/completed/failed/cancelled |
+| `source_records` | id, workspace_id, provider, provider_record_id, canonical_url, origin, excerpt, published_at, retrieved_at, digest | source, timestamps and origin mandatory; bounded excerpts |
+| `signals` | id, workspace_id, run_id, source_record_id, summary, needs jsonb, relevance, intent, fit, evidence_quality | scores 0–1 or null, foreign keys |
+| `competitors` | id, workspace_id, name, site_url, user_confirmed | suggestions cannot be assumed direct |
+| `competitor_claims` | id, workspace_id, competitor_id, source_record_id?, claim_type, text, locator, provenance | missing facts unverified/unknown |
+| `evidence_snapshots` | id, workspace_id, digest, source_revision_set jsonb, created_at | frozen assessment source list |
+| `assessments` | id, workspace_id, signal_id, profile_version_id, evidence_snapshot_id, verdict, reasons jsonb | four-verdict enum |
+| `evidence_nodes` | id, workspace_id, assessment_id, node_type, label, claim/source pointer, origin | type, provenance constraints |
+| `evidence_edges` | id, workspace_id, assessment_id, from_node_id, to_node_id, type, reason, source pointer | endpoints same workspace and assessment |
+| `scenarios` | id, workspace_id, baseline_assessment_id, name, revision, assumptions jsonb, result jsonb, created_at | baseline immutable, explicit assumption patch |
+| `leads` | id, workspace_id, signal_id?, assessment_id?, title, stage, created_at, updated_at | unique(workspace_id,signal_id) when present |
+| `lead_notes` | id, workspace_id, lead_id, author_id, text, created_at | append/audit |
+| `followups` | id, workspace_id, lead_id, due_at, state, note | due/completed/cancelled |
+| `outreach_drafts` | id, workspace_id, lead_id, content, version, status | only unsent drafts in MVP |
+| `jobs` | id, workspace_id, initiator_id, kind, status, payload, progress, lease_until, attempts, next_attempt_at, idempotency_key | durable leased queue, unique request key |
+| `audit_events` | id, workspace_id, actor_kind, actor_id, object_id, action, safe_metadata, request_id, created_at | redact secrets |
 
-**Naming:** actual SQL naming conventions, enums, indices and foreign keys must be fixed in migration PR. Use UTC §timestamptz§ and UUID identifiers. Avoid persisting raw third-party webpage bodies beyond terms and retention policy.
+**Naming:** actual SQL naming conventions, enums, indices and foreign keys must be fixed in migration PR. Use UTC `timestamptz` and UUID identifiers. Avoid persisting raw third-party webpage bodies beyond terms and retention policy.
 
 ## 3. Cross-workspace referential integrity
 
-A simple independent §workspace_id§ on each table is insufficient: a lead in workspace A could accidentally point to a signal in workspace B if its foreign key is only on signal ID. Preferred pattern: **composite unique keys (workspace_id,id) and composite FKs** across all workspace-owned relationships.
+A simple independent `workspace_id` on each table is insufficient: a lead in workspace A could accidentally point to a signal in workspace B if its foreign key is only on signal ID. Preferred pattern: **composite unique keys (workspace_id,id) and composite FKs** across all workspace-owned relationships.
 
 Illustrative partial SQL (**not a full migration**):
 
-§§§sql
+```sql
 CREATE TABLE workspaces (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   owner_user_id uuid NOT NULL,
@@ -90,13 +90,13 @@ CREATE TABLE signals (
   FOREIGN KEY (workspace_id,run_id) REFERENCES research_runs(workspace_id,id),
   FOREIGN KEY (workspace_id,source_record_id) REFERENCES source_records(workspace_id,id)
 );
-§§§
+```
 
 Implement equivalent checks for claims/assessments/graph nodes+edges/scenarios/leads/notes/followups. **Composite FK tests and server-side checks are both required**.
 
 ### RLS when Supabase is selected
 
-For each private table enable RLS and add ownership policies using valid membership (e.g., join §workspaces.owner_user_id = auth.uid()§), with both §USING§ and §WITH CHECK§ on mutations. A privileged backend may bypass policies; use explicit authorization in repository/use-case layer even if RLS exists. Account ID mapping from Auth to DB must be verified rather than assumed.
+For each private table enable RLS and add ownership policies using valid membership (e.g., join `workspaces.owner_user_id = auth.uid()`), with both `USING` and `WITH CHECK` on mutations. A privileged backend may bypass policies; use explicit authorization in repository/use-case layer even if RLS exists. Account ID mapping from Auth to DB must be verified rather than assumed.
 
 ## 4. Snapshot, versioning and transaction boundaries
 
@@ -107,7 +107,7 @@ For each private table enable RLS and add ownership policies using valid members
 - Create research run + job in a transaction. Claim job with bounded lease/row locking, retry after expiry with idempotency.
 - Save lead + audit event in a transaction; duplicate signal save returns same lead or explicit conflict.
 - Write a scenario revision + result atomically.
-- Sample job claim: §SELECT id FROM jobs WHERE status='queued' AND next_attempt_at<=now() ORDER BY created_at FOR UPDATE SKIP LOCKED LIMIT 1§ inside transaction, then update lease/status. Additional reclaim/renew logic required.
+- Sample job claim: `SELECT id FROM jobs WHERE status='queued' AND next_attempt_at<=now() ORDER BY created_at FOR UPDATE SKIP LOCKED LIMIT 1` inside transaction, then update lease/status. Additional reclaim/renew logic required.
 
 ## 5. Indices, retention and migrations
 
