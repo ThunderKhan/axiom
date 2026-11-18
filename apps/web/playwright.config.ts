@@ -5,6 +5,7 @@ const baseURL = "http://127.0.0.1:" + port;
 
 export default defineConfig({
   testDir: "./tests",
+  outputDir: "./playwright-report/artifacts",
   testMatch: "*.smoke.spec.ts",
   fullyParallel: true,
   forbidOnly: Boolean(process.env.CI),
