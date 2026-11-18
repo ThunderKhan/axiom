@@ -2,9 +2,10 @@
 
 **Project:** Axiom  
 **Document:** `docs/04-USER-FLOWS.md`  
-**Version:** 0.1 — review draft  
+**Version:** 1.0 — approved  
 **Prepared:** 18 November 2026  
-**Status:** DRAFT — requires founder approval  
+**Approved:** 18 November 2026  
+**Status:** APPROVED  
 **Authority:** [Approved PRD](02-PRD.md) and [Approved MVP Scope](03-MVP.md)  
 **Related documentation:** [Documentation Index](01-INDEX.md)  
 **Submission target:** 26 November 2026, 11:59 PM IST
@@ -554,12 +555,6 @@ The following are **open**, not implicitly approved by this flow draft:
 
 ## 12. Approval and change control
 
-**Draft status:** This is a proposed implementation-facing user-flow specification. The founder's prior approval applies to the PRD and MVP, **not automatically to this new document**.
-
-On explicit approval:
-1. Update version/status to `1.0 — Approved` and record approval date.
-2. Promote it to the **Approved Documents** section of `01-INDEX.md`.
-3. Use its flow IDs and acceptance paths in architecture, backend, frontend, AI and test planning.
-4. Treat any proposal that contradicts the approved PRD/MVP as requiring an explicit scope change.
+**Approval record:** Founder approved this user-flow specification on 18 November 2026. Flow IDs and acceptance paths now inform the architecture, backend, frontend, AI, and testing work. Any change contradicting the approved PRD or MVP requires explicit scope approval.
 
 **No PRD or MVP obligations are waived by this document.** If a flow proves infeasible in the remaining time, surface its risk and proposed alternative rather than silently omitting it.
