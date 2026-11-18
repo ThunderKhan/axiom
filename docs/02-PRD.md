@@ -372,12 +372,16 @@ These are deliberately **not** fixed in a product PRD:
 
 ## 17. Required follow-on documents
 
+- [`docs/06-TRD.md`](06-TRD.md) — project technical requirements and validation targets.
+
 - [`docs/03-MVP.md`](03-MVP.md) — approved scope, breadth targets, quality gates, and owner-controlled cutlines.
 - [`docs/04-USER-FLOWS.md`](04-USER-FLOWS.md) — detailed journey states, edge cases, errors, and acceptance test scenarios (draft pending approval).
 - [`docs/05-SYSTEM-ARCHITECTURE.md`](05-SYSTEM-ARCHITECTURE.md), `docs/07-DATABASE-DESIGN.md`, `docs/08-API-CONTRACTS.md`.
 - `docs/09-AI-ENGINE.md`, `docs/10-MCP-INTEGRATION.md`, `docs/11-DATA-SOURCES.md`.
 - `docs/12-UI-UX-SPEC.md`, `docs/13-DESIGN-SYSTEM.md`, `docs/16-IMPLEMENTATION-ROADMAP.md`.
-- Additional engineering references: testing strategy, deployment runbook, decision log.
+- [`docs/14-TESTING-STRATEGY.md`](14-TESTING-STRATEGY.md) — executable acceptance and security validation.
+- [`docs/15-DEPLOYMENT-RUNBOOK.md`](15-DEPLOYMENT-RUNBOOK.md) — host, secrets, migrations and release operations.
+- [`docs/17-SECURITY.md`](17-SECURITY.md), [`docs/DECISIONS.md`](DECISIONS.md), [`docs/T-shirt.md`](T-shirt.md) — threats, decisions and effort sizing.
 
 ---
 
