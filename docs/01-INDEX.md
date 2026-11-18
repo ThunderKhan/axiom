@@ -33,7 +33,7 @@ Only documents explicitly approved by the project owner belong in this section. 
 
 Entries marked **Draft — in review** exist but are **not approved implementation authority**. Entries marked **Planned** describe files not yet completed. Approval requires an explicit founder decision; a GitHub commit alone is not approval.
 
-| Planned document | Purpose | Status |
+| Document | Purpose | Status |
 |---|---|---|
 
 | [`06-TRD.md`](06-TRD.md) | Project-specific technology stack, technical requirements, quality/security acceptance | **Draft — in review** |
