@@ -96,3 +96,7 @@ Evaluator account credentials are shared privately and rotated/revoked after jud
 - Run concurrent tenant-isolation tests alongside the [scalability benchmark](18-SCALABILITY.md). Passing a throughput test without isolation is **not** a release acceptance.
 
 **Approval boundary:** These are mandatory security **controls and tests**, not a claim that any authentication scheme, RLS policy, MCP server or deployed instance is already secure.
+
+## 9. Confidential inputs and multi-provider inference
+
+[ADR-005](decisions/005-ai-inference-providers.md) approves **Groq primary** with **Gemini as a policy-gated fallback**, not blanket data sharing. Classify startup ideas, confirmed product profiles, CRM notes, drafts, and mixed/unknown context as confidential by default. Confirm exact current plan-specific provider data-use/retention terms and any required user disclosure/consent before transmission. **Never silently route confidential founder content to Gemini free tier** if those checks have not been satisfied. Use separate server-only credentials, data minimization, a request-level policy gate, tenant-isolated caches, redacted call logs and explicit blocked/degraded states. Test that forbidden fallback transmits zero private payloads. This document does not assert that current Groq or Gemini offerings meet any particular privacy condition.
