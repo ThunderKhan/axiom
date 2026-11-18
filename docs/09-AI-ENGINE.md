@@ -11,7 +11,7 @@ Idea-stage capabilities are **hypothetical**, even when the user confidently des
 
 ## 2. Pipeline
 
-§§§mermaid
+```mermaid
 flowchart LR
   P[Confirmed profile version] --> Q[Discovery query]
   Q --> S[Lawful source adapters]
@@ -23,7 +23,7 @@ flowchart LR
   R --> G[Typed evidence graph and contradictions]
   G --> O[Pursue Research Skip Abstain]
   O --> U[Graph report CRM scenarios]
-§§§
+```
 
 1. **Input contract:** selected workspace, confirmed profile version, permitted source/query and bounded record count.
 2. **Fetch:** only allowed public source/adapters; URL policy, timestamps, excerpt and live/cached/seeded origin.
@@ -36,18 +36,18 @@ flowchart LR
 
 ## 3. Structured data contracts
 
-§SourceRecord§ fields: §id§, §family§, §canonical_url§, §origin§ live/cached/seeded/user_provided, §excerpt§, §published_at§ nullable, §retrieved_at§, §content_hash§.  
-§CustomerNeed§: §id§, §text§, §source_record_id§, §locator§, §confidence_label§, §claim_type§.  
-§CompetitorClaim§: §competitor_id§, §claim_type§ feature/pricing/positioning, §text§, §source_record_id§ nullable, §locator§ nullable, §provenance§ sourced/unverified, §retrieved_at§.  
-§EvidenceNode§: §id§, §type§ source/need/capability/competitor_claim/gap/unknown, §label§, §origin§, §source_ref§ nullable.  
-§EvidenceEdge§: §id§, §from§, §to§, §relation§ supports/contradicts/requires/satisfies/does_not_satisfy/uncertain, §reason_code§, §source_ref§ nullable.  
-§Assessment§: §profile_version_id§, §evidence_snapshot_id§, §verdict§, §reason_codes§, §nodes§, §edges§, §unknowns§, §model_metadata§.
+`SourceRecord` fields: `id`, `family`, `canonical_url`, `origin` live/cached/seeded/user_provided, `excerpt`, `published_at` nullable, `retrieved_at`, `content_hash`.  
+`CustomerNeed`: `id`, `text`, `source_record_id`, `locator`, `confidence_label`, `claim_type`.  
+`CompetitorClaim`: `competitor_id`, `claim_type` feature/pricing/positioning, `text`, `source_record_id` nullable, `locator` nullable, `provenance` sourced/unverified, `retrieved_at`.  
+`EvidenceNode`: `id`, `type` source/need/capability/competitor_claim/gap/unknown, `label`, `origin`, `source_ref` nullable.  
+`EvidenceEdge`: `id`, `from`, `to`, `relation` supports/contradicts/requires/satisfies/does_not_satisfy/uncertain, `reason_code`, `source_ref` nullable.  
+`Assessment`: `profile_version_id`, `evidence_snapshot_id`, `verdict`, `reason_codes`, `nodes`, `edges`, `unknowns`, `model_metadata`.
 
 ## 4. Scoring and verdict algorithm
 
 Represent separate **nullable** 0–1 dimensions: problem relevance (R), solution-seeking intent (I), capability fit (F), evidence quality (E), freshness (T). Do not equate buying intent to fit. Explain rule/model contribution and unknown data.
 
-**Provisional ordering formula only:** §0.27R + 0.23I + 0.32F + 0.18E§ with bounded, visible freshness tie-break. These weights are **not calibrated or approved statistical probabilities**. Missing F/E does not become 1; instead communicate uncertainty and avoid a high-confidence decision.
+**Provisional ordering formula only:** `0.27R + 0.23I + 0.32F + 0.18E` with bounded, visible freshness tie-break. These weights are **not calibrated or approved statistical probabilities**. Missing F/E does not become 1; instead communicate uncertainty and avoid a high-confidence decision.
 
 **Hard constraints:**
 - If no trustworthy needs/evidence → **Insufficient evidence**.
@@ -64,7 +64,7 @@ Exact "critical requirement" definition/thresholds to be tested against labeled 
 - User chooses known competitors and confirms auto-suggested candidates; no unconfirmed candidate is treated as direct competition.
 - Safe network fetch obtains bounded, permitted HTML/text, page URL and retrieval timestamp.
 - Extract pricing/features/positioning phrases with exact excerpt or locator; source is retained.
-- Model may propose structured claims, but validator ensures each claimed citation matches a real fetched source. Failed verification is §unverified§ or removed.
+- Model may propose structured claims, but validator ensures each claimed citation matches a real fetched source. Failed verification is `unverified` or removed.
 - Absent price = **Unknown**; contradictions kept with both sources and dates.
 - Generate sourced comparison + limits + suggested validation steps; never invent a competitor's pricing or features.
 
@@ -83,7 +83,7 @@ No future revenue/causal change prediction without rigorous independent data.
 
 ## 7. Model/provider handling
 
-Define §ModelAdapter§ by task, prompt-template version, bounded input excerpts, structured output schema, per-call timeout, quota, provider/model identifier and trace ID. Inputs must exclude secrets, private evaluator credentials and unnecessary personal data.
+Define `ModelAdapter` by task, prompt-template version, bounded input excerpts, structured output schema, per-call timeout, quota, provider/model identifier and trace ID. Inputs must exclude secrets, private evaluator credentials and unnecessary personal data.
 
 - Verify a legitimate **free** provider and quota with actual call; no model is selected/connected merely by being named in docs.
 - Pydantic/JSON validation required; limited retry/repair; enforce bounded tokens/concurrency.
