@@ -210,13 +210,24 @@ sys.exit(0 if result.wasSuccessful() else 1)
         )
 
     def test_required_application_gate_invocation_cannot_disappear(self):
-        self.check_workflow_mutation(
-            self.original_workflow.replace(
-                "run: python ci/quality_gate.py application",
-                "run: echo application gate missing"
-            ),
-            "does not invoke the application quality gate",
+        import yaml
+
+        parsed = yaml.load(self.original_workflow, Loader=yaml.BaseLoader)
+        steps = parsed["jobs"]["application"]["steps"]
+        target = next(
+            step for step in steps
+            if step.get("run", "").strip() in {
+                "python ci/quality_gate.py application",
+                "python3 ci/quality_gate.py application",
+            }
         )
+        before = target["run"]
+        target["run"] = "echo application gate missing"
+        self.assertNotEqual(before, target["run"])
+        mutated = yaml.safe_dump(parsed, sort_keys=False)
+        self.assertNotEqual(self.original_workflow, mutated)
+        self.check_workflow_mutation(mutated, "does not invoke ci/quality_gate.py application")
+
 
     def test_secret_expression_rejected(self):
         # This is only a synthetic policy test; no actual credential is provided.
@@ -278,13 +289,24 @@ sys.exit(0 if result.wasSuccessful() else 1)
             stdout='{"Action":"fail","Test":"TestBroken"}\n',
             stderr="assertion: actual != expected\n",
         )
+
+        def realistic_run(cmd, *, cwd=None, check=False, **kwargs):
+            if cmd[0] == "go" and "test" in cmd:
+                if check:
+                    raise subprocess.CalledProcessError(
+                        fake.returncode, cmd, output=fake.stdout, stderr=fake.stderr
+                    )
+                return fake
+            return subprocess.CompletedProcess(cmd, returncode=0, stdout="", stderr="")
+
         stdout, stderr = io.StringIO(), io.StringIO()
-        with patch.object(gate.subprocess, "run", return_value=fake):
+        with patch.object(gate.subprocess, "run", side_effect=realistic_run):
             with contextlib.redirect_stdout(stdout), contextlib.redirect_stderr(stderr):
                 with self.assertRaises(subprocess.CalledProcessError):
                     gate.run_application(self.root, [source])
         self.assertIn("TestBroken", stdout.getvalue())
         self.assertIn("actual != expected", stderr.getvalue())
+
 
     def test_go_success_without_executed_tests_is_rejected(self):
         self.make_package(manifest="go.mod", lockfile="go.sum", test_file="main_test.go")
