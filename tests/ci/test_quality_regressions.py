@@ -73,12 +73,12 @@ class QualityRegressionTests(unittest.TestCase):
             lockfile="uv.lock",
             test_file="tests/test_sample.py",
         )
-        source = self.write("apps/web/src/module.py", "def f(): return 1\\n")
+        source = self.write("apps/web/src/module.py", "def f(): return 1\n")
         self.write(
             "apps/web/tests/test_sample.py",
-            "import unittest\\n"
-            "class SampleTest(unittest.TestCase):\\n"
-            f"    def test_regression(self): {test_method}\\n",
+            "import unittest\n"
+            "class SampleTest(unittest.TestCase):\n"
+            f"    def test_regression(self): {test_method}\n",
         )
         runner = '''
 import pathlib
@@ -300,9 +300,9 @@ sys.exit(0 if result.wasSuccessful() else 1)
         self.assertTrue(report.is_file())
         self.write(
             "apps/web/tests/test_sample.py",
-            "import unittest\\n"
-            "class SampleTest(unittest.TestCase):\\n"
-            "    def test_regression(self): self.assertEqual(2, 2)\\n",
+            "import unittest\n"
+            "class SampleTest(unittest.TestCase):\n"
+            "    def test_regression(self): self.assertEqual(2, 2)\n",
         )
         marker.unlink()
         self.assertEqual(0, self.run_python_fixture_through_main(source))
