@@ -25,6 +25,7 @@ Only documents explicitly approved by the project owner belong in this section. 
 | [`02-PRD.md`](02-PRD.md) | Product vision, target users, requirements, release objectives, user journeys, acceptance criteria, and constraints | **Approved — v1.0** |
 | [`03-MVP.md`](03-MVP.md) | November 26 MVP scope, P0 verification floor, preserved R0 objectives, acceptance tests and release gates | **Approved — v1.0** |
 | [`04-USER-FLOWS.md`](04-USER-FLOWS.md) | 15 concrete user journeys, onboarding branching, error states, and test traceability | **Approved — v1.0** |
+| [`05-SYSTEM-ARCHITECTURE.md`](05-SYSTEM-ARCHITECTURE.md) | Approved modular system design, data and worker boundaries; vendors still pending verification | **Approved — v1.0** |
 
 **Current access requirement:** The product's entry flow is **landing page → login page → authenticated web app**. Fellowship evaluators receive credentials privately and use the normal application. A public guest sandbox or judge-only demo page is **not** required.
 
@@ -34,15 +35,21 @@ Entries marked **Draft — in review** exist but are **not approved implementati
 
 | Planned document | Purpose | Status |
 |---|---|---|
-| [`05-SYSTEM-ARCHITECTURE.md`](05-SYSTEM-ARCHITECTURE.md) | Logical/component architecture, identity, research/AI worker, evidence data, HTTP/MCP boundaries and deployment feasibility | **Draft — in review** |
-| `06-DATABASE-DESIGN.md` | Data model, relationships, isolation, migrations, retention | Planned |
-| `07-API-CONTRACTS.md` | HTTP APIs, schemas, authentication, error contracts | Planned |
-| `08-AI-ENGINE.md` | Discovery, scoring, evidence assessment, simulation, evaluation | Planned |
-| `09-MCP-INTEGRATION.md` | MCP server, tools, permissions, and integration behavior | Planned |
-| `10-DATA-SOURCES.md` | Public source adapters, access policies, provenance and limitations | Planned |
-| `11-UI-UX-SPEC.md` | Landing, login, onboarding, web app screens, interaction design | Planned |
-| `12-DESIGN-SYSTEM.md` | Typography, color, components, motion, accessibility | Planned |
-| `13-IMPLEMENTATION-ROADMAP.md` | Milestones, dependencies, verification, deployment, submission | Planned |
+
+| [`06-TRD.md`](06-TRD.md) | Project-specific technology stack, technical requirements, quality/security acceptance | **Draft — in review** |
+| `07-DATABASE-DESIGN.md` | Data model, relationships, isolation, migrations, retention | Planned |
+| `08-API-CONTRACTS.md` | HTTP APIs, schemas, authentication, error contracts | Planned |
+| `09-AI-ENGINE.md` | Discovery, scoring, evidence assessment, simulation, evaluation | Planned |
+| `10-MCP-INTEGRATION.md` | MCP server, tools, permissions, and integration behavior | Planned |
+| `11-DATA-SOURCES.md` | Public source adapters, access policies, provenance and limitations | Planned |
+| `12-UI-UX-SPEC.md` | Landing, login, onboarding, web app screens, interaction design | Planned |
+| `13-DESIGN-SYSTEM.md` | Typography, color, components, motion, accessibility | Planned |
+| `14-TESTING-STRATEGY.md` | Acceptance tests, security, E2E, CI and release gates | Planned |
+| `15-DEPLOYMENT-RUNBOOK.md` | Infrastructure verification, migrations, secrets, smoke and rollback | Planned |
+| `16-IMPLEMENTATION-ROADMAP.md` | Milestones, dependencies, verification, deployment, submission | Planned |
+| `17-SECURITY.md` | Threat model, permission and incident policy | Planned |
+| `DECISIONS.md` | Decision register and unresolved ADR candidates | Planned |
+| `T-shirt.md` | Effort sizing, scope dependencies and delivery risk | Planned |
 
 Additional operational documentation (such as a testing strategy, deployment runbook, or decision records) may be added as actual needs arise. Add entries here when created.
 
