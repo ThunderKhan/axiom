@@ -23,7 +23,7 @@ No separate evaluator-only page, public guest sandbox, bulk sending service or u
 
 ## 2. Pre-deployment decisions (blockers)
 
-1. Select eligible **managed** frontend/API/worker hosts under [ADR-008](decisions/008-managed-hosting-and-worker.md), with dedicated persistent worker process, outbound HTTPS, service-to-DB connectivity and TLS. Vercel and Railway are candidates, not guaranteed selections. Verify terms of use, exact pricing/monthly cap, billing approval and runtime quotas.
+1. Select eligible **managed** frontend/API/worker hosts under [ADR-008](decisions/008-managed-hosting-and-worker.md), with dedicated persistent worker process, outbound HTTPS, service-to-DB connectivity and TLS. The intended monorepo mapping is **Vercel Root Directory `apps/web`**, plus **two Railway services using Root Directory `services/api`** and one shared backend Dockerfile with distinct API/worker start commands. See [19-DOCKER-AND-DEPLOYMENT-TOPOLOGY.md](19-DOCKER-AND-DEPLOYMENT-TOPOLOGY.md). Vercel and Railway are candidates, not guaranteed selections. Verify terms of use, exact pricing/monthly cap, billing approval and runtime quotas.
 2. Use **Supabase Auth + Supabase-hosted PostgreSQL** per [ADR-002](decisions/002-authentication-database-and-api-boundary.md) and confirm privileged credential handling. Pre-provision a low-privilege evaluator account; distribute password **privately** through submission channel.
 3. Verify database migrations, backups, schema isolation and connection limits with chosen PostgreSQL environment.
 4. Prove a dedicated managed worker can claim a queued job, survive restart and resume; if the chosen plan cannot support it, evaluate other eligible managed tiers/providers with cost approval before claiming production readiness.
@@ -52,7 +52,7 @@ Keep `.env.example` with names/placeholders, not tokens. Use hosting secrets man
 ## 4. Deployment procedure (once host selected)
 
 1. Record current commit SHA/tag and host configuration; back up database if migrations change persistent data.
-2. Install from lockfile; ensure frontend build, Python imports/type/lint/tests, migration check and API schema generation pass.
+2. Install from lockfile; ensure frontend build, Python imports/type/lint/tests, migration check and API schema generation pass. When backend source exists, require a real backend Docker image build, Compose config validation and API/worker container startup smoke in protected CI before deployment.
 3. Provision database/auth resources with least-privilege secrets; enable and verify RLS where appropriate, while enforcing app-layer workspace checks.
 4. Apply **Alembic** versioned migrations (SQLAlchemy 2.x models), transactionally/with a forward-fix plan; verify schema version, essential indices and constraints.
 5. Deploy API and separate **managed** worker process (same Python source, different start command). Validate `/health` and readiness DB probe.
