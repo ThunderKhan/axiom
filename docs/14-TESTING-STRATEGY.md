@@ -7,7 +7,7 @@
 
 "Implemented" means a feature has real data or validated deterministic behavior, correct authorization, persistence if needed, honest errors, executable automated tests and proof on an environment matching deployment. A rendered component, fixture response, simulated network call, self-reported AI confidence or a green unit test alone does **not** prove a live integration.
 
-Each feature tracked with: §requirement_id§, owner, branch/commit, status (Not started / In progress / Blocked / Verified / Owner-approved changed), test IDs, test run evidence, provider dependency, source/seeded labeling, and last verified timestamp. **Do not change an R0 commitment without explicit owner approval**.
+Each feature tracked with: `requirement_id`, owner, branch/commit, status (Not started / In progress / Blocked / Verified / Owner-approved changed), test IDs, test run evidence, provider dependency, source/seeded labeling, and last verified timestamp. **Do not change an R0 commitment without explicit owner approval**.
 
 ## 2. Test layers
 
@@ -60,7 +60,7 @@ Create an explicit synthetic fixture file or test seeding command for:
 11. Duplicate public post across runs.
 12. Two hypothetical scenarios changing coverage, not revenue.
 
-Each seed is labeled §seeded§ in UI, database, API and exports. Actual live retrieved records must use real URLs/timestamps from source and be tested separately.
+Each seed is labeled `seeded` in UI, database, API and exports. Actual live retrieved records must use real URLs/timestamps from source and be tested separately.
 
 ## 5. Security negative tests (release blockers)
 
@@ -76,9 +76,9 @@ Each seed is labeled §seeded§ in UI, database, API and exports. Actual live re
 
 ## 6. CI gates and developer commands
 
-Exact commands follow repository root §engineering.md§ and the chosen package managers. Typical commands (illustrative, not claims they exist yet):
+Exact commands follow repository root `engineering.md` and the chosen package managers. Typical commands (illustrative, not claims they exist yet):
 
-§§§bash
+```bash
 # Web (once configured)
 pnpm install --frozen-lockfile
 pnpm --dir apps/web lint
@@ -90,7 +90,7 @@ python -m pytest tests/unit tests/api
 python -m pytest tests/security
 # migration tool upgrade / schema diff
 # Playwright E2E against deployed-like services
-§§§
+```
 
 CI stages: **PR fast** (build/type/lint/unit/API/fixtures) → **migration and security** → **integration** (real allowed services, controlled quotas) → **E2E** → **deployment smoke**. A test failure cannot be "waived" by an automated agent without explicit owner decision.
 
