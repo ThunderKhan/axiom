@@ -197,28 +197,32 @@ def check_workflow(root: pathlib.Path) -> None:
         for step in steps:
             if not isinstance(step, dict) or "if" in step or step.get("continue-on-error") not in (None, False):
                 fail(f"Required job {name} may not conditionally skip or ignore errors in steps")
-    def required_command_step(job_name: str, command: str) -> None:
-        """Require an entire dedicated shell step; honor shell override precedence."""
+    def required_command_step(job_name: str, mode: str) -> None:
+        """Enforce one whole shell command, with shell defaults override precedence."""
         job = jobs[job_name]
+        allowed = {f"python ci/quality_gate.py {mode}",
+                   f"python3 ci/quality_gate.py {mode}"}
         workflow_shell = (workflow.get("defaults") or {}).get("run", {}).get("shell")
         job_shell = (job.get("defaults") or {}).get("run", {}).get("shell")
         matching = []
         for step in job["steps"]:
-            if not isinstance(step, dict) or step.get("run", "").strip() != command:
+            if not isinstance(step, dict) or not isinstance(step.get("run"), str):
+                continue
+            if step["run"].strip() not in allowed:
                 continue
             shell = step.get("shell") or job_shell or workflow_shell or "bash"
             if not isinstance(shell, str) or not shell.strip():
-                fail(f"Required {command} must run in a supported command shell")
+                fail(f"Required {job_name}/{mode} must run in a supported command shell")
             executable = pathlib.PurePosixPath(shell.split()[0].replace("\\", "/")).name.lower()
             if executable not in {"bash", "sh", "pwsh", "powershell"}:
-                fail(f"Required {command} must run in a supported command shell, not {shell}")
+                fail(f"Required {job_name}/{mode} must run in a supported command shell, not {shell}")
             matching.append(step)
         if not matching:
-            fail(f"Required {job_name} job does not invoke {command}")
+            fail(f"Required {job_name} job does not invoke ci/quality_gate.py {mode}")
 
-    required_command_step("repository", "python ci/quality_gate.py self-test")
-    required_command_step("repository", "python ci/quality_gate.py repository")
-    required_command_step("application", "python ci/quality_gate.py application")
+    required_command_step("repository", "self-test")
+    required_command_step("repository", "repository")
+    required_command_step("application", "application")
 
     def contains_secret_context(value: object) -> bool:
         if isinstance(value, dict):
@@ -375,7 +379,9 @@ def check_junit_test_evidence(path: pathlib.Path, name: str) -> None:
     suites = tree.getroot()
     if suites.tag not in {"testsuites", "testsuite"}:
         fail(f"Package {name}: test_report is not JUnit XML")
-    for suite in suites.iter("testsuite"):
+    for suite in suites.iter():
+        if suite.tag not in {"testsuite", "testsuites"}:
+            continue
         for attribute in ("failures", "errors"):
             total = suite.get(attribute)
             if total is not None:
