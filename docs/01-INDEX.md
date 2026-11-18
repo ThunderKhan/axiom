@@ -32,7 +32,7 @@ These entries are the intended documentation roadmap, **not** claims that the fi
 
 | Planned document | Purpose | Status |
 |---|---|---|
-| `03-MVP-SCOPE.md` | Release boundaries, priorities, feature cutlines, and testable MVP commitments | Planned |
+| [`03-MVP.md`](03-MVP.md) | November 26 MVP scope, P0 verification floor, preserved R0 objectives, acceptance tests and release gates | **Draft — in review** |
 | `04-USER-FLOWS.md` | Detailed journeys, interaction states, edge cases, and errors | Planned |
 | `05-SYSTEM-ARCHITECTURE.md` | System context, backend and AI boundaries, deployment design | Planned |
 | `06-DATABASE-DESIGN.md` | Data model, relationships, isolation, migrations, retention | Planned |
