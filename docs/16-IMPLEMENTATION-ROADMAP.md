@@ -84,9 +84,9 @@ These dates are **targets**, not completion statuses. Do not overpromise which b
 
 **Critical path:** source and managed-worker feasibility → authentication/DB → versioned product profile → source/competitor evidence → decision engine → persistent CRM and scenarios → real MCP client → deployed E2E.
 
-Do not begin sophisticated graph motion before confirming source and storage architecture. Do not declare model inference without actual compatible free provider. Do not deploy MCP writes before approval/authorization semantics are implemented.
+Do not begin sophisticated graph motion before confirming source and storage architecture. Do not declare model inference without actual compatible no-charge provider calls; the Groq-primary, conditional Gemini strategy is approved by [ADR-005](decisions/005-ai-inference-providers.md) but has not been deployed. Do not deploy MCP writes before approval/authorization semantics are implemented.
 
-**Needed decisions:** Supabase Auth/PostgreSQL/FastAPI and SQLAlchemy/Alembic are approved; managed hosting strategy approved (ADR-008) but **vendor, plan, cost and worker runtime remain unverified**; source registry, model provider and remote MCP auth still need decisions. Use [DECISIONS.md](DECISIONS.md) for open/approved choices.
+**Needed decisions:** Supabase Auth/PostgreSQL/FastAPI and SQLAlchemy/Alembic are approved; managed hosting strategy approved (ADR-008) but **vendor, plan, cost and worker runtime remain unverified**; source registry and remote MCP auth still need decisions. The Groq-primary / conditional Gemini **strategy** is approved but model IDs, terms and real calls remain unverified. Use [DECISIONS.md](DECISIONS.md) for open/approved choices.
 
 ## 7. Final release evidence
 
@@ -117,3 +117,7 @@ Sizes are directional only and may exceed the available schedule; keep verified 
 ## 9. Managed hosting decision and implementation next step
 
 Founder-approved [ADR-008](decisions/008-managed-hosting-and-worker.md) permits **modest infrastructure spending** to host the frontend, FastAPI API and separate durable research worker. It does **not** approve a specific billing charge. Prioritize selecting/verifying candidate managed services (e.g. Vercel if its terms suit the actual use, Railway or equivalent for the Python API/worker), proving safe job restart, and recording accepted provider plan pricing. No part of the **₹0 external AI/research API spending** requirement is relaxed.
+
+## 10. AI model routing implementation (technical decision 3 of 6)
+
+Implement [ADR-005](decisions/005-ai-inference-providers.md) as a **shared Groq-primary, privacy/consent-gated Gemini-fallback** adapter. Validate one real no-charge Groq call, a strictly allowed Gemini fallback, blocked private/mixed fallback, citation/schema correctness, deterministic degraded path, quotas, redaction, logs and zero paid external AI/research API costs. This architecture decision **does not** count as a completed model integration.
