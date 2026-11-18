@@ -15,7 +15,7 @@ There are three distinct test dimensions:
 2. **Interactive throughput:** reads, workspace changes and CRM updates meet measured latency and correctness targets under load.
 3. **Research capacity:** users can enqueue bounded jobs, see honest progress, and get fair completion subject to **measured** worker/provider throughput and quotas.
 
-**Current state:** Neither 500-user capacity nor the hosting/AI provider budgets have been tested. This is a **design and test target**, not a guarantee, capacity claim or assertion that it fits a ₹0 deployment. The founder's ₹0 objective applies to **external AI/research API spending**; adequate production compute and database tiers may require resources or a revised throughput envelope, especially at 500 active users.
+**Current state:** Neither 500-user capacity nor the hosting/AI provider budgets have been tested. This is a **design and test target**, not a guarantee, capacity claim or assertion that it fits a ₹0 deployment. The founder's ₹0 objective applies to **external AI/research API spending**; under [ADR-008](decisions/008-managed-hosting-and-worker.md), **modest paid managed infrastructure is permitted** after exact cost approval; appropriate production compute/database tiers may still need further resources or adjusted expectations at 500 active users.
 
 ## 2. Workload model (assumptions requiring validation)
 
@@ -122,7 +122,7 @@ Use **k6** or **Locust** for application-level virtual users, plus **Playwright*
 ## 9. Capacity, cost and release decisions
 
 - **Before claiming 500 users:** benchmark actual deployment or representative production-like tier, not only localhost.
-- **If the chosen free host cannot pass:** document measured bottleneck, estimate legitimate upgrades or reduce the claimed service level with **explicit owner approval**; do not silently loosen test loads, quota constraints or interpretation.
+- **If a chosen managed hosting tier cannot pass:** document the measured bottleneck and legitimate paid resource upgrades or reduce the claimed service level with **explicit owner approval**; do not silently loosen test loads, quota constraints or interpretation.
 - **If database connection caps are low:** adjust pool sizes/replicas, consider approved managed pooling and cache; quantify benefit before adding another service.
 - **If worker concurrency is low:** preserve 500-user interactive app usability while transparently queueing/limiting external research, and report queue completion limits.
 - **If provider terms or budget prohibit testing with real traffic:** run isolated provider mocks with clear labels and separately verify actual permitted live adapter behavior.
@@ -134,3 +134,7 @@ Use **k6** or **Locust** for application-level virtual users, plus **Playwright*
 The approved release gates still require an actual deployable end-to-end research journey. Design for scalable stateless services, pooling and bounded queue **now**, but do not abandon working core features to build speculative multi-region infrastructure. The 500-founder design is an explicit nonfunctional target to validate. Whether it is a **hard November 26 release block** versus a post-submission capacity milestone must be recorded as an explicit owner decision, not inferred from this draft.
 
 **Status at creation:** no load tests run, no production concurrency measured, no 500-user capacity verified.
+
+## 11. Hosting cost/scale decision boundary
+
+The founder approved **managed infrastructure with a modest potential hosting budget**, [ADR-008](decisions/008-managed-hosting-and-worker.md). Scaling from one API process/worker to multiple replicas may incur additional costs and DB connection pressure; **no capacity-based scaling purchase is authorized without exact plan and cost review**. The separate **₹0 paid external AI/research API** rule still applies. 500 active founders is a **performance design and load-test target**, not an achieved guarantee, and never means 500 simultaneous free-LLM calls.

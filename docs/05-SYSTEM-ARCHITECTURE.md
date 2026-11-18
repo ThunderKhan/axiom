@@ -36,7 +36,7 @@ This document proposes the technical **how** for the already approved product **
 | A-07 | Provider-agnostic structured LLM adapter with deterministic fallbacks, zero planned paid API use | Proposed |
 | A-08 | HTTP REST plus authenticated MCP using shared application/use-case layer | Proposed |
 | A-09 | Server-owned external URL ingestion with SSRF and prompt-injection boundaries | Proposed |
-| A-10 | Hosting, runtime limits, worker feasibility and CI provider choice | **Unresolved: verify before approval** |
+| A-10 | **Managed web/API hosting with separately executable research worker; modest hosting spend permitted** ([ADR-008](decisions/008-managed-hosting-and-worker.md)) | **Approved strategy; exact vendor/tier and deployment tests pending** |
 
 The founder's approval of this architecture should be followed by separate, short ADRs for consequential technical choices. Until then this is a proposed design, not a hidden architecture mandate.
 
@@ -99,7 +99,7 @@ flowchart TD
 
 **Why two Python processes rather than two backend microservices?** The main backend and AI pipeline need different *execution characteristics*, not necessarily separate independent network APIs. A stateless FastAPI request server and a worker process can share domain types, versioned schemas, DB transactions, and CI while keeping slow web fetches/LLM calls off request threads. Only split into separately owned microservices if throughput, security isolation, or team boundaries justify the operational cost.
 
-**Critical feasibility check:** a free host may sleep, limit persistent workers, or have no background process allowance. No queue design is approved until an actual worker process can claim/finish jobs on the intended host. A bounded, server-managed on-demand fallback is acceptable **only if** it reliably completes within real hosting limits and reports timeouts/partial state honestly; a development-only background task does not prove production durability.
+**Critical feasibility check:** [ADR-008](decisions/008-managed-hosting-and-worker.md) approves **managed hosting with modest infrastructure expenditure allowed**; a permanent free tier is *not* required. A chosen host may still sleep or restrict background processes. No queue deployment is verified until an actual worker claims/finishes jobs on the intended tier. A bounded, server-managed on-demand fallback is acceptable **only if** it reliably completes within real hosting limits and reports timeouts/partial state honestly; a development-only background task does not prove production durability.
 
 ## 3. Proposed technology stack and alternatives
 
@@ -117,7 +117,7 @@ flowchart TD
 | Graph visualization | Client graph library with typed node/edge DTOs | Evidence graph can be interactive without graph DB | Accessible report/list is mandatory |
 | MCP transport | Python MCP SDK / current compatible Streamable HTTP | Real external integration; shared domain logic | Confirm client compatibility/auth against supported protocol revision before committing |
 | Tests | pytest, Playwright, type/lint/build quality gates | Contract, isolation and deployed E2E evidence | Actual commands and CI workflow follow engineering standards |
-| Hosting | Compatible frontend/API/worker hosts + managed DB | Flexible with deployment budget | Must test independent worker, HTTPS, secrets, free-tier limits |
+| Hosting | **Managed web host + managed FastAPI host and worker + Supabase** ([ADR-008](decisions/008-managed-hosting-and-worker.md)) | Modest hosting budget accepted; Vercel/Railway are candidates, **not selected vendor commitments** | Verify provider terms, spend, dedicated worker, HTTPS, quotas and scale |
 
 **Not proposed for MVP:** managed Kafka, paid vector DB, graph DB, microservice mesh, autonomous outreach service, GPU-dependent inference, or unbounded crawlers. For "semantic" ranking, model-assisted structured relevance and/or small in-process embedding batches are optional only if real free provider/hardware capacity is demonstrated. Deterministic search + honest model-unavailable disclosure is the minimum fallback, **not equivalent** to shipped AI intelligence.
 
@@ -550,7 +550,7 @@ These checkpoints are **planned**, not completed work. Failures require an expli
 
 **Approval questions to resolve before implementation:**
 
-1. **Host reality:** Which truly free, compatible combination can run **frontend + FastAPI + live worker** through judging, with outbound HTTPS, persistent HTTPS endpoint, database connectivity, and no unavoidable credit card?
+1. **Host reality:** Managed hosting with modest infrastructure expense is approved by ADR-008. **Which actual provider/plan** permits the intended use and runs frontend, FastAPI and long-lived worker reliably, with HTTPS, DB connectivity, cost disclosure and verified uptime?
 2. **Authentication choice:** Supabase Auth plus API JWT verification, and evaluator account issuance/revocation — confirm exact production configuration.
 3. **DB isolation:** API-only domain data access is **approved in ADR-002**. Verify JWT, workspace scope, privileged RLS bypass and production migrations.
 4. **Queue execution:** PostgreSQL job leasing with worker probe versus alternate genuinely durable free job mechanism.
@@ -606,3 +606,5 @@ Do **not** create approved ADR claims merely from this draft. Record selected al
 ## 21. Owner-requested concurrent-founder capacity target
 
 The founder additionally requests architecture capable of serving **500 simultaneously active, authenticated founders**. This is an explicit **capacity design objective**, not tested throughput. Keep FastAPI stateless, PostgreSQL connections pooled, source and AI tasks in bounded durable research jobs, cache workspace-scoped reads safely and use jittered/backoff polling to avoid synchronized request storms. See [18-SCALABILITY.md](18-SCALABILITY.md) for workload assumptions, initial 25–50 requests/s test envelope, queue fairness, load/soak testing and the required evidence before capacity can be claimed. Whether verified 500-user capacity is a hard November 26 launch gate remains an explicit founder decision. **No load benchmark has been run.**
+
+**Hosting decision (approved 18 November 2026):** [ADR-008](decisions/008-managed-hosting-and-worker.md) selects managed deployment with a separately runnable FastAPI research worker, permits reasonable **infrastructure** charges, and retains the **₹0 external AI/research API spend constraint**. Vercel and Railway remain *candidates*, not actual purchased or proven services. The 500-founder target still requires load testing.

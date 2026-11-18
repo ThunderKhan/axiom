@@ -18,7 +18,7 @@
 | DEC-005 | Modular FastAPI system, shared domain use cases and bounded independently runnable worker as **architectural direction** | Approved | Architecture v1.0, 18 Nov |
 | DEC-006 | ₹0 planned external AI/research API spending, genuine sources, clear seeded/hypothetical labeling, human-reviewed unsent drafts | Approved | PRD/MVP |
 
-**Crucial distinction:** approving architecture **does not approve or verify** a specific hosting provider, source API, auth system, AI model or background worker's deployed feasibility. Those remain open below.
+**Crucial distinction:** the owner approved the auth/data stack ([ADR-002](decisions/002-authentication-database-and-api-boundary.md)) and managed-hosting strategy ([ADR-008](decisions/008-managed-hosting-and-worker.md)); **no particular frontend/worker vendor, subscription, cost, uptime, AI provider, source API, or deployed capacity is verified or purchased**.
 
 ## 3. Open technology decisions
 
@@ -31,12 +31,16 @@
 | ADR-005 | Free AI provider/model | Pluggable structured LLM | Actual call, quotas, output validation and fallback | Open |
 | ADR-006 | MCP remote auth and version | Python SDK, Streamable HTTP | External client handshake, scope/denied write | Open |
 | ADR-007 | Frontend/graph libraries and visual tokens | Next.js + accessible graph/list | Build, interaction/accessibility stress | Open |
-| ADR-008 | Production hosting | Candidate free hosts | HTTPS worker/API/DB health and stability | Blocked by verification |
+| [ADR-008](decisions/008-managed-hosting-and-worker.md) | Managed frontend + FastAPI API + dedicated worker; modest hosting spend allowed | Actual host choice, terms/pricing, worker restart, HTTPS and capacity load tests | **Approved strategy — provider/cost and deployment unverified** |
 | ADR-009 | Data retention and source excerpts | Minimal permitted excerpts | Policy/terms and deletion review | Open |
 
 ## 3A. Founder-approved technical decision 1 of 6 (18 November 2026)
 
 **Option A selected:** Supabase Auth + Supabase-hosted PostgreSQL + FastAPI sole application data API + SQLAlchemy 2.x + Alembic. See [ADR-002](decisions/002-authentication-database-and-api-boundary.md). This approves the stack and access boundary, **not** the configuration, cost, throughput, or operational verification. Remaining infrastructure, model, sources and MCP choices are still open.
+
+## 3B. Founder-approved technical decision 2 of 6 (18 November 2026)
+
+**Option A selected:** Managed hosting with a modest infrastructure budget: a suitable web frontend host (Vercel or an eligible equivalent), a continuously runnable FastAPI service and **separately executed durable research worker** (Railway or an eligible equivalent), and previously approved Supabase Auth/PostgreSQL. [ADR-008](decisions/008-managed-hosting-and-worker.md) governs. Provider selection and paid plan costs require a separate review before purchase. **The ₹0 external AI/research API budget remains unchanged.** No claim of tested hosting/500-user capacity.
 
 ## 3A. New founder requirements (18 November 2026)
 
@@ -63,7 +67,7 @@ If a proposal affects an approved PRD/MVP commitment, require founder's **explic
 ## 5. Pending issue / risk ledger
 
 - Confirm R0 3+ source families under lawful access and ₹0 provider budget.
-- Confirm a **real** worker can run on deployed hosting or approve an alternative.
+- **Hosting strategy approved:** managed web/API plus durable worker, modest infrastructure charges permitted. Confirm an **actual worker** runs on selected hosting; choose specific providers, instance costs and test restart before deployment acceptance.
 - Confirm LLM free structured output availability; document deterministic degraded path.
 - Resolve MCP client auth and write approval, not just a tool list.
 - **Stack chosen:** Supabase Auth/PostgreSQL/FastAPI/SQLAlchemy/Alembic. **Still verify** exact PostgreSQL schema, JWT validation, RLS/privileged server behavior and actual deployment.

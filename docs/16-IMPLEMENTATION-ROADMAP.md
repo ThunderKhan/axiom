@@ -8,7 +8,7 @@
 
 Use **tested vertical slices**, not separate weeks of frontend then backend then AI. The first complete user journey is: authenticated workspace → confirm profile → lawful live source → ranked signal → cited competitor → evidence verdict → saved CRM lead → reopen. Then expand to graph, two-scenario comparison and MCP/tool coverage. Every task must include failure and tenant security tests.
 
-**Constraints:** The approved budget is **₹0 planned external AI/research API spend**. Free hosting and long-lived workers must be verified; inability to run a worker changes the implementation strategy. A visual shell is not a milestone.
+**Constraints:** The approved budget is **₹0 planned external AI/research API spend**. Under [ADR-008](decisions/008-managed-hosting-and-worker.md), modest managed-hosting expenditure is allowed; provider/plan costs and a durable worker must still be verified. ₹0 AI/research API spending remains unchanged. A visual shell is not a milestone.
 
 ### Workstream dependency graph
 
@@ -34,7 +34,7 @@ flowchart TD
 | Date (IST) | Focus | Required proof before moving on |
 |---|---|---|
 | **18 Nov** | Approved baseline docs, tech choices, repository structure, CI scaffold | One source-of-truth index; no contradictory statuses |
-| **19 Nov** | **Early feasibility:** chosen auth+DB, actual free host worker probe, real lawful source, real competitor fetch, optional real LLM call | Proven live source URL, sourced competitor excerpt, worker queued job test |
+| **19 Nov** | **Early feasibility:** approved auth+DB stack, **actual managed host/worker probe**, real lawful source, real competitor fetch, optional real LLM call | Proven live source URL, sourced competitor excerpt, worker queued job test |
 | **20 Nov** | P0 identity/workspace and versioned onboarding | Login + two workspaces with denied cross-user access; confirmed profile |
 | **21 Nov** | Discovery normalization, dedupe, ranking and competitor report | Real records + clear evidence timestamps + Unknown price failure case |
 | **22 Nov** | End-to-end saved opportunity, evidence model, evaluate full R0 breadth | Browser journey works and owner sees R0 source/CRM/scenario/MCP status |
@@ -82,11 +82,11 @@ These dates are **targets**, not completion statuses. Do not overpromise which b
 
 ## 6. Open decisions and critical path
 
-**Critical path:** source and free-host feasibility → authentication/DB → versioned product profile → source/competitor evidence → decision engine → persistent CRM and scenarios → real MCP client → deployed E2E.
+**Critical path:** source and managed-worker feasibility → authentication/DB → versioned product profile → source/competitor evidence → decision engine → persistent CRM and scenarios → real MCP client → deployed E2E.
 
 Do not begin sophisticated graph motion before confirming source and storage architecture. Do not declare model inference without actual compatible free provider. Do not deploy MCP writes before approval/authorization semantics are implemented.
 
-**Needed decisions:** exact auth, DB access/RLS, hosting/worker runtime, source registry, model provider, remote MCP token mechanism, migration framework. Use [DECISIONS.md](DECISIONS.md) for open/approved choices.
+**Needed decisions:** Supabase Auth/PostgreSQL/FastAPI and SQLAlchemy/Alembic are approved; managed hosting strategy approved (ADR-008) but **vendor, plan, cost and worker runtime remain unverified**; source registry, model provider and remote MCP auth still need decisions. Use [DECISIONS.md](DECISIONS.md) for open/approved choices.
 
 ## 7. Final release evidence
 
@@ -109,7 +109,11 @@ The mistakenly introduced separate `T-shirt.md` is not needed. Retain these coar
 | Advanced Counterfactual | XL–XXL | Frozen evidence and versioning |
 | Advanced CRM | L–XL | Persistence and permissions |
 | MCP read and write tools | L–XL | Remote client auth and consent |
-| Hosted API, worker, DB and load capacity | XL–XXL | Free-tier limits and operational durability |
+| Managed API, worker, DB and load capacity | XL–XXL | Provider cost, runtime/worker continuity and measured scaling |
 | Full E2E, security and deployment verification | XL | Cross-system integration |
 
 Sizes are directional only and may exceed the available schedule; keep verified P0 vertical slices first while surfacing R0 tradeoffs for explicit owner decisions. **This document's approval does not mean its tasks are finished.**
+
+## 9. Managed hosting decision and implementation next step
+
+Founder-approved [ADR-008](decisions/008-managed-hosting-and-worker.md) permits **modest infrastructure spending** to host the frontend, FastAPI API and separate durable research worker. It does **not** approve a specific billing charge. Prioritize selecting/verifying candidate managed services (e.g. Vercel if its terms suit the actual use, Railway or equivalent for the Python API/worker), proving safe job restart, and recording accepted provider plan pricing. No part of the **₹0 external AI/research API spending** requirement is relaxed.

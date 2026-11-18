@@ -58,7 +58,7 @@ Record consequential architecture decisions in `docs/decisions/` as numbered, da
 
 **Approved product and architectural direction decisions**, the founder-requested 500-user target, Edviro design reference, and unresolved architecture issues are tracked in [DECISIONS.md](DECISIONS.md). The authentication/database/access architecture choice is approved in ADR-002; other provider-specific ADRs remain pending.
 
-**Approved ADR:** [002 — Supabase Auth, PostgreSQL, FastAPI domain access and SQLAlchemy/Alembic](decisions/002-authentication-database-and-api-boundary.md). User-selected implementation stack is locked; actual Supabase configuration, quotas, migrations and authorization tests remain pending. Other open decisions: hosting/worker, free AI provider, lawful source adapters, remote MCP auth and capacity verification.
+**Approved ADRs:** [002 — Supabase Auth, PostgreSQL, FastAPI domain access and SQLAlchemy/Alembic](decisions/002-authentication-database-and-api-boundary.md); [008 — managed frontend/API hosting and dedicated research worker](decisions/008-managed-hosting-and-worker.md). Exact host providers, spending, uptime, worker durability, DB configuration and 500-founder throughput remain unverified; AI provider, lawful sources and MCP authorization are still open.
 
 ## Superseded Documents
 

@@ -26,10 +26,10 @@ The TRD states **technology choices, engineering constraints and objectively tes
 | Model | Provider-agnostic structured-output LLM adapter | Choose only on verified legitimate free quota/latency |
 | External agent protocol | Maintained Python MCP SDK / compatible Streamable HTTP | Real remote client handshake and scoped auth |
 | Quality | pytest, Playwright, lint/type/build, migrations and security tests | CI and deployed smoke evidence |
-| Hosting | Compatible HTTPS frontend/API/worker + managed DB | Not chosen; free-tier persistence and uptime unverified |
+| Hosting | **Managed web + managed FastAPI/worker + Supabase** ([ADR-008](decisions/008-managed-hosting-and-worker.md)) | Strategy approved; provider/plan, cost and real worker uptime not verified |
 
 **TRD-STACK-01:** Production dependencies must have reproducible lockfiles; record chosen version and license.
-**TRD-STACK-02:** Adopt no paid, inaccessible or policy-incompatible dependency without explicit owner approval.
+**TRD-STACK-02:** **Modest paid hosting/infrastructure is allowed under ADR-008**; require explicit approval of any specific paid plan/cost before provisioning. **Paid AI/research APIs remain excluded** under the ₹0 external API constraint; do not use inaccessible or policy-incompatible services.
 **TRD-STACK-03:** Main API and research worker share typed domain services, not duplicated business rules. Avoid unnecessary Redis/Kafka/microservices for initial release.
 
 ## 3. Web requirements
@@ -50,7 +50,7 @@ The TRD states **technology choices, engineering constraints and objectively tes
 - **TRD-BE-02:** At least two independently callable real HTTP operations: discovery and competitor teardown. Web and MCP call identical application/domain use cases.
 - **TRD-BE-03:** Authenticate and authorize *every* private read/write, including downloads, job progress and MCP calls; supplied workspace IDs do not prove authority.
 - **TRD-BE-04:** Long research/extraction operations use bounded jobs, retries, rate limits, correlation IDs and durable progress state; no unbounded synchronous requests.
-- **TRD-BE-05:** A crash/restart probe must prove a job is retried without duplicate business mutations. If free worker hosting fails, disclose blocker and propose an approved alternative.
+- **TRD-BE-05:** A crash/restart probe must prove a job is retried without duplicate business mutations. Prove a persistent worker on the chosen managed tier; paid infrastructure can be considered within an owner-reviewed hosting budget, but no unverified provider is accepted.
 - **TRD-DB-01:** Workspace-scoped foreign keys, profile/source snapshot versioning, relational evidence nodes/edges, transactional CRM writes, idempotency.
 - **TRD-DB-02:** Clean-install + upgrade migration tests, backup/restore plan and documented data deletion/retention policy.
 - **TRD-DB-03:** Privileged Supabase service/secret credentials bypass RLS; server-side workspace checks remain mandatory, with RLS defense in depth where applicable.
@@ -141,3 +141,7 @@ Targets below are **proposals until benchmarked**; do not advertise them as achi
 **TRD-CAP-04:** This capacity objective cannot be marketed as **achieved** until the selected deployment passes the reproducible load/soak/failure test in [18-SCALABILITY.md](18-SCALABILITY.md). Whether 500 verified users is a hard November 26 gate or a later capacity milestone remains a founder decision; it is **not silently a waived objective**.
 
 **Approval boundary:** Owner-approved TRD requirements and architecture direction are authoritative; every technology labeled candidate/proposed stays contingent on real provider, cost, license, and deployability evidence. Approval does not claim a built backend or 500-user capacity.
+
+## 12. Approved managed-hosting strategy (decision 2 of 6)
+
+[ADR-008](decisions/008-managed-hosting-and-worker.md) approves a **managed frontend, independently running managed FastAPI API and research worker, and Supabase Auth/PostgreSQL**. Vercel and Railway are **candidate hosts only**. Distinguish *permitted infrastructure spend* from the **still-₹0 external AI/research API spending** requirement. Record actual host/plan price, allowed use, worker/restart results, scaling limits and database connection caps before deployment approval. No deployment or 500-founder capacity has been verified by the document change.

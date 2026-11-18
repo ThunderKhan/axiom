@@ -5,7 +5,7 @@
 
 ## 1. Deployment objective and unknowns
 
-Axiom must be reachable via stable **HTTPS landing page → login → authenticated app**, with working API, managed PostgreSQL, and actual research execution (separate worker if host supports it). **No specific cloud provider/free tier is approved or proven yet.** ₹0 external AI/research API spending is planned; actual persistent worker/free hosting feasibility needs a real deployment probe. Never state production is deployed until confirmed.
+Axiom must be reachable via stable **HTTPS landing page → login → authenticated app**, with working API, managed PostgreSQL, and actual research execution (separate worker if host supports it). **Managed hosting strategy is approved in [ADR-008](decisions/008-managed-hosting-and-worker.md), but no specific vendor/tier is selected or proven yet.** Modest paid infrastructure is permitted after cost approval; **₹0 external AI/research API spending** remains required. A long-lived worker on the selected host needs a real deployment probe. Never state production is deployed until confirmed.
 
 ### Proposed topology
 
@@ -23,10 +23,10 @@ No separate evaluator-only page, public guest sandbox, bulk sending service or u
 
 ## 2. Pre-deployment decisions (blockers)
 
-1. Select frontend/API/worker hosts with persistent runtime, outbound HTTPS, service-to-DB connectivity, TLS and transparent free quotas; document actual billing/usage risk.
+1. Select eligible **managed** frontend/API/worker hosts under [ADR-008](decisions/008-managed-hosting-and-worker.md), with dedicated persistent worker process, outbound HTTPS, service-to-DB connectivity and TLS. Vercel and Railway are candidates, not guaranteed selections. Verify terms of use, exact pricing/monthly cap, billing approval and runtime quotas.
 2. Use **Supabase Auth + Supabase-hosted PostgreSQL** per [ADR-002](decisions/002-authentication-database-and-api-boundary.md) and confirm privileged credential handling. Pre-provision a low-privilege evaluator account; distribute password **privately** through submission channel.
 3. Verify database migrations, backups, schema isolation and connection limits with chosen PostgreSQL environment.
-4. Prove a worker can claim a queued job, survive restart and resume; if free worker is impossible, stop and obtain approved architecture adjustment.
+4. Prove a dedicated managed worker can claim a queued job, survive restart and resume; if the chosen plan cannot support it, evaluate other eligible managed tiers/providers with cost approval before claiming production readiness.
 5. Confirm at least one permitted live public source fetch, competitor website extraction and model call if marketing AI as working.
 6. Confirm MCP transport/client compatibility and auth scheme. Don't publicly expose write-enabled MCP before tests.
 7. Choose actual app/domain URLs and valid CORS/origin rules; avoid wildcard credentialed CORS.
@@ -55,7 +55,7 @@ Keep `.env.example` with names/placeholders, not tokens. Use hosting secrets man
 2. Install from lockfile; ensure frontend build, Python imports/type/lint/tests, migration check and API schema generation pass.
 3. Provision database/auth resources with least-privilege secrets; enable and verify RLS where appropriate, while enforcing app-layer workspace checks.
 4. Apply **Alembic** versioned migrations (SQLAlchemy 2.x models), transactionally/with a forward-fix plan; verify schema version, essential indices and constraints.
-5. Deploy API and separate worker (same Python source, different start command). Validate `/health` and readiness DB probe.
+5. Deploy API and separate **managed** worker process (same Python source, different start command). Validate `/health` and readiness DB probe.
 6. Deploy frontend with **public** API/Auth configuration; check HTTPS, redirect to login, CORS and cookies/tokens.
 7. Run real bounded source retrieval and competitor teardown through API; confirm worker actually processes queued jobs.
 8. Test persisted profile, graph/report and Counterfactual scenario re-open; create lead, note, follow-up and unsent draft.
@@ -104,3 +104,7 @@ Submit deployed app URL, repo, documented APIs/MCP, source/data/AI disclosures, 
 ## 9. Stop/go release criteria
 
 Do not claim release complete if P0 gates remain unverified, a protected route is publicly accessible, AI research is faked, source terms are violated, cross-tenant tests fail or a worker is nonfunctional. Any R0 objective not met requires explicit owner-approved adjustment and honest release notes, not silent scope erosion.
+
+## 10. Approved hosting strategy and procurement gate
+
+The founder chose **Option A (managed hosting with a modest infrastructure budget)** on 18 November 2026; see [ADR-008](decisions/008-managed-hosting-and-worker.md). **Do not purchase or select a paid tier solely from this broad approval:** record and obtain agreement on concrete vendor, plan, monthly cost, billing account, eligible use, worker lifetime and limits. A working managed worker/restart test, HTTPS ingress and DB connection pooling are required before calling deployment done. Keep AI/research API spending at ₹0 unless the founder explicitly changes that separate constraint. This runbook remains **DRAFT** until actual provider selections and deployment proof are complete.
