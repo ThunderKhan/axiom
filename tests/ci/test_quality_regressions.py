@@ -492,11 +492,14 @@ sys.exit(0 if result.wasSuccessful() else 1)
         self.assertEqual(original, (root / "tests/test_sample.py").read_bytes())
 
     def test_report_lock_serializes_parallel_invocations(self):
+        import fcntl
+        import hashlib
+        import os
         import threading
+
         report = self.root / "apps/web/build/junit.xml"
         holding = threading.Event()
         release = threading.Event()
-        second_entered = threading.Event()
         errors = []
 
         def holder():
@@ -508,30 +511,33 @@ sys.exit(0 if result.wasSuccessful() else 1)
             except BaseException as exc:
                 errors.append(exc)
 
-        def waiter():
-            try:
-                with gate.locked_test_report(report, self.root):
-                    second_entered.set()
-            except BaseException as exc:
-                errors.append(exc)
-
         first = threading.Thread(target=holder, daemon=True)
-        second = threading.Thread(target=waiter, daemon=True)
         first.start()
         try:
             self.assertTrue(holding.wait(timeout=2), "first run did not acquire lock")
-            second.start()
-            self.assertFalse(second_entered.wait(timeout=0.08),
-                             "second run entered while report is locked")
+            # Open the SAME inode independently, from this test thread.
+            # A nonblocking lock must report contention while holder owns it;
+            # merely observing that another thread hasn't entered yet is not proof.
+            digest = hashlib.sha256(os.fsencode(report.resolve())).hexdigest()
+            lock_file = self.root / ".axiom-quality-locks" / f"{digest}.lock"
+            self.assertTrue(lock_file.is_file())
+            fd = os.open(lock_file, os.O_RDWR)
+            with os.fdopen(fd, "rb+"):
+                with self.assertRaises(BlockingIOError):
+                    fcntl.flock(fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
+                release.set()
+                first.join(timeout=4)
+                self.assertFalse(first.is_alive())
+                self.assertFalse(errors)
+                # The same independent descriptor must acquire immediately
+                # once the holder has definitively released its lock.
+                fcntl.flock(fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
+                fcntl.flock(fd, fcntl.LOCK_UN)
         finally:
             release.set()
             first.join(timeout=4)
-            if second.ident:
-                second.join(timeout=4)
-        self.assertFalse(first.is_alive())
-        self.assertFalse(second.is_alive())
         self.assertFalse(errors)
-        self.assertTrue(second_entered.is_set())
+
 
     def test_required_repos_integrity_commands_must_both_be_present(self):
         import yaml
@@ -552,6 +558,61 @@ sys.exit(0 if result.wasSuccessful() else 1)
                     yaml.safe_dump(data, sort_keys=False),
                     f"does not invoke ci/quality_gate.py {mode}",
                 )
+
+    def test_required_commands_reject_nonroot_working_directories(self):
+        import yaml
+
+        # All three scopes must be enforced, including when a more-specific
+        # override is absent. Test all three mandatory commands.
+        for scope in ("workflow", "job", "step"):
+            for job_name, mode in (("repository", "self-test"),
+                                   ("repository", "repository"),
+                                   ("application", "application")):
+                with self.subTest(scope=scope, job=job_name, mode=mode):
+                    data = self.parsed_workflow()
+                    job = data["jobs"][job_name]
+                    step = next(
+                        st for st in job["steps"]
+                        if st.get("run", "").strip() in {
+                            f"python ci/quality_gate.py {mode}",
+                            f"python3 ci/quality_gate.py {mode}",
+                        }
+                    )
+                    if scope == "workflow":
+                        data["defaults"] = {"run": {"working-directory": "./docs"}}
+                    elif scope == "job":
+                        job["defaults"] = {"run": {"working-directory": "docs"}}
+                    else:
+                        step["working-directory"] = "./docs"
+                    self.check_workflow_mutation(
+                        yaml.safe_dump(data, sort_keys=False),
+                        "must run from checkout root",
+                    )
+
+    def test_required_commands_accept_explicit_root_and_precedence(self):
+        import yaml
+
+        for root_value in (".", "./", "docs/.."):
+            with self.subTest(root_value=root_value):
+                data = self.parsed_workflow()
+                data["defaults"] = {"run": {"working-directory": "docs"}}
+                for job in data["jobs"].values():
+                    job["defaults"] = {"run": {"working-directory": root_value}}
+                self.write(
+                    ".github/workflows/quality.yml",
+                    yaml.safe_dump(data, sort_keys=False),
+                )
+                gate.check_workflow(self.root)
+
+        # A step override must take priority over a nonroot job default.
+        data = self.parsed_workflow()
+        job = data["jobs"]["application"]
+        job["defaults"] = {"run": {"working-directory": "docs"}}
+        for step in job["steps"]:
+            if "quality_gate.py application" in step.get("run", ""):
+                step["working-directory"] = "."
+        self.write(".github/workflows/quality.yml", yaml.safe_dump(data, sort_keys=False))
+        gate.check_workflow(self.root)
 
     def test_required_application_command_is_a_whole_step(self):
         import yaml
