@@ -17,7 +17,7 @@
     "check:style": "npm run lint && npm run format:check",
     "typecheck": "tsc --noEmit",
     "test:unit": "node scripts/run-unit-tests.mjs",
-    "test:ci": "node scripts/run-unit-tests.mjs --junit && playwright install chromium && playwright test --reporter=html --trace=on && node scripts/verify-playwright-report.mjs",
+    "test:ci": "node scripts/run-unit-tests.mjs --junit && playwright install chromium && playwright test --trace=on && node scripts/verify-playwright-report.mjs",
     "test:smoke": "playwright test",
     "audit": "npm audit --audit-level=high"
   },

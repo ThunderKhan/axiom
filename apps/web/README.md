@@ -41,8 +41,9 @@ JUnit XML to `test-results/junit.xml`. The repo-level quality gate intentionally
 removes a prior report before every test invocation and rejects missing, empty,
 skipped-only or failing reports.
 
-In CI, Playwright uses the HTML reporter with tracing enabled. The `test:ci` script
-verifies the HTML report and attached trace archives after the browser tests,
+Playwright keeps list output and writes an HTML report without opening it
+interactively (including when a test fails locally). `test:ci` enables tracing
+and verifies the HTML report and attached trace archives after the browser tests,
 with artifacts isolated in `playwright-artifacts/` rather than inside
 `playwright-report/` or `test-results/`. The generated reports are ignored
 by Git.
