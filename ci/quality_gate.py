@@ -2,11 +2,16 @@
 from __future__ import annotations
 
 import argparse
+import contextlib
+import fcntl
+import hashlib
 import json
+import os
 import pathlib
 import re
 import subprocess
 import sys
+import tempfile
 import tomllib
 import unittest
 import xml.etree.ElementTree as ET
@@ -50,25 +55,25 @@ def tracked(root: pathlib.Path) -> list[pathlib.Path]:
 
 
 def check_fence_boundaries(body: str, file: pathlib.Path, root: pathlib.Path, parser) -> None:
-    """Require a real closer for each CommonMark fence, including list/quote containers."""
-    lines = body.splitlines()
+    """Use markdown-it's parsed fence span/content, including nested containers.
+
+    The parser excludes the actual closing fence from token.content, while its
+    token.map includes it when present. This avoids guessing whether a raw
+    backtick line is a closer (e.g. four-space-indented content).
+    """
+    # Match markdown-it's CR/LF normalization; splitlines() also splits U+2028
+    # and would desynchronize token.map indices from the parser.
+    lines = body.replace("\r\n", "\n").replace("\r", "\n").split("\n")
     for token in parser.parse(body):
         if token.type != "fence" or not token.map:
             continue
-        opening = token.markup
         start, end = token.map
-        # MarkdownIt provides container-aware fence boundaries in token.map.
-        # An unclosed fence consumes to the end of its enclosing block.
-        if end - start < 2 or end > len(lines):
+        content = token.content
+        content_lines = content.count("\n") + int(bool(content) and not content.endswith("\n"))
+        if (start < 0 or end > len(lines) or
+                end - start != content_lines + 2):
             fail(f"Unbalanced Markdown code fences: {file.relative_to(root)}")
-        final_line = lines[end - 1].strip()
-        # Strip blockquote markers, which are part of the enclosing container,
-        # and permit the indentation Markdown allows inside a list item.
-        while final_line.startswith(">"):
-            final_line = final_line[1:].lstrip()
-        pattern = re.escape(opening[0]) + "{" + str(len(opening)) + ",}"
-        if not re.fullmatch(pattern + r"[ \\t]*", final_line):
-            fail(f"Unbalanced Markdown code fences: {file.relative_to(root)}")
+
 
 
 def check_document_links(root: pathlib.Path, files: list[pathlib.Path]) -> int:
@@ -192,13 +197,28 @@ def check_workflow(root: pathlib.Path) -> None:
         for step in steps:
             if not isinstance(step, dict) or "if" in step or step.get("continue-on-error") not in (None, False):
                 fail(f"Required job {name} may not conditionally skip or ignore errors in steps")
-    app_steps = jobs["application"]["steps"]
-    if not any(isinstance(step, dict) and
-               any(line.strip() in {"python ci/quality_gate.py application",
-                                    "python3 ci/quality_gate.py application"}
-                   for line in str(step.get("run", "")).splitlines())
-               for step in app_steps):
-        fail("Required application job does not invoke the application quality gate")
+    def required_command_step(job_name: str, command: str) -> None:
+        """Require an entire dedicated shell step; honor shell override precedence."""
+        job = jobs[job_name]
+        workflow_shell = (workflow.get("defaults") or {}).get("run", {}).get("shell")
+        job_shell = (job.get("defaults") or {}).get("run", {}).get("shell")
+        matching = []
+        for step in job["steps"]:
+            if not isinstance(step, dict) or step.get("run", "").strip() != command:
+                continue
+            shell = step.get("shell") or job_shell or workflow_shell or "bash"
+            if not isinstance(shell, str) or not shell.strip():
+                fail(f"Required {command} must run in a supported command shell")
+            executable = pathlib.PurePosixPath(shell.split()[0].replace("\\", "/")).name.lower()
+            if executable not in {"bash", "sh", "pwsh", "powershell"}:
+                fail(f"Required {command} must run in a supported command shell, not {shell}")
+            matching.append(step)
+        if not matching:
+            fail(f"Required {job_name} job does not invoke {command}")
+
+    required_command_step("repository", "python ci/quality_gate.py self-test")
+    required_command_step("repository", "python ci/quality_gate.py repository")
+    required_command_step("application", "python ci/quality_gate.py application")
 
     def contains_secret_context(value: object) -> bool:
         if isinstance(value, dict):
@@ -323,11 +343,18 @@ def check_application_config(root: pathlib.Path, files: list[pathlib.Path]) -> l
             if not isinstance(report, str) or not report.strip():
                 fail(f"Package {name}: non-Go tests require a JUnit XML test_report")
             relative_report = pathlib.Path(report)
-            if relative_report.is_absolute() or ".." in relative_report.parts:
-                fail(f"Package {name}: test_report must be inside the package directory")
+            if (relative_report.is_absolute() or ".." in relative_report.parts or
+                    relative_report.suffix.lower() != ".xml" or
+                    not relative_report.parts or
+                    relative_report.parts[0] not in {"build", "test-results", "reports", "coverage"}):
+                fail(f"Package {name}: test_report must be generated XML under a report output directory")
             output = (directory / relative_report).resolve()
             if not output.is_relative_to(directory):
                 fail(f"Package {name}: test_report escapes package directory")
+            inputs = {file.resolve() for file in
+                      (artifacts["manifest"], artifacts["lockfile"], *matches)}
+            if output in inputs:
+                fail(f"Package {name}: test_report overlaps declared package input")
             validated["test_report"] = str(relative_report)
         declared.append((name, directory, validated))
     uncovered = [file for file in code if not any(file.is_relative_to(d) for _, d, _ in declared)]
@@ -348,17 +375,64 @@ def check_junit_test_evidence(path: pathlib.Path, name: str) -> None:
     suites = tree.getroot()
     if suites.tag not in {"testsuites", "testsuite"}:
         fail(f"Package {name}: test_report is not JUnit XML")
+    for suite in suites.iter("testsuite"):
+        for attribute in ("failures", "errors"):
+            total = suite.get(attribute)
+            if total is not None:
+                try:
+                    count = int(total)
+                except ValueError as exc:
+                    raise QualityError(f"Package {name}: invalid JUnit {attribute} total") from exc
+                if count < 0 or count != 0:
+                    fail(f"Package {name}: JUnit suite declares nonzero {attribute}")
     cases = list(suites.iter("testcase"))
     passed = [case for case in cases
               if not any(case.find(tag) is not None
                          for tag in ("skipped", "failure", "error"))]
     if not passed:
         fail(f"Package {name}: zero successfully executed tests in JUnit XML test_report")
-    if len(cases) != len(passed):
-        failed = [case for case in cases
-                  if case.find("failure") is not None or case.find("error") is not None]
-        if failed:
-            fail(f"Package {name}: JUnit XML reports failed/error tests")
+    if any(case.find("failure") is not None or case.find("error") is not None
+           for case in cases):
+        fail(f"Package {name}: JUnit XML reports failed/error tests")
+
+
+@contextlib.contextmanager
+def locked_test_report(report: pathlib.Path):
+    """Serialize cleanup, execution and validation for one report across processes."""
+    digest = hashlib.sha256(os.fsencode(report)).hexdigest()
+    lock_path = pathlib.Path(tempfile.gettempdir()) / f"axiom-quality-{digest}.lock"
+    fd = os.open(lock_path, os.O_CREAT | os.O_RDWR | os.O_NOFOLLOW, 0o600)
+    with os.fdopen(fd, "rb+"):
+        fcntl.flock(fd, fcntl.LOCK_EX)
+        try:
+            yield
+        finally:
+            fcntl.flock(fd, fcntl.LOCK_UN)
+
+
+def assert_generated_report(
+    root: pathlib.Path, directory: pathlib.Path, report: pathlib.Path,
+    spec: dict, tracked_files: list[pathlib.Path], name: str
+) -> None:
+    """Never remove tracked/declared inputs or files reachable via symlinks."""
+    relative = pathlib.Path(spec["test_report"])
+    if not relative.parts or relative.parts[0] not in {"build", "test-results", "reports", "coverage"}:
+        fail(f"Package {name}: report must be in a generated output directory")
+    candidate = directory
+    for segment in relative.parts:
+        candidate = candidate / segment
+        if candidate.is_symlink():
+            fail(f"Package {name}: report path traverses a symlink")
+    if report != (directory / relative).resolve() or not report.is_relative_to(directory):
+        fail(f"Package {name}: report path is not safely within package")
+    protected = {file.resolve() for file in tracked_files}
+    protected.add((directory / spec["manifest"]).resolve())
+    protected.add((directory / spec["lockfile"]).resolve())
+    for pattern in spec["test_files"]:
+        protected.update(path.resolve() for path in directory.glob(pattern) if path.is_file())
+    if report in protected:
+        fail(f"Package {name}: refusing to delete tracked or declared input as test_report")
+
 
 
 def run_application(root: pathlib.Path, files: list[pathlib.Path]) -> None:
@@ -400,12 +474,13 @@ def run_application(root: pathlib.Path, files: list[pathlib.Path]) -> None:
                     fail(f"Package {name}: go test reported zero successfully executed tests")
             elif key == "test":
                 report = (directory / spec["test_report"]).resolve()
-                if not report.is_relative_to(directory):
-                    fail(f"Package {name}: test report path escapes package directory")
-                # A test from a previous invocation must never count as evidence.
-                report.unlink(missing_ok=True)
-                subprocess.run(cmd, cwd=directory, check=True)
-                check_junit_test_evidence(report, name)
+                with locked_test_report(report):
+                    assert_generated_report(root, directory, report, spec, files, name)
+                    # The lock covers cleanup, test invocation and evidence validation.
+                    # Another parallel process cannot supply a report for this run.
+                    report.unlink(missing_ok=True)
+                    subprocess.run(cmd, cwd=directory, check=True)
+                    check_junit_test_evidence(report, name)
             else:
                 subprocess.run(cmd, cwd=directory, check=True)
 
