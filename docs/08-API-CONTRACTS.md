@@ -5,7 +5,7 @@
 
 ## 1. Normative conventions (proposed)
 
-Base path `/api/v1`; HTTPS and JSON. Authentication: `Authorization: Bearer <access_token>` or a reviewed equivalent secure session. Verify user token, **workspace membership** and object scope server-side. Workspace ID in URL is never authority. UUID-style opaque identifiers; timestamps ISO 8601 UTC; null/`unknown` means missing data, not zero.
+Base path `/api/v1`; HTTPS and JSON. **ADR-002 approves FastAPI as the sole domain-data access path** (including browser research/CRM, MCP and status). Browser Supabase access is for login/session only. Authentication: `Authorization: Bearer <access_token>` or a reviewed equivalent secure session. Verify user token, **workspace membership** and object scope server-side. Workspace ID in URL is never authority. UUID-style opaque identifiers; timestamps ISO 8601 UTC; null/`unknown` means missing data, not zero.
 
 Async research/teardown: submission returns `202 Accepted`, `run_id` and `status=queued`. Poll per-workspace status; do not pretend accepted means completed. `Idempotency-Key` on research submissions and CRM writes. List pagination uses `limit` (default 20, max 100) + opaque `cursor` with stable sort. Request and response include `request_id` where applicable. Future public version changes require compatibility review and regenerated OpenAPI-derived TypeScript types.
 
