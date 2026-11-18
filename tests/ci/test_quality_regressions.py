@@ -423,5 +423,192 @@ sys.exit(0 if result.wasSuccessful() else 1)
             gate.check_junit_test_evidence(report, "web")
 
 
+    def test_junit_suite_totals_reject_nonzero_failures_and_errors(self):
+        for root_tag in ("testsuite", "testsuites"):
+            for attribute in ("failures", "errors"):
+                with self.subTest(root=root_tag, attribute=attribute):
+                    xml = (f'<{root_tag} {attribute}="1">'
+                           '<testsuite><testcase name="green"/></testsuite>'
+                           f'</{root_tag}>'
+                           if root_tag == "testsuites"
+                           else f'<testsuite {attribute}="1">'
+                                '<testcase name="green"/></testsuite>')
+                    report = self.write("apps/web/build/junit.xml", xml)
+                    with self.assertRaisesRegex(gate.QualityError, "nonzero"):
+                        gate.check_junit_test_evidence(report, "web")
+
+    def test_junit_zero_suite_totals_accept_an_actual_pass(self):
+        report = self.write("apps/web/build/junit.xml",
+                            '<testsuites failures="0" errors="0">'
+                            '<testsuite failures="0" errors="0" tests="1">'
+                            '<testcase name="green"/></testsuite></testsuites>')
+        gate.check_junit_test_evidence(report, "web")
+
+    def test_report_cleanup_never_deletes_tracked_generated_file(self):
+        root = self.make_package(manifest="pyproject.toml", lockfile="uv.lock",
+                                 test_file="tests/test_sample.py")
+        source = root / "src/app.ts"
+        report = self.write("apps/web/build/junit.xml", "important tracked data")
+        original = report.read_bytes()
+        with patch.object(gate.subprocess, "run",
+                          return_value=subprocess.CompletedProcess([], 0)):
+            with self.assertRaisesRegex(gate.QualityError, "refusing to delete tracked"):
+                gate.run_application(self.root, [source, report])
+        self.assertEqual(original, report.read_bytes())
+
+    def test_report_cleanup_rejects_symlink_to_source_input(self):
+        root = self.make_package(manifest="pyproject.toml", lockfile="uv.lock",
+                                 test_file="tests/test_sample.py")
+        source = root / "src/app.ts"
+        report = root / "build/junit.xml"
+        report.parent.mkdir(exist_ok=True)
+        report.symlink_to(source)
+        original = source.read_bytes()
+        with patch.object(gate.subprocess, "run",
+                          return_value=subprocess.CompletedProcess([], 0)):
+            with self.assertRaisesRegex(gate.QualityError, "symlink"):
+                gate.run_application(self.root, [source])
+        self.assertEqual(original, source.read_bytes())
+        self.assertTrue(report.is_symlink())
+
+    def test_report_cleanup_rejects_declared_test_input(self):
+        root = self.make_package(manifest="pyproject.toml", lockfile="uv.lock",
+                                 test_file="tests/test_sample.py")
+        report = root / "build/junit.xml"
+        report.parent.mkdir(exist_ok=True)
+        report.symlink_to(root / "tests/test_sample.py")
+        original = (root / "tests/test_sample.py").read_bytes()
+        with self.assertRaisesRegex(gate.QualityError, "overlaps declared"):
+            gate.check_application_config(self.root, [root / "src/app.ts"])
+        self.assertEqual(original, (root / "tests/test_sample.py").read_bytes())
+
+    def test_report_lock_serializes_parallel_invocations(self):
+        import threading
+        report = self.root / "apps/web/build/junit.xml"
+        holding = threading.Event()
+        release = threading.Event()
+        second_entered = threading.Event()
+        errors = []
+
+        def holder():
+            try:
+                with gate.locked_test_report(report):
+                    holding.set()
+                    if not release.wait(timeout=4):
+                        raise AssertionError("test lock release timeout")
+            except BaseException as exc:
+                errors.append(exc)
+
+        def waiter():
+            try:
+                with gate.locked_test_report(report):
+                    second_entered.set()
+            except BaseException as exc:
+                errors.append(exc)
+
+        first = threading.Thread(target=holder, daemon=True)
+        second = threading.Thread(target=waiter, daemon=True)
+        first.start()
+        try:
+            self.assertTrue(holding.wait(timeout=2), "first run did not acquire lock")
+            second.start()
+            self.assertFalse(second_entered.wait(timeout=0.08),
+                             "second run entered while report is locked")
+        finally:
+            release.set()
+            first.join(timeout=4)
+            if second.ident:
+                second.join(timeout=4)
+        self.assertFalse(first.is_alive())
+        self.assertFalse(second.is_alive())
+        self.assertFalse(errors)
+        self.assertTrue(second_entered.is_set())
+
+    def test_required_repos_integrity_commands_must_both_be_present(self):
+        import yaml
+        for mode in ("self-test", "repository"):
+            with self.subTest(mode=mode):
+                data = yaml.load(self.original_workflow, Loader=yaml.BaseLoader)
+                steps = data["jobs"]["repository"]["steps"]
+                old_count = len(steps)
+                data["jobs"]["repository"]["steps"] = [
+                    step for step in steps
+                    if step.get("run", "").strip() not in {
+                        f"python ci/quality_gate.py {mode}",
+                        f"python3 ci/quality_gate.py {mode}",
+                    }
+                ]
+                self.assertEqual(old_count - 1, len(data["jobs"]["repository"]["steps"]))
+                self.check_workflow_mutation(
+                    yaml.safe_dump(data, sort_keys=False),
+                    f"does not invoke ci/quality_gate.py {mode}",
+                )
+
+    def test_required_application_command_is_a_whole_step(self):
+        import yaml
+        data = yaml.load(self.original_workflow, Loader=yaml.BaseLoader)
+        app = next(step for step in data["jobs"]["application"]["steps"]
+                   if step.get("run", "").strip().endswith("quality_gate.py application"))
+        app["run"] = (
+            "function never_called() {\n"
+            "  python ci/quality_gate.py application\n"
+            "}\necho success\n"
+        )
+        self.check_workflow_mutation(
+            yaml.safe_dump(data, sort_keys=False),
+            "does not invoke ci/quality_gate.py application",
+        )
+
+    def test_required_application_command_accepts_python3_shell_step(self):
+        import yaml
+        data = yaml.load(self.original_workflow, Loader=yaml.BaseLoader)
+        app = next(step for step in data["jobs"]["application"]["steps"]
+                   if "quality_gate.py application" in step.get("run", ""))
+        app["run"] = "python3 ci/quality_gate.py application"
+        self.write(".github/workflows/quality.yml", yaml.safe_dump(data, sort_keys=False))
+        gate.check_workflow(self.root)
+
+    def test_shell_default_and_override_precedence(self):
+        import yaml
+        for level in ("workflow", "job", "step"):
+            with self.subTest(level=level):
+                data = yaml.load(self.original_workflow, Loader=yaml.BaseLoader)
+                job = data["jobs"]["application"]
+                step = next(step for step in job["steps"]
+                            if "quality_gate.py application" in step.get("run", ""))
+                if level == "workflow":
+                    data["defaults"] = {"run": {"shell": "python"}}
+                elif level == "job":
+                    job["defaults"] = {"run": {"shell": "python"}}
+                else:
+                    step["shell"] = "python"
+                self.check_workflow_mutation(
+                    yaml.safe_dump(data, sort_keys=False),
+                    "must run in a supported command shell",
+                )
+        data = yaml.load(self.original_workflow, Loader=yaml.BaseLoader)
+        data["defaults"] = {"run": {"shell": "python"}}
+        data["jobs"]["application"]["defaults"] = {"run": {"shell": "bash"}}
+        self.write(".github/workflows/quality.yml", yaml.safe_dump(data, sort_keys=False))
+        gate.check_workflow(self.root)
+
+    def test_fence_uses_parser_actual_closing_rule(self):
+        fence = chr(96) * 3
+        valid = self.write("docs/fence.md", f"{fence}\nbody\n{fence}\n")
+        self.assertEqual(1, gate.check_document_links(self.root, [valid]))
+        invalid = self.write("docs/fence.md", f"{fence}\nbody\n    {fence}\n")
+        with self.assertRaisesRegex(gate.QualityError, "Unbalanced"):
+            gate.check_document_links(self.root, [invalid])
+
+    def test_fence_line_mapping_preserves_u2028_and_crlf(self):
+        fence = chr(96) * 4
+        doc = self.write("docs/unicode.md",
+                         f"{fence}\r\nline\u2028continued\r\n{fence}\r\n")
+        self.assertEqual(1, gate.check_document_links(self.root, [doc]))
+        doc = self.write("docs/unicode.md", f"{fence}\rline\u2028continued\r")
+        with self.assertRaisesRegex(gate.QualityError, "Unbalanced"):
+            gate.check_document_links(self.root, [doc])
+
+
 if __name__ == "__main__":
     unittest.main()
