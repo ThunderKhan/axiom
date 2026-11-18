@@ -26,14 +26,14 @@ def load_catalog() -> list[dict[str, str]]:
         if not isinstance(label, dict) or set(label) != {"name", "color", "description"}:
             raise ValueError(f"Invalid label entry: {label!r}")
         name, color, description = label["name"], label["color"], label["description"]
-        if not (isinstance(name, str) and 1 <= len(name) <= 50 and name not in seen):
+        if not (isinstance(name, str) and 1 <= len(name) <= 50 and name.casefold() not in seen):
             raise ValueError(f"Invalid or duplicate label name: {name!r}")
         if not (isinstance(color, str) and len(color) == 6 and
                 all(c in "0123456789abcdefABCDEF" for c in color)):
             raise ValueError(f"Invalid RGB hex color for {name}")
         if not (isinstance(description, str) and len(description) <= 100):
             raise ValueError(f"Invalid description for {name}")
-        seen.add(name)
+        seen.add(name.casefold())
     return labels
 
 
@@ -79,7 +79,7 @@ def sync() -> None:
         if not isinstance(labels, list):
             raise RuntimeError("Unexpected GitHub label response")
         for label in labels:
-            existing[label["name"]] = label
+            existing[label["name"].casefold()] = label
         if len(labels) < 100:
             break
         page += 1
@@ -87,18 +87,21 @@ def sync() -> None:
     created = updated = unchanged = 0
     for spec in catalog:
         name = spec["name"]
-        if name not in existing:
+        if name.casefold() not in existing:
             request_json("POST", base, token, spec)
             created += 1
             print(f"Created {name}")
             continue
 
-        current = existing[name]
+        current = existing[name.casefold()]
         if (current.get("color", "").lower() == spec["color"].lower()
                 and current.get("description", "") == spec["description"]):
             unchanged += 1
             continue
-        request_json("PATCH", base + "/" + quote(name, safe=""), token, spec)
+        request_json(
+            "PATCH", base + "/" + quote(current["name"], safe=""), token,
+            {"color": spec["color"], "description": spec["description"]},
+        )
         updated += 1
         print(f"Updated {name}")
 
