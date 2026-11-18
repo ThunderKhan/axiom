@@ -329,17 +329,21 @@ def run_application(root: pathlib.Path, files: list[pathlib.Path]) -> None:
                                         capture_output=True, text=True)
                 print(result.stdout, end="", flush=True)
                 print(result.stderr, end="", file=sys.stderr, flush=True)
-                test_events = []
+                started_tests: set[str] = set()
+                passed_tests: set[str] = set()
                 for line in result.stdout.splitlines():
                     try:
                         event = json.loads(line)
                     except json.JSONDecodeError:
                         continue
-                    if (isinstance(event, dict) and event.get("Test")
-                            and event.get("Action") == "run"):
-                        test_events.append(event["Test"])
-                if not test_events:
-                    fail(f"Package {name}: go test reported zero executed tests")
+                    if not isinstance(event, dict) or not isinstance(event.get("Test"), str):
+                        continue
+                    if event.get("Action") == "run":
+                        started_tests.add(event["Test"])
+                    elif event.get("Action") == "pass":
+                        passed_tests.add(event["Test"])
+                if not (started_tests & passed_tests):
+                    fail(f"Package {name}: go test reported zero successfully executed tests")
             else:
                 subprocess.run(cmd, cwd=directory, check=True)
 
