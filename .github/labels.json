@@ -1,0 +1,127 @@
+[
+  {
+    "name": "type:bug",
+    "color": "d73a4a",
+    "description": "Confirmed malfunction or regression"
+  },
+  {
+    "name": "type:feature",
+    "color": "0e8a16",
+    "description": "New user-facing capability"
+  },
+  {
+    "name": "type:task",
+    "color": "1d76db",
+    "description": "Engineering implementation task"
+  },
+  {
+    "name": "type:chore",
+    "color": "c5def5",
+    "description": "Maintenance or repository housekeeping"
+  },
+  {
+    "name": "type:docs",
+    "color": "0075ca",
+    "description": "Documentation and specifications"
+  },
+  {
+    "name": "type:refactor",
+    "color": "c2e0c6",
+    "description": "Internal structural change with intended behavior preserved"
+  },
+  {
+    "name": "type:test",
+    "color": "7057ff",
+    "description": "Tests, fixtures or test infrastructure"
+  },
+  {
+    "name": "type:security",
+    "color": "b60205",
+    "description": "Security-related change; never disclose vulnerabilities publicly"
+  },
+  {
+    "name": "type:ci",
+    "color": "5319e7",
+    "description": "Quality automation and continuous integration"
+  },
+  {
+    "name": "area:frontend",
+    "color": "cfd3d7",
+    "description": "Landing page, React and browser behavior"
+  },
+  {
+    "name": "area:backend",
+    "color": "bfd4f2",
+    "description": "FastAPI, domain services and durable workers"
+  },
+  {
+    "name": "area:database",
+    "color": "fef2c0",
+    "description": "PostgreSQL, RLS, schema and migrations"
+  },
+  {
+    "name": "area:ai",
+    "color": "d4c5f9",
+    "description": "AI inference, scoring and analysis"
+  },
+  {
+    "name": "area:data-sources",
+    "color": "c2e0c6",
+    "description": "Permitted external research sources and provenance"
+  },
+  {
+    "name": "area:mcp",
+    "color": "b4a7d6",
+    "description": "MCP tools, authorization and integrations"
+  },
+  {
+    "name": "area:infra",
+    "color": "d4e3fc",
+    "description": "Hosting, CI, environment and operational systems"
+  },
+  {
+    "name": "area:design",
+    "color": "f9d0c4",
+    "description": "Design system, UX and visual polish"
+  },
+  {
+    "name": "priority:p0",
+    "color": "b60205",
+    "description": "Critical: release blocker or severe correctness/security issue"
+  },
+  {
+    "name": "priority:p1",
+    "color": "fbca04",
+    "description": "High priority for current milestone"
+  },
+  {
+    "name": "priority:p2",
+    "color": "0e8a16",
+    "description": "Lower priority, planned improvement"
+  },
+  {
+    "name": "status:needs-triage",
+    "color": "ededed",
+    "description": "Needs assessment, reproduction or owner assignment"
+  },
+  {
+    "name": "status:ready",
+    "color": "0e8a16",
+    "description": "Acceptance criteria clear; ready for implementation"
+  },
+  {
+    "name": "status:blocked",
+    "color": "d93f0b",
+    "description": "Blocked by dependency, policy or external provider"
+  },
+  {
+    "name": "risk:high",
+    "color": "b60205",
+    "description": "High-risk authorization, security, data or CI-trust change"
+  },
+  {
+    "name": "good-first-issue",
+    "color": "7057ff",
+    "description": "Small, scoped starter task with clear acceptance criteria"
+  }
+]
