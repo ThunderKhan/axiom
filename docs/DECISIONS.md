@@ -18,7 +18,7 @@
 | DEC-005 | Modular FastAPI system, shared domain use cases and bounded independently runnable worker as **architectural direction** | Approved | Architecture v1.0, 18 Nov |
 | DEC-006 | ₹0 planned external AI/research API spending, genuine sources, clear seeded/hypothetical labeling, human-reviewed unsent drafts | Approved | PRD/MVP |
 
-**Crucial distinction:** the owner approved the auth/data stack ([ADR-002](decisions/002-authentication-database-and-api-boundary.md)) and managed-hosting strategy ([ADR-008](decisions/008-managed-hosting-and-worker.md)); **no particular frontend/worker vendor, subscription, cost, uptime, AI provider, source API, or deployed capacity is verified or purchased**.
+**Crucial distinction:** six architectural **strategies** have been approved. None of this asserts a purchased host, deployed worker, functioning AI/source API, configured MCP OAuth authorization server, correct live-provider permissions, or measured 100/250/500 active-user capacity. Exact vendor plans and any purchases still require approval.
 
 ## 3. Open technology decisions
 
@@ -27,12 +27,13 @@
 | ADR-001 | Backend app/worker process deployment | One FastAPI codebase + worker process | Hosting probe, durable lease/restart | Proposed |
 | [ADR-002](decisions/002-authentication-database-and-api-boundary.md) | Identity and workspace policy | Supabase Auth, JWT validation, FastAPI-only domain access, RLS defense | Real login and cross-tenant tests still required | **Approved choice — implementation unverified** |
 | ADR-003 | Database hosting and migration implementation | **Chosen:** Supabase PostgreSQL, SQLAlchemy 2.x + Alembic (per ADR-002) | Actual DB project/quota, migrations, backup, pooling and RLS tests | **Approved stack — implementation unverified** |
-| [ADR-004](decisions/004-broad-authorized-source-integration.md) | **Broad authorized source integration:** Hacker News, RSS/Atom, Bluesky, Reddit (subject to official approval) and further permitted platforms | Provider policy/permission, credentials, quotas, live fetch and provenance | **Approved target strategy — access/integration unverified** |
-| [ADR-005](decisions/005-ai-inference-providers.md) | Groq primary; Gemini conditional privacy/consent-gated fallback | Verify current no-charge quotas, provider terms, model quality and real calls | **Approved strategy — implementation unverified** |
-| [ADR-006](decisions/006-mcp-oauth-and-write-approval.md) | OAuth 2.1 scoped/consented MCP clients; PKCE, audience/resource-bound tokens; no initial personal API tokens | Select authorization server, prove metadata, consent/revocation, remote client, denied writes | **Approved strategy — implementation unverified** |
+| [ADR-004](decisions/004-broad-authorized-source-integration.md) | Data-source acquisition | **Broad permitted-platform target**, including HN, RSS, Bluesky and Reddit only with specific access authorization | Terms, credentials, quotas, legal approval, live results | **Approved strategy — source access unverified** |
+| [ADR-005](decisions/005-ai-inference-providers.md) | AI inference providers | **Groq primary + Gemini conditional privacy/consent-gated fallback** | Provider terms, consent/data handling, actual no-charge calls, model quality | **Approved strategy — model integration unverified** |
+| [ADR-006](decisions/006-mcp-oauth-and-write-approval.md) | MCP client authorization | **OAuth 2.1 delegated tokens**, PKCE, consent and scopes; no initial personal tokens | Choose AS, metadata, revocation, external client and safe writes | **Approved strategy — MCP integration unverified** |
 | ADR-007 | Frontend/graph libraries and visual tokens | Next.js + accessible graph/list | Build, interaction/accessibility stress | Open |
-| [ADR-008](decisions/008-managed-hosting-and-worker.md) | Managed frontend + FastAPI API + dedicated worker; modest hosting spend allowed | Actual host choice, terms/pricing, worker restart, HTTPS and capacity load tests | **Approved strategy — provider/cost and deployment unverified** |
+| [ADR-008](decisions/008-managed-hosting-and-worker.md) | Hosting and worker | **Managed web/API + dedicated worker**, modest hosting spend allowed | Exact host/tier, price, restart, security, scale tests | **Approved strategy — hosting unverified** |
 | ADR-009 | Data retention and source excerpts | Minimal permitted excerpts | Policy/terms and deletion review | Open |
+| [ADR-010](decisions/010-staged-500-founder-capacity-release.md) | Capacity/release gate | **Option B**: design for 500 now; test 100/250 before Nov 26; pass 500 before broad production | Test harness, actual 100/250 results and pre-launch 500 benchmark | **Approved staging — capacity unverified** |
 
 ## 3A. Founder-approved technical decision 1 of 6 (18 November 2026)
 
@@ -54,15 +55,26 @@
 
 **Option A:** OAuth 2.1 scoped remote MCP clients with PKCE, resource-bound tokens, discovery, user consent and revocation ([ADR-006](decisions/006-mcp-oauth-and-write-approval.md)). Supabase Auth authenticates users but **is not automatically an MCP OAuth authorization server**. Select/integrate a compatible authorization server and prove the real remote-client flow. Scope and write-consent architecture approved; specific provider, consent UI, token issuance and client handshake are not verified. No initial personal API tokens.
 
-## 3A. New founder requirements (18 November 2026)
+## 3F. Founder-approved technical decision 6 of 6 (18 November 2026)
+
+**Option B selected:** Build the scalable API/DB/worker architecture for **500 concurrently active founders now**, run/report realistic **100- and 250-active-user** preliminary benchmarks before the November 26 fellowship submission, and **block wider public production rollout until a 500-active-founder load/soak/failure benchmark passes**. See [ADR-010](decisions/010-staged-500-founder-capacity-release.md) and [18-SCALABILITY.md](18-SCALABILITY.md). A fellowship deployment may be accurately labeled limited-capacity without the full 500 test if independent P0 functional/security release gates pass. No capacity tests have been verified yet.
+
+## 3G. Additional founder directives (18 November 2026)
 
 | ID | Decision / scope | Status | Notes |
 |---|---|---|---|
-| DEC-007 | Design for **500 founders concurrently active**; no untested concurrency guarantee | **Owner requested** | Capacity implementation and exact release gate are unapproved pending [18-SCALABILITY.md](18-SCALABILITY.md) testing/decision |
-| DEC-008 | Use [edviro-clone](https://github.com/ThunderKhan/edviro-clone) layout, typography, spacing, navigation and landing animations as Axiom design **reference**, with Axiom-specific content | **Owner direction** | Final colors and user-supplied design-system file pending; [13-DESIGN.md](13-DESIGN.md) **ON HOLD** |
+| DEC-007 | Design for **500 active founders**; preliminary 100/250-user tests before submission, complete 500-user pass before wider production | **Approved — Option B** | [ADR-010](decisions/010-staged-500-founder-capacity-release.md); **performance unverified** |
+| DEC-008 | Use [edviro-clone](https://github.com/ThunderKhan/edviro-clone) layout/typography/motion as Axiom landing reference | **Owner direction** | Colors selected in DEC-010; founder's additional design-system file still pending; [13-DESIGN.md](13-DESIGN.md) **ON HOLD** |
 | DEC-009 | Remove accidental T-shirt effort-sizing document; maintain necessary effort/risk notes in roadmap | **Owner clarification** | [16-IMPLEMENTATION-ROADMAP.md](16-IMPLEMENTATION-ROADMAP.md) records sizing |
-
 | DEC-010 | Founder-approved Axiom palette (`--bg` #FAF7F1, `--band` #F1EAE2, `--ink` #302B32, `--text` #655B61, `--muted` #766B70, `--line` #302B3221, `--green` #AC4E30, `--deep` #271F28, `--leaf` #F2A487, `--tint` #F6E2D7) applies to all public and authenticated pages | **Approved — 18 Nov 2026** | [13-DESIGN.md](13-DESIGN.md) Section 3; **full design still ON HOLD** |
+
+## 3H. Documentation review decision after six approvals
+
+**Formally approved as architecture, standards or policies (not implementation proof):** `02-PRD.md`, `03-MVP.md`, `04-USER-FLOWS.md`, `05-SYSTEM-ARCHITECTURE.md`, `06-TRD.md`, `10-MCP-INTEGRATION.md` (protocol/permissions only), `11-DATA-SOURCES.md` (lawful acquisition policy only), `12-UI-UX-SPEC.md` (functional UX only), `14-TESTING-STRATEGY.md`, `16-IMPLEMENTATION-ROADMAP.md`, `17-SECURITY.md`, `18-SCALABILITY.md` (staged architecture/release gate only). Six ADRs are individually approved: 002, 008, 005, 004, 006 and 010.
+
+**Not ready for whole-document approval:** `07-DATABASE-DESIGN.md` (exact DDL/RLS/migrations), `08-API-CONTRACTS.md` (frozen DTOs/OpenAPI/error model), `09-AI-ENGINE.md` (validated source/citation algorithms and provider/model evaluations), `15-DEPLOYMENT-RUNBOOK.md` (actual host/provisioning/backup/MCP OAuth provider/probes). `13-DESIGN.md` is explicitly **ON HOLD** for the founder's additional design-system file, despite its approved palette and Edviro reference. Active register and documentation index are governance records, not product approvals.
+
+All provider integrations, 100/250 preliminary load tests and 500-user production benchmark are **unverified until real evidence exists**. Approval of a design baseline does not waive its release gates.
 
 ## 4. ADR template and procedure
 
