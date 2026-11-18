@@ -8,7 +8,7 @@ Use the GitHub issue forms for reproducible bugs, new feature proposals, and eng
 
 Use shared **issues and PR labels** from [the catalog](.github/labels.json): one `type:*` and `area:*` where applicable, appropriate `priority:*` and `status:*` for issues, and `risk:high` for sensitive changes. GitHub labels are shared between issues and PRs rather than two separate label namespaces. CodeRabbit **suggests** labels; humans review/assign them.
 
-**Initial provisioning:** after the governance PR is merged to `main`, a maintainer must manually run [Sync repository labels](.github/workflows/sync-labels.yml) through Actions → Sync repository labels → Run workflow (branch: `main`). Until then, the issue forms' default labels might not exist and won't auto-apply. The sync is additive; it does not delete existing unrelated labels.
+**Initial provisioning:** [Sync repository labels](.github/workflows/sync-labels.yml) now runs automatically on the first trusted `main` push adding `.github/labels.json` and whenever that catalog changes, with a serial, non-cancelled concurrency group. Confirm its first run succeeds before using default-label issue intake. A maintainer can also manually dispatch it from `main` if it fails. During the brief initial setup, custom labels may not yet exist; check newly created issues for missing defaults. The sync is additive and preserves unrelated labels.
 
 ## Pull requests
 
