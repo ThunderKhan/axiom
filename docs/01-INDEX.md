@@ -37,10 +37,10 @@ Entries marked **Draft — in review** exist but are **not approved implementati
 |---|---|---|
 
 | [`06-TRD.md`](06-TRD.md) | Project-specific technology stack, technical requirements, quality/security acceptance | **Draft — in review** |
-| `07-DATABASE-DESIGN.md` | Data model, relationships, isolation, migrations, retention | Planned |
-| `08-API-CONTRACTS.md` | HTTP APIs, schemas, authentication, error contracts | Planned |
-| `09-AI-ENGINE.md` | Discovery, scoring, evidence assessment, simulation, evaluation | Planned |
-| `10-MCP-INTEGRATION.md` | MCP server, tools, permissions, and integration behavior | Planned |
+| [`07-DATABASE-DESIGN.md`](07-DATABASE-DESIGN.md) | Data model, workspace-scoped relationships, migrations and evidence versioning | **Draft — in review** |
+| [`08-API-CONTRACTS.md`](08-API-CONTRACTS.md) | REST endpoints, job lifecycle, authentication, typed requests and errors | **Draft — in review** |
+| [`09-AI-ENGINE.md`](09-AI-ENGINE.md) | Source-based scoring, AI extraction, verdicts and counterfactual simulations | **Draft — in review** |
+| [`10-MCP-INTEGRATION.md`](10-MCP-INTEGRATION.md) | MCP tool schemas, scope permissions, transport and external-client tests | **Draft — in review** |
 | `11-DATA-SOURCES.md` | Public source adapters, access policies, provenance and limitations | Planned |
 | `12-UI-UX-SPEC.md` | Landing, login, onboarding, web app screens, interaction design | Planned |
 | `13-DESIGN-SYSTEM.md` | Typography, color, components, motion, accessibility | Planned |
