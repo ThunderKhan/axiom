@@ -42,8 +42,15 @@ class QualityRegressionTests(unittest.TestCase):
                      test_file="src/page.test.ts"):
         root = self.root / "apps" / "web"
         root.mkdir(parents=True, exist_ok=True)
-        self.write(f"apps/web/{manifest}", "{}\n")
-        self.write(f"apps/web/{lockfile}", "lockfile\n")
+        manifests = {
+            "package.json": '{"name":"ci-fixture","version":"1.0.0","private":true}\n',
+            "pyproject.toml": '[project]\nname = "ci-fixture"\nversion = "0.0.1"\n',
+            "go.mod": 'module example.com/ci-fixture\n\ngo 1.23\n',
+        }
+        self.write(f"apps/web/{manifest}", manifests.get(manifest, "{}\n"))
+        locks = {"pnpm-lock.yaml": "lockfileVersion: '9.0'\n",
+                 "uv.lock": "version = 1\n", "go.sum": ""}
+        self.write(f"apps/web/{lockfile}", locks.get(lockfile, "lockfile\n"))
         self.write(f"apps/web/{test_file}", "it('works', () => {});\n")
         self.write("apps/web/src/app.ts", "export const hello = true;\n")
         config = [
