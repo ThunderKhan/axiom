@@ -40,22 +40,15 @@ Only documents explicitly approved by the project owner belong in this section. 
 
 | Document | Purpose | Status |
 |---|---|---|
-
-
 | [`07-DATABASE-DESIGN.md`](07-DATABASE-DESIGN.md) | Data model, workspace-scoped relationships, migrations and evidence versioning | **Draft — in review** |
 | [`08-API-CONTRACTS.md`](08-API-CONTRACTS.md) | REST endpoints, job lifecycle, authentication, typed requests and errors | **Draft — in review** |
 | [`09-AI-ENGINE.md`](09-AI-ENGINE.md) | Source-based scoring, AI extraction, verdicts and counterfactual simulations | **Draft — in review** |
 | [`10-MCP-INTEGRATION.md`](10-MCP-INTEGRATION.md) | MCP tool schemas, scope permissions, transport and external-client tests | **Draft — in review** |
 | [`11-DATA-SOURCES.md`](11-DATA-SOURCES.md) | Permitted source registry, safe public URL fetching, provenance, coverage and limitations | **Draft — in review** |
-
 | [`13-DESIGN.md`](13-DESIGN.md) | Edviro-clone-derived layout, typography, responsive behavior and motion; final colors and founder design system pending | **ON HOLD — not approved** |
-
 | [`15-DEPLOYMENT-RUNBOOK.md`](15-DEPLOYMENT-RUNBOOK.md) | Hosting verification, migrations, secrets, smoke tests and rollback | **Draft — in review** |
 | [`18-SCALABILITY.md`](18-SCALABILITY.md) | Owner-requested 500-founder concurrent capacity model, queue/pooling design and load-test criteria | **Draft — requires capacity test and review** |
-
-
 | [`DECISIONS.md`](DECISIONS.md) | Active decision register with approved decisions and unresolved vendor/architecture records | **ACTIVE register — not blanket approval of open ADRs** |
-
 
 **Review blockers:** Database design needs final DDL/RLS/migrations; API contracts need complete frozen schemas; AI engine needs model evaluation and deterministic threshold verification; MCP requires production auth/write-consent design and client handshake; source adapters need legal/technical access proof; deployment runbook needs actual hosting/worker choice. Design awaits founder palette/design-system file. Scaling awaits measured capacity. **None of these drafts proves implementation or provider availability.**
 
