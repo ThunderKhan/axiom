@@ -24,7 +24,8 @@ export const capabilities: readonly Capability[] = [
   {
     id: "research",
     title: "Research and workspace features",
-    description: "Live intelligence, workspaces, and CRM are not yet implemented.",
+    description:
+      "Live intelligence, workspaces, and CRM are not yet implemented.",
     state: "unavailable",
   },
 ];

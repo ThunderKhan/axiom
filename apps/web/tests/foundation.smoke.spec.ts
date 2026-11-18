@@ -9,17 +9,18 @@ test("the home page loads with an honest, accessible foundation state", async ({
     page.getByRole("heading", { level: 1, name: "Axiom is taking shape." }),
   ).toBeVisible();
   await expect(page.getByRole("main")).toBeVisible();
-  await expect(page.getByRole("list", { name: "Current capabilities" })).toBeVisible();
+  await expect(
+    page.getByRole("list", { name: "Current capabilities" }),
+  ).toBeVisible();
   await expect(
     page.getByRole("listitem").filter({ hasText: "Authentication" }),
   ).toContainText("Not yet available");
   await expect(
     page.getByRole("listitem").filter({ hasText: "Research" }),
   ).toContainText("Not yet available");
-  await expect(page.getByRole("link", { name: "Skip to content" })).toHaveAttribute(
-    "href",
-    "#main-content",
-  );
+  await expect(
+    page.getByRole("link", { name: "Skip to content" }),
+  ).toHaveAttribute("href", "#main-content");
 });
 
 test("the landing state fits a narrow mobile viewport", async ({ page }) => {

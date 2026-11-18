@@ -39,7 +39,9 @@ export default function HomePage() {
             </ul>
           </section>
         </main>
-        <footer className="site-footer">Axiom · Foundation only · No account access</footer>
+        <footer className="site-footer">
+          Axiom · Foundation only · No account access
+        </footer>
       </div>
     </>
   );
