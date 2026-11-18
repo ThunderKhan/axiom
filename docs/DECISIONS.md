@@ -25,14 +25,18 @@
 | ID | Question | Candidate/default | Evidence required | Status |
 |---|---|---|---|---|
 | ADR-001 | Backend app/worker process deployment | One FastAPI codebase + worker process | Hosting probe, durable lease/restart | Proposed |
-| ADR-002 | Identity and workspace policy | Supabase Auth + server JWT checks + app ownership/RLS defense | Real login and cross-tenant tests | Open |
-| ADR-003 | Database and migrations | Managed PostgreSQL, SQLAlchemy/Alembic or SQL | Real quota, migrations, backup, authorization | Open |
+| [ADR-002](decisions/002-authentication-database-and-api-boundary.md) | Identity and workspace policy | Supabase Auth, JWT validation, FastAPI-only domain access, RLS defense | Real login and cross-tenant tests still required | **Approved choice — implementation unverified** |
+| ADR-003 | Database hosting and migration implementation | **Chosen:** Supabase PostgreSQL, SQLAlchemy 2.x + Alembic (per ADR-002) | Actual DB project/quota, migrations, backup, pooling and RLS tests | **Approved stack — implementation unverified** |
 | ADR-004 | Permitted discovery source families | HN, approved RSS, Bluesky candidate | Live retrieval, terms, usefulness, limits | Open |
 | ADR-005 | Free AI provider/model | Pluggable structured LLM | Actual call, quotas, output validation and fallback | Open |
 | ADR-006 | MCP remote auth and version | Python SDK, Streamable HTTP | External client handshake, scope/denied write | Open |
 | ADR-007 | Frontend/graph libraries and visual tokens | Next.js + accessible graph/list | Build, interaction/accessibility stress | Open |
 | ADR-008 | Production hosting | Candidate free hosts | HTTPS worker/API/DB health and stability | Blocked by verification |
 | ADR-009 | Data retention and source excerpts | Minimal permitted excerpts | Policy/terms and deletion review | Open |
+
+## 3A. Founder-approved technical decision 1 of 6 (18 November 2026)
+
+**Option A selected:** Supabase Auth + Supabase-hosted PostgreSQL + FastAPI sole application data API + SQLAlchemy 2.x + Alembic. See [ADR-002](decisions/002-authentication-database-and-api-boundary.md). This approves the stack and access boundary, **not** the configuration, cost, throughput, or operational verification. Remaining infrastructure, model, sources and MCP choices are still open.
 
 ## 3A. New founder requirements (18 November 2026)
 
@@ -62,7 +66,7 @@ If a proposal affects an approved PRD/MVP commitment, require founder's **explic
 - Confirm a **real** worker can run on deployed hosting or approve an alternative.
 - Confirm LLM free structured output availability; document deterministic degraded path.
 - Resolve MCP client auth and write approval, not just a tool list.
-- Validate exact PostgreSQL schema and RLS/privileged server behavior.
+- **Stack chosen:** Supabase Auth/PostgreSQL/FastAPI/SQLAlchemy/Alembic. **Still verify** exact PostgreSQL schema, JWT validation, RLS/privileged server behavior and actual deployment.
 - Reconcile scope and tech targets at November 19 and 22 gates; record evidence.
 
 This register tracks decisions, **not implementation completion**. See [16-IMPLEMENTATION-ROADMAP.md](16-IMPLEMENTATION-ROADMAP.md) and [14-TESTING-STRATEGY.md](14-TESTING-STRATEGY.md).
