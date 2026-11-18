@@ -9,6 +9,7 @@ import subprocess
 import sys
 import tomllib
 import unittest
+import xml.etree.ElementTree as ET
 from urllib.parse import unquote, urlsplit
 
 ROOT = pathlib.Path(__file__).resolve().parents[1]
@@ -48,22 +49,26 @@ def tracked(root: pathlib.Path) -> list[pathlib.Path]:
     return [root / b.decode("utf-8") for b in result.stdout.split(b"\0") if b]
 
 
-def check_fence_boundaries(body: str, file: pathlib.Path, root: pathlib.Path) -> None:
-    """Recognize CommonMark fenced code open/close boundaries, not raw backtick counts."""
-    opened: tuple[str, int] | None = None
-    for line in body.splitlines():
-        match = re.match(r"^ {0,3}(`{3,}|~{3,})(.*)$", line)
-        if not match:
+def check_fence_boundaries(body: str, file: pathlib.Path, root: pathlib.Path, parser) -> None:
+    """Require a real closer for each CommonMark fence, including list/quote containers."""
+    lines = body.splitlines()
+    for token in parser.parse(body):
+        if token.type != "fence" or not token.map:
             continue
-        fence, info = match.groups()
-        if opened is None:
-            if fence[0] == "`" and "`" in info:
-                continue  # Not a valid opening fence per CommonMark.
-            opened = (fence[0], len(fence))
-        elif fence[0] == opened[0] and len(fence) >= opened[1] and not info.strip():
-            opened = None
-    if opened is not None:
-        fail(f"Unbalanced Markdown code fences: {file.relative_to(root)}")
+        opening = token.markup
+        start, end = token.map
+        # MarkdownIt provides container-aware fence boundaries in token.map.
+        # An unclosed fence consumes to the end of its enclosing block.
+        if end - start < 2 or end > len(lines):
+            fail(f"Unbalanced Markdown code fences: {file.relative_to(root)}")
+        final_line = lines[end - 1].strip()
+        # Strip blockquote markers, which are part of the enclosing container,
+        # and permit the indentation Markdown allows inside a list item.
+        while final_line.startswith(">"):
+            final_line = final_line[1:].lstrip()
+        pattern = re.escape(opening[0]) + "{" + str(len(opening)) + ",}"
+        if not re.fullmatch(pattern + r"[ \\t]*", final_line):
+            fail(f"Unbalanced Markdown code fences: {file.relative_to(root)}")
 
 
 def check_document_links(root: pathlib.Path, files: list[pathlib.Path]) -> int:
@@ -81,7 +86,7 @@ def check_document_links(root: pathlib.Path, files: list[pathlib.Path]) -> int:
         if file.suffix.lower() != ".md" or not file.is_file():
             continue
         body = file.read_text(encoding="utf-8")
-        check_fence_boundaries(body, file, root)
+        check_fence_boundaries(body, file, root, parser)
         for token in parser.parse(body):
             if token.type != "inline":
                 continue
@@ -89,12 +94,14 @@ def check_document_links(root: pathlib.Path, files: list[pathlib.Path]) -> int:
                 if child.type != "link_open":
                     continue
                 url = (child.attrGet("href") or "").strip()
-                if url.startswith(("http:", "https:", "mailto:", "#", "data:")):
+                parsed = urlsplit(url)
+                if parsed.scheme or parsed.netloc or not parsed.path:
                     continue
-                path = unquote(urlsplit(url).path)
-                if not path or path.startswith("/"):
+                path = unquote(parsed.path)
+                if not path:
                     continue
-                target = (file.parent / path).resolve()
+                base = root if path.startswith("/") else file.parent
+                target = (base / path.lstrip("/")).resolve()
                 if not target.is_relative_to(root.resolve()) or not target.exists():
                     fail(f"Broken Markdown link in {file.relative_to(root)}: {url}")
         count += 1
@@ -185,6 +192,13 @@ def check_workflow(root: pathlib.Path) -> None:
         for step in steps:
             if not isinstance(step, dict) or "if" in step or step.get("continue-on-error") not in (None, False):
                 fail(f"Required job {name} may not conditionally skip or ignore errors in steps")
+    app_steps = jobs["application"]["steps"]
+    if not any(isinstance(step, dict) and
+               any(line.strip() in {"python ci/quality_gate.py application",
+                                    "python3 ci/quality_gate.py application"}
+                   for line in str(step.get("run", "")).splitlines())
+               for step in app_steps):
+        fail("Required application job does not invoke the application quality gate")
 
     def contains_secret_context(value: object) -> bool:
         if isinstance(value, dict):
@@ -300,12 +314,51 @@ def check_application_config(root: pathlib.Path, files: list[pathlib.Path]) -> l
                 fail(f"Package {name}: not an ecosystem test file: {file.relative_to(directory)}")
         for key in CHECKS:
             validate_command(spec.get(key), f"{name}.{key}")
-        declared.append((name, directory, spec))
+        # Carry the validated canonical manifest type into execution. The
+        # declared path may be './go.mod' and must not bypass Go test checks.
+        validated = dict(spec)
+        validated["manifest"] = manifest
+        if manifest != "go.mod":
+            report = spec.get("test_report")
+            if not isinstance(report, str) or not report.strip():
+                fail(f"Package {name}: non-Go tests require a JUnit XML test_report")
+            relative_report = pathlib.Path(report)
+            if relative_report.is_absolute() or ".." in relative_report.parts:
+                fail(f"Package {name}: test_report must be inside the package directory")
+            output = (directory / relative_report).resolve()
+            if not output.is_relative_to(directory):
+                fail(f"Package {name}: test_report escapes package directory")
+            validated["test_report"] = str(relative_report)
+        declared.append((name, directory, validated))
     uncovered = [file for file in code if not any(file.is_relative_to(d) for _, d, _ in declared)]
     if uncovered:
         fail("Application code outside configured CI packages: " +
              ", ".join(str(file.relative_to(root)) for file in uncovered[:10]))
     return declared
+
+
+def check_junit_test_evidence(path: pathlib.Path, name: str) -> None:
+    """Require a nonempty JUnit XML report with at least one genuine passed testcase."""
+    if not path.is_file() or path.stat().st_size > 10_000_000:
+        fail(f"Package {name}: missing or oversized JUnit XML test_report")
+    try:
+        tree = ET.parse(path)
+    except ET.ParseError as exc:
+        raise QualityError(f"Package {name}: invalid JUnit XML test_report") from exc
+    suites = tree.getroot()
+    if suites.tag not in {"testsuites", "testsuite"}:
+        fail(f"Package {name}: test_report is not JUnit XML")
+    cases = list(suites.iter("testcase"))
+    passed = [case for case in cases
+              if not any(case.find(tag) is not None
+                         for tag in ("skipped", "failure", "error"))]
+    if not passed:
+        fail(f"Package {name}: zero successfully executed tests in JUnit XML test_report")
+    if len(cases) != len(passed):
+        failed = [case for case in cases
+                  if case.find("failure") is not None or case.find("error") is not None]
+        if failed:
+            fail(f"Package {name}: JUnit XML reports failed/error tests")
 
 
 def run_application(root: pathlib.Path, files: list[pathlib.Path]) -> None:
@@ -325,10 +378,11 @@ def run_application(root: pathlib.Path, files: list[pathlib.Path]) -> None:
                 if (pathlib.PurePosixPath(cmd[0].replace("\\", "/")).name != "go"
                         or "test" not in cmd[1:] or "-json" not in cmd[1:]):
                     fail(f"Package {name}: go tests must use go test -json to prove tests ran")
-                result = subprocess.run(cmd, cwd=directory, check=True,
+                result = subprocess.run(cmd, cwd=directory, check=False,
                                         capture_output=True, text=True)
                 print(result.stdout, end="", flush=True)
                 print(result.stderr, end="", file=sys.stderr, flush=True)
+                result.check_returncode()  # Preserve failure details in logs first.
                 started_tests: set[str] = set()
                 passed_tests: set[str] = set()
                 for line in result.stdout.splitlines():
@@ -344,6 +398,14 @@ def run_application(root: pathlib.Path, files: list[pathlib.Path]) -> None:
                         passed_tests.add(event["Test"])
                 if not (started_tests & passed_tests):
                     fail(f"Package {name}: go test reported zero successfully executed tests")
+            elif key == "test":
+                report = (directory / spec["test_report"]).resolve()
+                if not report.is_relative_to(directory):
+                    fail(f"Package {name}: test report path escapes package directory")
+                # A test from a previous invocation must never count as evidence.
+                report.unlink(missing_ok=True)
+                subprocess.run(cmd, cwd=directory, check=True)
+                check_junit_test_evidence(report, name)
             else:
                 subprocess.run(cmd, cwd=directory, check=True)
 
