@@ -23,7 +23,7 @@ The TRD states **technology choices, engineering constraints and objectively tes
 | DB access | **SQLAlchemy 2.x + Alembic (approved)** | Verify clean-install, upgrade and role isolation |
 | Async jobs | PostgreSQL-backed queue, independent Python worker process | Test live process, lease and restart on actual host |
 | Data sources | Hacker News + permitted feeds; manual public URL; Bluesky candidate | Legal access check, successful real retrieval, useful results |
-| Model | Provider-agnostic structured-output LLM adapter | Choose only on verified legitimate free quota/latency |
+| Model | **Groq primary with conditional Gemini fallback** ([ADR-005](decisions/005-ai-inference-providers.md)) | Verify current no-charge quota, policy/consent, models, typed output and latency |
 | External agent protocol | Maintained Python MCP SDK / compatible Streamable HTTP | Real remote client handshake and scoped auth |
 | Quality | pytest, Playwright, lint/type/build, migrations and security tests | CI and deployed smoke evidence |
 | Hosting | **Managed web + managed FastAPI/worker + Supabase** ([ADR-008](decisions/008-managed-hosting-and-worker.md)) | Strategy approved; provider/plan, cost and real worker uptime not verified |
@@ -118,7 +118,7 @@ Targets below are **proposals until benchmarked**; do not advertise them as achi
 |---|---|---|
 | Auth and DB implementation | **Approved stack: Supabase Auth, PostgreSQL, FastAPI-only domain access, SQLAlchemy + Alembic**. Verify login, JWT, RLS and API ownership | **Chosen — not implemented** |
 | Hosting and worker | Real deployment, queue claim, completion after restart | Open |
-| Free model/provider | Actual structured inference call, quota, model/version and failure case | Open |
+| Free model/provider | **Groq primary, Gemini conditional strategy approved**; actual provider calls, privacy/consent, quotas and failures | **Chosen — not verified** |
 | Third source family | Legitimate access, quality, bounded quota, live result | Open |
 | MCP auth/protocol | Remote client initialize/call, user scopes and denied write | Open |
 | Migrations / ORM | Clean/upgrade/schema drift test | Open |
@@ -145,3 +145,9 @@ Targets below are **proposals until benchmarked**; do not advertise them as achi
 ## 12. Approved managed-hosting strategy (decision 2 of 6)
 
 [ADR-008](decisions/008-managed-hosting-and-worker.md) approves a **managed frontend, independently running managed FastAPI API and research worker, and Supabase Auth/PostgreSQL**. Vercel and Railway are **candidate hosts only**. Distinguish *permitted infrastructure spend* from the **still-₹0 external AI/research API spending** requirement. Record actual host/plan price, allowed use, worker/restart results, scaling limits and database connection caps before deployment approval. No deployment or 500-founder capacity has been verified by the document change.
+
+## 13. AI model routing requirements (decision 3 of 6)
+
+- **TRD-AI-08:** A single typed model adapter sends eligible jobs to Groq first. Gemini free-tier fallback requires per-request data classification, verified current terms permitting that input and applicable consent; **no silent disclosure of founder-private ideas, profile, CRM, notes, drafts, or mixed/unknown content**.
+- **TRD-AI-09:** If neither route is permissible or available, show honest deterministic/manual degradation or blocked/unavailable status; keep source/citation validation, bounded retries and redacted model trace information.
+- **TRD-AI-10:** Verify actual no-charge API calls, model versions, data policies, limits, 429/timeout behavior, license/terms, and maintain **₹0 paid external AI/research API** spend. See [ADR-005](decisions/005-ai-inference-providers.md). This is strategy approval, **not** integration completion.
