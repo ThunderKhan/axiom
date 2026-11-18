@@ -41,9 +41,9 @@ Entries marked **Draft — in review** exist but are **not approved implementati
 | [`08-API-CONTRACTS.md`](08-API-CONTRACTS.md) | REST endpoints, job lifecycle, authentication, typed requests and errors | **Draft — in review** |
 | [`09-AI-ENGINE.md`](09-AI-ENGINE.md) | Source-based scoring, AI extraction, verdicts and counterfactual simulations | **Draft — in review** |
 | [`10-MCP-INTEGRATION.md`](10-MCP-INTEGRATION.md) | MCP tool schemas, scope permissions, transport and external-client tests | **Draft — in review** |
-| `11-DATA-SOURCES.md` | Public source adapters, access policies, provenance and limitations | Planned |
-| `12-UI-UX-SPEC.md` | Landing, login, onboarding, web app screens, interaction design | Planned |
-| `13-DESIGN-SYSTEM.md` | Typography, color, components, motion, accessibility | Planned |
+| [`11-DATA-SOURCES.md`](11-DATA-SOURCES.md) | Permitted source registry, safe public URL fetching, provenance, coverage and limitations | **Draft — in review** |
+| [`12-UI-UX-SPEC.md`](12-UI-UX-SPEC.md) | Screen requirements, adaptive onboarding and investigation user experience | **Draft — in review** |
+| [`13-DESIGN-SYSTEM.md`](13-DESIGN-SYSTEM.md) | Editorial visual language, components, accessibility, motion and responsive tokens | **Draft — in review** |
 | `14-TESTING-STRATEGY.md` | Acceptance tests, security, E2E, CI and release gates | Planned |
 | `15-DEPLOYMENT-RUNBOOK.md` | Infrastructure verification, migrations, secrets, smoke and rollback | Planned |
 | `16-IMPLEMENTATION-ROADMAP.md` | Milestones, dependencies, verification, deployment, submission | Planned |
