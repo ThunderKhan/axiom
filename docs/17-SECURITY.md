@@ -42,7 +42,7 @@ Trust boundaries:
 - JWT: cryptographically verify issuer, audience, signature/JWKS, expiration and relevant claims; never accept unsigned tokens or client-supplied user ID as proof.
 - Each workspace has an authorized owner; every query filters by workspace and membership; no cross-tenant joins without guards.
 - Low-privilege evaluator accounts are real users, provisioned in admin-controlled workflow with sample data clearly marked.
-- External MCP credentials are revocable and scoped to user/workspace/tool capabilities; §crm:write§ must be explicitly consented to. High-risk writes require approval design.
+- External MCP credentials are revocable and scoped to user/workspace/tool capabilities; `crm:write` must be explicitly consented to. High-risk writes require approval design.
 - Admin/service role credentials are never sent to browser; work performed with privileged DB access remains subject to application-level authorization.
 - Only necessary role actions exposed; avoid broad "admin" endpoints for a hackathon demo.
 
