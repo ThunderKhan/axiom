@@ -1,0 +1,738 @@
+"""Regression tests for CodeRabbit findings on Axiom's CI quality contract."""
+from __future__ import annotations
+
+import contextlib
+import io
+import pathlib
+import subprocess
+import sys
+import tempfile
+import unittest
+from unittest.mock import patch
+
+sys.path.insert(0, str(pathlib.Path(__file__).resolve().parents[2]))
+
+import ci.quality_gate as gate
+
+
+class QualityRegressionTests(unittest.TestCase):
+    def setUp(self):
+        temp = tempfile.TemporaryDirectory()
+        self.addCleanup(temp.cleanup)
+        self.root = pathlib.Path(temp.name)
+        for name in gate.REQUIRED:
+            self.write(name, "# required\n")
+        self.original_workflow = (
+            gate.ROOT / ".github/workflows/quality.yml"
+        ).read_text(encoding="utf-8")
+        self.write(".github/workflows/quality.yml", self.original_workflow)
+
+    def write(self, path, data):
+        target = self.root / path
+        target.parent.mkdir(parents=True, exist_ok=True)
+        target.write_text(data, encoding="utf-8")
+        return target
+
+    def parsed_workflow(self):
+        """BaseLoader retains 'on' but returns empty YAML values as strings."""
+        import yaml
+        data = yaml.load(self.original_workflow, Loader=yaml.BaseLoader)
+        for event in ("pull_request", "workflow_dispatch"):
+            if data["on"].get(event) == "":
+                data["on"][event] = None
+        return data
+
+    def check_workflow_mutation(self, mutated, message):
+        self.write(".github/workflows/quality.yml", mutated)
+        with self.assertRaisesRegex(gate.QualityError, message):
+            gate.check_workflow(self.root)
+
+    def make_package(self, manifest="package.json", lockfile="pnpm-lock.yaml",
+                     test_file="src/page.test.ts"):
+        root = self.root / "apps" / "web"
+        root.mkdir(parents=True, exist_ok=True)
+        manifests = {
+            "package.json": '{"name":"ci-fixture","version":"1.0.0","private":true}\n',
+            "pyproject.toml": '[project]\nname = "ci-fixture"\nversion = "0.0.1"\n',
+            "go.mod": 'module example.com/ci-fixture\n\ngo 1.23\n',
+        }
+        self.write(f"apps/web/{manifest}", manifests.get(manifest, "{}\n"))
+        locks = {"pnpm-lock.yaml": "lockfileVersion: '9.0'\n",
+                 "uv.lock": "version = 1\n", "go.sum": ""}
+        self.write(f"apps/web/{lockfile}", locks.get(lockfile, "lockfile\n"))
+        self.write(f"apps/web/{test_file}", "it('works', () => {});\n")
+        self.write("apps/web/src/app.ts", "export const hello = true;\n")
+        config = [
+            "version = 1", "", "[packages.web]",
+            'directory = "apps/web"',
+            f'manifest = "{manifest}"',
+            f'lockfile = "{lockfile}"',
+            f'test_files = ["{test_file}"]',
+        ]
+        for step in gate.CHECKS:
+            config.append(f'{step} = ["tool", "{step}"]')
+        if manifest != "go.mod":
+            config.append('test_report = "build/junit.xml"')
+        self.write("ci/quality.toml", "\n".join(config) + "\n")
+        return root
+
+    def make_runnable_python_package(self, test_method):
+        self.make_package(
+            manifest="pyproject.toml",
+            lockfile="uv.lock",
+            test_file="tests/test_sample.py",
+        )
+        source = self.write("apps/web/src/module.py", "def f(): return 1\n")
+        self.write(
+            "apps/web/tests/test_sample.py",
+            "import unittest\n"
+            "class SampleTest(unittest.TestCase):\n"
+            f"    def test_regression(self): {test_method}\n",
+        )
+        runner = '''
+import pathlib
+import sys
+import unittest
+import xml.etree.ElementTree as ET
+suite = unittest.defaultTestLoader.discover("tests", pattern="test_*.py")
+result = unittest.TextTestRunner(verbosity=1).run(suite)
+root = ET.Element("testsuite", tests=str(result.testsRun))
+case = ET.SubElement(root, "testcase", name="test_regression")
+if result.skipped:
+    ET.SubElement(case, "skipped")
+if result.failures:
+    ET.SubElement(case, "failure").text = result.failures[0][1]
+if result.errors:
+    ET.SubElement(case, "error").text = result.errors[0][1]
+pathlib.Path("build").mkdir(exist_ok=True)
+ET.ElementTree(root).write("build/junit.xml", encoding="utf-8")
+pathlib.Path("test-ran.marker").write_text(str(result.wasSuccessful()))
+sys.exit(0 if result.wasSuccessful() else 1)
+'''
+        self.write("apps/web/run-tests.py", runner)
+        config_file = self.root / "ci/quality.toml"
+        config = config_file.read_text(encoding="utf-8")
+        for step in gate.CHECKS:
+            actual = (f'{step} = ["{sys.executable}", "-m", "compileall", "-q", "."]'
+                      if step != "test"
+                      else f'{step} = ["{sys.executable}", "run-tests.py"]')
+            config = config.replace(f'{step} = ["tool", "{step}"]', actual)
+        config_file.write_text(config, encoding="utf-8")
+        return source
+
+    def run_python_fixture_through_main(self, source):
+        with patch.object(gate, "ROOT", self.root), patch.object(
+            gate, "tracked", return_value=[source]
+        ), patch.object(sys, "argv", ["ci/quality_gate.py", "application"]):
+            with contextlib.redirect_stderr(io.StringIO()):
+                return gate.main()
+
+    def test_default_workflow_is_valid(self):
+        gate.check_workflow(self.root)
+
+    def test_mts_and_cts_trigger_required_application_config(self):
+        for ext in (".mts", ".cts"):
+            with self.subTest(ext=ext):
+                path = self.write(f"apps/web/worker{ext}", "export const work = 1;\n")
+                with self.assertRaisesRegex(gate.QualityError, "quality.toml is missing"):
+                    gate.check_application_config(self.root, [path])
+
+    def test_fence_length_and_literal_example_links(self):
+        doc = self.write("docs/example.md", (
+            "Before.\n\n"
+            "Excerpt:\n\n"
+            "````markdown\n"
+            "[fake](no-such-file.md)\n"
+            "```\n"
+            "````\n\n"
+            "[real](01-INDEX.md)\n"
+        ))
+        self.assertEqual(1, gate.check_document_links(self.root, [doc]))
+        self.write("docs/example.md", "[actual broken](no-such-file.md)\n")
+        with self.assertRaisesRegex(gate.QualityError, "Broken Markdown link"):
+            gate.check_document_links(self.root, [doc])
+
+    def test_nested_list_and_quote_fences_are_balanced(self):
+        for body in (
+            "- ```\n  [not a link](missing.md)\n  ```\n",
+            "> ```python\n> print('ok')\n> ```\n",
+            "1. Example\n\n   ````markdown\n   ```\n   ````\n",
+        ):
+            with self.subTest(body=body):
+                doc = self.write("docs/nested.md", body)
+                self.assertEqual(1, gate.check_document_links(self.root, [doc]))
+
+    def test_root_relative_links_resolve_inside_repository(self):
+        doc = self.write("docs/example.md", "[root](/docs/01-INDEX.md)\n")
+        self.assertEqual(1, gate.check_document_links(self.root, [doc]))
+        doc.write_text("[missing](/docs/no-such-file.md)\n")
+        with self.assertRaisesRegex(gate.QualityError, "Broken Markdown link"):
+            gate.check_document_links(self.root, [doc])
+
+    def test_unclosed_long_fence_fails(self):
+        doc = self.write("docs/open.md", "````python\nprint('broken')\n```\n")
+        with self.assertRaisesRegex(gate.QualityError, "Unbalanced Markdown"):
+            gate.check_document_links(self.root, [doc])
+
+    def test_duplicate_workflow_keys_fail(self):
+        self.check_workflow_mutation(
+            self.original_workflow + "\npermissions:\n  contents: read\n",
+            "Duplicate workflow YAML key",
+        )
+
+    def test_required_jobs_cannot_override_read_only_permissions(self):
+        for spec in ('    permissions: {}\n', '    permissions:\n      contents: write\n'):
+            with self.subTest(spec=spec):
+                self.check_workflow_mutation(
+                    self.original_workflow.replace("  repository:\n", "  repository:\n" + spec),
+                    "read-only contents access",
+                )
+
+    def test_required_events_cannot_disappear(self):
+        self.check_workflow_mutation(
+            self.original_workflow.replace("  workflow_dispatch:\n", ""),
+            "manual dispatch",
+        )
+
+    def test_filtering_required_events_fails(self):
+        examples = (
+            self.original_workflow.replace(
+                "  pull_request:\n", "  pull_request:\n    paths: ['docs/**']\n"
+            ),
+            self.original_workflow.replace(
+                "    branches: [main]\n", "    branches: [main]\n    paths-ignore: ['src/**']\n"
+            ),
+        )
+        for example in examples:
+            with self.subTest():
+                self.check_workflow_mutation(example, "must not filter|without path")
+
+    def test_required_job_and_step_cannot_be_disabled(self):
+        self.check_workflow_mutation(
+            self.original_workflow.replace("  application:\n", "  application:\n    if: false\n"),
+            "must not have a conditional",
+        )
+        self.check_workflow_mutation(
+            self.original_workflow.replace("      - name: Check documentation",
+                "      - if: false\n        name: Check documentation"),
+            "conditionally skip",
+        )
+
+    def test_required_application_gate_invocation_cannot_disappear(self):
+        import yaml
+
+        parsed = self.parsed_workflow()
+        steps = parsed["jobs"]["application"]["steps"]
+        target = next(
+            step for step in steps
+            if step.get("run", "").strip() in {
+                "python ci/quality_gate.py application",
+                "python3 ci/quality_gate.py application",
+            }
+        )
+        before = target["run"]
+        target["run"] = "echo application gate missing"
+        self.assertNotEqual(before, target["run"])
+        mutated = yaml.safe_dump(parsed, sort_keys=False)
+        self.assertNotEqual(self.original_workflow, mutated)
+        self.check_workflow_mutation(mutated, "does not invoke ci/quality_gate.py application")
+
+
+    def test_secret_expression_rejected(self):
+        # This is only a synthetic policy test; no actual credential is provided.
+        self.check_workflow_mutation(
+            self.original_workflow.replace(
+                "permissions:\n  contents: read\n",
+                "permissions:\n  contents: read\nenv:\n  TOKEN: ${{ secrets.DEPLOY_TOKEN }}\n"
+            ),
+            "secret references",
+        )
+
+    def test_executable_basename_bypass_rejected(self):
+        for command in (["/usr/bin/true"], ["/bin/echo", "ok"], ["C:\\bin\\true"]):
+            with self.subTest(command=command), self.assertRaises(gate.QualityError):
+                gate.validate_command(command, "lint")
+
+    def test_manifest_cannot_alias_lockfile(self):
+        self.make_package(lockfile="package.json")
+        with self.assertRaisesRegex(gate.QualityError, "distinct files"):
+            gate.check_application_config(
+                self.root, [self.root / "apps/web/src/app.ts"]
+            )
+
+    def test_lockfile_must_match_real_package_ecosystem(self):
+        self.make_package(lockfile="test-placeholder.lock")
+        with self.assertRaisesRegex(gate.QualityError, "lockfile role"):
+            gate.check_application_config(
+                self.root, [self.root / "apps/web/src/app.ts"]
+            )
+
+    def test_production_go_file_is_not_a_test(self):
+        self.make_package(manifest="go.mod", lockfile="go.sum", test_file="main.go")
+        with self.assertRaisesRegex(gate.QualityError, "not an ecosystem test file"):
+            gate.check_application_config(
+                self.root, [self.root / "apps/web/main.go"]
+            )
+
+    def test_go_manifest_path_alias_keeps_test_evidence_checks(self):
+        self.make_package(manifest="./go.mod", lockfile="go.sum", test_file="main_test.go")
+        source = self.root / "apps/web/main_test.go"
+        # With the manifest string './go.mod', a zero-exit generic test
+        # previously bypassed the Go-specific -json executed-test policy.
+        with patch.object(gate.subprocess, "run", return_value=subprocess.CompletedProcess([], 0)):
+            with self.assertRaisesRegex(gate.QualityError, "go tests must use go test -json"):
+                gate.run_application(self.root, [source])
+
+    def test_failed_go_command_preserves_diagnostics(self):
+        self.make_package(manifest="go.mod", lockfile="go.sum", test_file="main_test.go")
+        config_file = self.root / "ci/quality.toml"
+        config_file.write_text(
+            config_file.read_text().replace(
+                'test = ["tool", "test"]',
+                'test = ["go", "test", "-json", "./..."]'
+            ), encoding="utf-8",
+        )
+        source = self.root / "apps/web/main_test.go"
+        fake = subprocess.CompletedProcess(
+            args=["go", "test", "-json", "./..."], returncode=1,
+            stdout='{"Action":"fail","Test":"TestBroken"}\n',
+            stderr="assertion: actual != expected\n",
+        )
+
+        def realistic_run(cmd, *, cwd=None, check=False, **kwargs):
+            if cmd[0] == "go" and "test" in cmd:
+                if check:
+                    raise subprocess.CalledProcessError(
+                        fake.returncode, cmd, output=fake.stdout, stderr=fake.stderr
+                    )
+                return fake
+            return subprocess.CompletedProcess(cmd, returncode=0, stdout="", stderr="")
+
+        stdout, stderr = io.StringIO(), io.StringIO()
+        with patch.object(gate.subprocess, "run", side_effect=realistic_run):
+            with contextlib.redirect_stdout(stdout), contextlib.redirect_stderr(stderr):
+                with self.assertRaises(subprocess.CalledProcessError):
+                    gate.run_application(self.root, [source])
+        self.assertIn("TestBroken", stdout.getvalue())
+        self.assertIn("actual != expected", stderr.getvalue())
+
+
+    def test_go_success_without_executed_tests_is_rejected(self):
+        self.make_package(manifest="go.mod", lockfile="go.sum", test_file="main_test.go")
+        config_file = self.root / "ci/quality.toml"
+        config_file.write_text(
+            config_file.read_text().replace(
+                'test = ["tool", "test"]',
+                'test = ["go", "test", "-json", "./..."]'
+            ), encoding="utf-8",
+        )
+        source = self.root / "apps/web/main_test.go"
+        fake = subprocess.CompletedProcess(
+            args=["go", "test", "-json", "./..."],
+            returncode=0,
+            stdout='{"Action":"output","Package":"example","Output":"[no test files]"}\n',
+            stderr="",
+        )
+        with patch.object(gate.subprocess, "run", return_value=fake):
+            with self.assertRaisesRegex(gate.QualityError, "zero successfully executed tests"):
+                gate.run_application(self.root, [source])
+
+    def test_go_all_skipped_tests_are_not_success_evidence(self):
+        self.make_package(manifest="go.mod", lockfile="go.sum", test_file="main_test.go")
+        config_file = self.root / "ci/quality.toml"
+        config_file.write_text(
+            config_file.read_text().replace(
+                'test = ["tool", "test"]',
+                'test = ["go", "test", "-json", "./..."]'
+            ), encoding="utf-8",
+        )
+        source = self.root / "apps/web/main_test.go"
+        fake = subprocess.CompletedProcess(
+            args=["go", "test", "-json", "./..."],
+            returncode=0,
+            stdout='{"Action":"run","Package":"example","Test":"TestSkipped"}\n'
+                   '{"Action":"skip","Package":"example","Test":"TestSkipped"}\n',
+            stderr="",
+        )
+        with patch.object(gate.subprocess, "run", return_value=fake):
+            with self.assertRaisesRegex(gate.QualityError, "zero successfully executed tests"):
+                gate.run_application(self.root, [source])
+
+    def test_go_success_with_actual_test_events_is_accepted(self):
+        self.make_package(manifest="go.mod", lockfile="go.sum", test_file="main_test.go")
+        config_file = self.root / "ci/quality.toml"
+        config_file.write_text(
+            config_file.read_text().replace(
+                'test = ["tool", "test"]',
+                'test = ["go", "test", "-json", "./..."]'
+            ), encoding="utf-8",
+        )
+        source = self.root / "apps/web/main_test.go"
+        fake = subprocess.CompletedProcess(
+            args=["go", "test", "-json", "./..."],
+            returncode=0,
+            stdout='{"Action":"run","Package":"example","Test":"TestReal"}\n'
+                   '{"Action":"pass","Package":"example","Test":"TestReal"}\n',
+            stderr="",
+        )
+        with patch.object(gate.subprocess, "run", return_value=fake):
+            gate.run_application(self.root, [source])
+
+    def test_full_application_mode_checks_exact_failing_and_passing_test(self):
+        source = self.make_runnable_python_package("self.fail('expected')")
+        self.assertEqual(1, self.run_python_fixture_through_main(source))
+        marker = self.root / "apps/web/test-ran.marker"
+        self.assertEqual("False", marker.read_text(encoding="utf-8"))
+        # A harmless install failure cannot satisfy this regression: the
+        # marker proves the actual unittest suite ran and failed.
+        report = self.root / "apps/web/build/junit.xml"
+        self.assertTrue(report.is_file())
+        self.write(
+            "apps/web/tests/test_sample.py",
+            "import unittest\n"
+            "class SampleTest(unittest.TestCase):\n"
+            "    def test_regression(self): self.assertEqual(2, 2)\n",
+        )
+        marker.unlink()
+        self.assertEqual(0, self.run_python_fixture_through_main(source))
+        self.assertEqual("True", marker.read_text(encoding="utf-8"))
+
+    def test_non_go_all_skipped_suite_fails_even_with_zero_exit(self):
+        source = self.make_runnable_python_package("self.skipTest('not executed')")
+        self.assertEqual(1, self.run_python_fixture_through_main(source))
+        report = self.root / "apps/web/build/junit.xml"
+        self.assertTrue(report.is_file())
+        with self.assertRaisesRegex(gate.QualityError, "zero successfully executed"):
+            gate.check_junit_test_evidence(report, "web")
+
+    def test_report_from_previous_run_cannot_satisfy_new_run(self):
+        source = self.make_runnable_python_package("self.assertTrue(True)")
+        report = self.root / "apps/web/build/junit.xml"
+        report.parent.mkdir(exist_ok=True)
+        report.write_text('<testsuite><testcase name="stale"/></testsuite>')
+        # All checks appear to return successfully, but no current test
+        # command has created a report; stale evidence must be removed.
+        with patch.object(gate.subprocess, "run", return_value=subprocess.CompletedProcess([], 0)):
+            with self.assertRaisesRegex(gate.QualityError, "missing or oversized"):
+                gate.run_application(self.root, [source])
+
+    def test_junit_rejects_failures_even_with_one_pass(self):
+        report = self.write("apps/web/build/junit.xml",
+                            '<testsuite><testcase name="ok"/>'
+                            '<testcase name="bad"><failure/></testcase></testsuite>')
+        with self.assertRaisesRegex(gate.QualityError, "failed/error tests"):
+            gate.check_junit_test_evidence(report, "web")
+
+    def test_junit_rejects_malformed_xml_and_empty_reports(self):
+        report = self.write("apps/web/build/junit.xml", "<testsuite>broken")
+        with self.assertRaisesRegex(gate.QualityError, "invalid JUnit"):
+            gate.check_junit_test_evidence(report, "web")
+        report.write_text('<testsuite tests="0"></testsuite>')
+        with self.assertRaisesRegex(gate.QualityError, "zero successfully executed"):
+            gate.check_junit_test_evidence(report, "web")
+
+
+    def test_junit_suite_totals_reject_nonzero_failures_and_errors(self):
+        for root_tag in ("testsuite", "testsuites"):
+            for attribute in ("failures", "errors"):
+                with self.subTest(root=root_tag, attribute=attribute):
+                    xml = (f'<{root_tag} {attribute}="1">'
+                           '<testsuite><testcase name="green"/></testsuite>'
+                           f'</{root_tag}>'
+                           if root_tag == "testsuites"
+                           else f'<testsuite {attribute}="1">'
+                                '<testcase name="green"/></testsuite>')
+                    report = self.write("apps/web/build/junit.xml", xml)
+                    with self.assertRaisesRegex(gate.QualityError, "nonzero"):
+                        gate.check_junit_test_evidence(report, "web")
+
+    def test_junit_zero_suite_totals_accept_an_actual_pass(self):
+        report = self.write("apps/web/build/junit.xml",
+                            '<testsuites failures="0" errors="0">'
+                            '<testsuite failures="0" errors="0" tests="1">'
+                            '<testcase name="green"/></testsuite></testsuites>')
+        gate.check_junit_test_evidence(report, "web")
+
+    def test_report_cleanup_never_deletes_tracked_generated_file(self):
+        root = self.make_package(manifest="pyproject.toml", lockfile="uv.lock",
+                                 test_file="tests/test_sample.py")
+        source = root / "src/app.ts"
+        report = self.write("apps/web/build/junit.xml", "important tracked data")
+        original = report.read_bytes()
+        with patch.object(gate.subprocess, "run",
+                          return_value=subprocess.CompletedProcess([], 0)):
+            with self.assertRaisesRegex(gate.QualityError, "refusing to delete tracked"):
+                gate.run_application(self.root, [source, report])
+        self.assertEqual(original, report.read_bytes())
+
+    def test_report_cleanup_rejects_symlink_to_source_input(self):
+        root = self.make_package(manifest="pyproject.toml", lockfile="uv.lock",
+                                 test_file="tests/test_sample.py")
+        source = root / "src/app.ts"
+        report = root / "build/junit.xml"
+        report.parent.mkdir(exist_ok=True)
+        report.symlink_to(source)
+        original = source.read_bytes()
+        with patch.object(gate.subprocess, "run",
+                          return_value=subprocess.CompletedProcess([], 0)):
+            with self.assertRaisesRegex(gate.QualityError, "symlink"):
+                gate.run_application(self.root, [source])
+        self.assertEqual(original, source.read_bytes())
+        self.assertTrue(report.is_symlink())
+
+    def test_report_cleanup_rejects_declared_test_input(self):
+        root = self.make_package(manifest="pyproject.toml", lockfile="uv.lock",
+                                 test_file="tests/test_sample.py")
+        report = root / "build/junit.xml"
+        report.parent.mkdir(exist_ok=True)
+        report.symlink_to(root / "tests/test_sample.py")
+        original = (root / "tests/test_sample.py").read_bytes()
+        with self.assertRaisesRegex(gate.QualityError, "overlaps declared"):
+            gate.check_application_config(self.root, [root / "src/app.ts"])
+        self.assertEqual(original, (root / "tests/test_sample.py").read_bytes())
+
+    def test_report_lock_serializes_parallel_invocations(self):
+        import fcntl
+        import hashlib
+        import os
+        import threading
+
+        report = self.root / "apps/web/build/junit.xml"
+        holding = threading.Event()
+        release = threading.Event()
+        errors = []
+
+        def holder():
+            try:
+                with gate.locked_test_report(report, self.root):
+                    holding.set()
+                    if not release.wait(timeout=4):
+                        raise AssertionError("test lock release timeout")
+            except BaseException as exc:
+                errors.append(exc)
+
+        first = threading.Thread(target=holder, daemon=True)
+        first.start()
+        try:
+            self.assertTrue(holding.wait(timeout=2), "first run did not acquire lock")
+            # Open the SAME inode independently, from this test thread.
+            # A nonblocking lock must report contention while holder owns it;
+            # merely observing that another thread hasn't entered yet is not proof.
+            digest = hashlib.sha256(os.fsencode(report.resolve())).hexdigest()
+            lock_file = self.root / ".axiom-quality-locks" / f"{digest}.lock"
+            self.assertTrue(lock_file.is_file())
+            fd = os.open(lock_file, os.O_RDWR)
+            with os.fdopen(fd, "rb+"):
+                with self.assertRaises(BlockingIOError):
+                    fcntl.flock(fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
+                release.set()
+                first.join(timeout=4)
+                self.assertFalse(first.is_alive())
+                self.assertFalse(errors)
+                # The same independent descriptor must acquire immediately
+                # once the holder has definitively released its lock.
+                fcntl.flock(fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
+                fcntl.flock(fd, fcntl.LOCK_UN)
+        finally:
+            release.set()
+            first.join(timeout=4)
+        self.assertFalse(errors)
+
+
+    def test_required_repos_integrity_commands_must_both_be_present(self):
+        import yaml
+        for mode in ("self-test", "repository"):
+            with self.subTest(mode=mode):
+                data = self.parsed_workflow()
+                steps = data["jobs"]["repository"]["steps"]
+                old_count = len(steps)
+                data["jobs"]["repository"]["steps"] = [
+                    step for step in steps
+                    if step.get("run", "").strip() not in {
+                        f"python ci/quality_gate.py {mode}",
+                        f"python3 ci/quality_gate.py {mode}",
+                    }
+                ]
+                self.assertEqual(old_count - 1, len(data["jobs"]["repository"]["steps"]))
+                self.check_workflow_mutation(
+                    yaml.safe_dump(data, sort_keys=False),
+                    f"does not invoke ci/quality_gate.py {mode}",
+                )
+
+    def test_required_commands_reject_nonroot_working_directories(self):
+        import yaml
+
+        # All three scopes must be enforced, including when a more-specific
+        # override is absent. Test all three mandatory commands.
+        for scope in ("workflow", "job", "step"):
+            for job_name, mode in (("repository", "self-test"),
+                                   ("repository", "repository"),
+                                   ("application", "application")):
+                with self.subTest(scope=scope, job=job_name, mode=mode):
+                    data = self.parsed_workflow()
+                    job = data["jobs"][job_name]
+                    step = next(
+                        st for st in job["steps"]
+                        if st.get("run", "").strip() in {
+                            f"python ci/quality_gate.py {mode}",
+                            f"python3 ci/quality_gate.py {mode}",
+                        }
+                    )
+                    if scope == "workflow":
+                        data["defaults"] = {"run": {"working-directory": "./docs"}}
+                    elif scope == "job":
+                        job["defaults"] = {"run": {"working-directory": "docs"}}
+                    else:
+                        step["working-directory"] = "./docs"
+                    self.check_workflow_mutation(
+                        yaml.safe_dump(data, sort_keys=False),
+                        "must run from checkout root",
+                    )
+
+    def test_required_commands_accept_explicit_root_and_precedence(self):
+        import yaml
+
+        for root_value in (".", "./", "docs/.."):
+            with self.subTest(root_value=root_value):
+                data = self.parsed_workflow()
+                data["defaults"] = {"run": {"working-directory": "docs"}}
+                for job in data["jobs"].values():
+                    job["defaults"] = {"run": {"working-directory": root_value}}
+                self.write(
+                    ".github/workflows/quality.yml",
+                    yaml.safe_dump(data, sort_keys=False),
+                )
+                gate.check_workflow(self.root)
+
+        # A step override must take priority over a nonroot job default.
+        data = self.parsed_workflow()
+        job = data["jobs"]["application"]
+        job["defaults"] = {"run": {"working-directory": "docs"}}
+        for step in job["steps"]:
+            if "quality_gate.py application" in step.get("run", ""):
+                step["working-directory"] = "."
+        self.write(".github/workflows/quality.yml", yaml.safe_dump(data, sort_keys=False))
+        gate.check_workflow(self.root)
+
+    def test_required_application_command_is_a_whole_step(self):
+        import yaml
+        data = self.parsed_workflow()
+        app = next(step for step in data["jobs"]["application"]["steps"]
+                   if step.get("run", "").strip().endswith("quality_gate.py application"))
+        app["run"] = (
+            "function never_called() {\n"
+            "  python ci/quality_gate.py application\n"
+            "}\necho success\n"
+        )
+        self.check_workflow_mutation(
+            yaml.safe_dump(data, sort_keys=False),
+            "does not invoke ci/quality_gate.py application",
+        )
+
+    def test_required_application_command_accepts_python3_shell_step(self):
+        import yaml
+        data = self.parsed_workflow()
+        app = next(step for step in data["jobs"]["application"]["steps"]
+                   if "quality_gate.py application" in step.get("run", ""))
+        app["run"] = "python3 ci/quality_gate.py application"
+        self.write(".github/workflows/quality.yml", yaml.safe_dump(data, sort_keys=False))
+        gate.check_workflow(self.root)
+
+    def test_shell_default_and_override_precedence(self):
+        import yaml
+        for level in ("workflow", "job", "step"):
+            with self.subTest(level=level):
+                data = self.parsed_workflow()
+                job = data["jobs"]["application"]
+                step = next(step for step in job["steps"]
+                            if "quality_gate.py application" in step.get("run", ""))
+                if level == "workflow":
+                    data["defaults"] = {"run": {"shell": "python"}}
+                    # Isolate the application's inherited shell from the
+                    # repository commands, which are also mandatory.
+                    data["jobs"]["repository"]["defaults"] = {"run": {"shell": "bash"}}
+                elif level == "job":
+                    job["defaults"] = {"run": {"shell": "python"}}
+                else:
+                    step["shell"] = "python"
+                self.check_workflow_mutation(
+                    yaml.safe_dump(data, sort_keys=False),
+                    "must run in a supported command shell",
+                )
+        data = self.parsed_workflow()
+        data["defaults"] = {"run": {"shell": "python"}}
+        data["jobs"]["repository"]["defaults"] = {"run": {"shell": "bash"}}
+        data["jobs"]["application"]["defaults"] = {"run": {"shell": "bash"}}
+        self.write(".github/workflows/quality.yml", yaml.safe_dump(data, sort_keys=False))
+        gate.check_workflow(self.root)
+
+    def test_fence_uses_parser_actual_closing_rule(self):
+        fence = chr(96) * 3
+        valid = self.write("docs/fence.md", f"{fence}\nbody\n{fence}\n")
+        self.assertEqual(1, gate.check_document_links(self.root, [valid]))
+        invalid = self.write("docs/fence.md", f"{fence}\nbody\n    {fence}\n")
+        with self.assertRaisesRegex(gate.QualityError, "Unbalanced"):
+            gate.check_document_links(self.root, [invalid])
+
+    def test_fence_line_mapping_preserves_u2028_and_crlf(self):
+        fence = chr(96) * 4
+        doc = self.write("docs/unicode.md",
+                         f"{fence}\r\nline\u2028continued\r\n{fence}\r\n")
+        self.assertEqual(1, gate.check_document_links(self.root, [doc]))
+        doc = self.write("docs/unicode.md", f"{fence}\rline\u2028continued\r")
+        with self.assertRaisesRegex(gate.QualityError, "Unbalanced"):
+            gate.check_document_links(self.root, [doc])
+
+
+    def test_unclosed_empty_quote_fence_without_terminal_lf_fails(self):
+        opener = chr(126) * 3
+        invalid = self.write("docs/quote.md", f"> {opener}\n>")
+        with self.assertRaisesRegex(gate.QualityError, "Unbalanced"):
+            gate.check_document_links(self.root, [invalid])
+        valid = self.write("docs/quote.md", f"> {opener}\n> {opener}")
+        self.assertEqual(1, gate.check_document_links(self.root, [valid]))
+
+    def test_custom_bash_shell_syntax_only_bypass_is_rejected(self):
+        import yaml
+        for shell in ("bash -n {0}", "bash -c true {0}", "sh -n {0}"):
+            with self.subTest(shell=shell):
+                data = self.parsed_workflow()
+                app = next(step for step in data["jobs"]["application"]["steps"]
+                           if "quality_gate.py application" in step.get("run", ""))
+                app["shell"] = shell
+                self.check_workflow_mutation(
+                    yaml.safe_dump(data, sort_keys=False),
+                    "must run in a supported command shell",
+                )
+
+    def test_test_report_lock_is_checkout_local_not_tmpdir_dependent(self):
+        report = self.root / "apps/web/build/junit.xml"
+        from unittest.mock import patch as mock_patch
+        with mock_patch("tempfile.gettempdir", return_value="/does-not-exist"):
+            with gate.locked_test_report(report, self.root):
+                locks = list((self.root / ".axiom-quality-locks").glob("*.lock"))
+                self.assertEqual(1, len(locks))
+        with mock_patch("tempfile.gettempdir", return_value="/different-tmpdir"):
+            with gate.locked_test_report(report, self.root):
+                self.assertEqual(locks, list((self.root / ".axiom-quality-locks").glob("*.lock")))
+
+    def test_post_run_symlink_to_stale_junit_report_is_rejected(self):
+        root = self.make_package(manifest="pyproject.toml", lockfile="uv.lock",
+                                 test_file="tests/test_sample.py")
+        source = root / "src/app.ts"
+        report = root / "build/junit.xml"
+        stale = self.write("apps/web/build/old.xml",
+                           '<testsuite><testcase name="stale-pass"/></testsuite>')
+        def fake_run(cmd, *, cwd=None, check=False, **kwargs):
+            if "test" in cmd:
+                report.symlink_to(stale)
+            return subprocess.CompletedProcess(cmd, 0)
+        with patch.object(gate.subprocess, "run", side_effect=fake_run):
+            with self.assertRaisesRegex(gate.QualityError, "symlink"):
+                gate.run_application(self.root, [source])
+        self.assertTrue(report.is_symlink())
+        self.assertTrue(stale.is_file())
+
+
+if __name__ == "__main__":
+    unittest.main()
