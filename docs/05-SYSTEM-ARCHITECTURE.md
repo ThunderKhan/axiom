@@ -597,7 +597,7 @@ Do **not** create approved ADR claims merely from this draft. Record selected al
 - FastAPI documentation: https://fastapi.tiangolo.com/
 - PostgreSQL `SKIP LOCKED` behavior: https://www.postgresql.org/docs/current/sql-select.html
 
-**Next detailed design files (not approved yet):** `06-DATABASE-DESIGN.md`, `07-API-CONTRACTS.md`, `08-AI-ENGINE.md`, `09-MCP-INTEGRATION.md`, `10-DATA-SOURCES.md`, `11-UI-UX-SPEC.md` and `12-DESIGN-SYSTEM.md`. Keep these aligned with approved product specs and record any architecture change before building incompatible code.
+**Next detailed design files (not approved yet):** `07-DATABASE-DESIGN.md`, `08-API-CONTRACTS.md`, `09-AI-ENGINE.md`, `10-MCP-INTEGRATION.md`, `11-DATA-SOURCES.md`, `12-UI-UX-SPEC.md` and `13-DESIGN-SYSTEM.md`. Keep these aligned with approved product specs and record any architecture change before building incompatible code.
 
 ---
 
