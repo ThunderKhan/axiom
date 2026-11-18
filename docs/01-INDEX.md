@@ -24,6 +24,7 @@ Only documents explicitly approved by the project owner belong in this section. 
 |---|---|---|
 | [`02-PRD.md`](02-PRD.md) | Product vision, target users, requirements, release objectives, user journeys, acceptance criteria, and constraints | **Approved — v1.0** |
 | [`03-MVP.md`](03-MVP.md) | November 26 MVP scope, P0 verification floor, preserved R0 objectives, acceptance tests and release gates | **Approved — v1.0** |
+| [`04-USER-FLOWS.md`](04-USER-FLOWS.md) | 15 concrete user journeys, onboarding branching, error states, and test traceability | **Approved — v1.0** |
 
 **Current access requirement:** The product's entry flow is **landing page → login page → authenticated web app**. Fellowship evaluators receive credentials privately and use the normal application. A public guest sandbox or judge-only demo page is **not** required.
 
@@ -33,8 +34,7 @@ Entries marked **Draft — in review** exist but are **not approved implementati
 
 | Planned document | Purpose | Status |
 |---|---|---|
-| [`04-USER-FLOWS.md`](04-USER-FLOWS.md) | 15 concrete user journeys, onboarding branching, error states, and test traceability | **Draft — in review** |
-| `05-SYSTEM-ARCHITECTURE.md` | System context, backend and AI boundaries, deployment design | Planned |
+| [`SystemArchitecture.md`](SystemArchitecture.md) | Logical/component architecture, identity, research/AI worker, evidence data, HTTP/MCP boundaries and deployment feasibility | **Draft — in review** |
 | `06-DATABASE-DESIGN.md` | Data model, relationships, isolation, migrations, retention | Planned |
 | `07-API-CONTRACTS.md` | HTTP APIs, schemas, authentication, error contracts | Planned |
 | `08-AI-ENGINE.md` | Discovery, scoring, evidence assessment, simulation, evaluation | Planned |
