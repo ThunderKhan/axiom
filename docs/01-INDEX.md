@@ -18,7 +18,7 @@ The following files live at the repository root and govern engineering work. The
 
 ## Repository Quality, Contribution and Review Controls
 
-The following are **engineering governance files**, not new product requirements. They become active after their respective pull requests merge into `main`:
+The following **engineering governance files** are already present on `main`. They are repository controls, **not** product requirements:
 
 | File | Purpose |
 |---|---|
@@ -29,6 +29,8 @@ The following are **engineering governance files**, not new product requirements
 | [`.github/ISSUE_TEMPLATE/`](../.github/ISSUE_TEMPLATE/config.yml) | Bug, feature and engineering-task forms; private security reporting |
 | [`.github/labels.json`](../.github/labels.json) | Shared issue/PR label catalog (type, area, priority, status and risk) |
 | [`.github/workflows/governance.yml`](../.github/workflows/governance.yml) | Read-only PR/push configuration tests for CodeRabbit, forms, labels and label-sync safety |
+| [`.github/workflows/quality.yml`](../.github/workflows/quality.yml) | Required repository-integrity and application-readiness checks for PRs and `main` |
+| [`ci/README.md`](../ci/README.md) | Quality gate commands, test-evidence requirements and application-code onboarding |
 | [`.github/workflows/sync-labels.yml`](../.github/workflows/sync-labels.yml) | Trusted-main label catalog sync (automatically on catalog push or manually on `main`); never runs on PRs |
 | [`.github/CODEOWNERS`](../.github/CODEOWNERS) | Initial governance reviewer ownership; not a substitute for independent review |
 | [`CONTRIBUTING.md`](../CONTRIBUTING.md) | Contribution, PR and issue lifecycle, acceptance criteria and CI expectations |
@@ -36,7 +38,9 @@ The following are **engineering governance files**, not new product requirements
 | [`.github/dependabot.yml`](../.github/dependabot.yml) | Weekly bounded GitHub Actions dependency update PRs |
 | [`.editorconfig`](../.editorconfig) | Portable whitespace and encoding defaults |
 
-**CI is tracked in a separate pull request** adding `.github/workflows/quality.yml`. The repo has no executable application implementation yet; an automatic code review or documentation-only check is **not** proof that the web/API tests/build passed. GitHub labels are **not created simply by committing a catalog or issue form**. After merging this governance PR, intentionally run the manual label sync from the default branch to make the names available. New quality and governance changes must receive review according to the root engineering rules.
+**Current repository setup (18 November 2026):** [Quality PR #1](https://github.com/ThunderKhan/axiom/pull/1) and [governance PR #2](https://github.com/ThunderKhan/axiom/pull/2) are merged. The [active `main` ruleset](https://github.com/ThunderKhan/axiom/rules/27560167) requires pull requests, up-to-date branches, resolved review conversations, and all three GitHub Actions checks: `Quality / repository integrity`, `Quality / application readiness`, and `Governance / configuration`. It blocks branch deletion and force-pushes and requires linear history. Required human approvals remain **0** for a solo maintainer; CodeRabbit assists but does not authorize merges. The [label sync workflow](../.github/workflows/sync-labels.yml) provisions or updates the versioned catalog on trusted `main` changes (or manual dispatch); custom labels are already in use. Private reporting guidance is in [SECURITY.md](../SECURITY.md), but submission from an external account has **not** been independently tested.
+
+**Application readiness is separate:** this is still a documentation-first repository, without a frontend/backend implementation or verified application build. Passing repository CI does not establish a working product.
 
 ## Approved Documents
 
