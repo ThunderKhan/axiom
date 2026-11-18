@@ -29,7 +29,7 @@ The following are **engineering governance files**, not new product requirements
 | [`.github/ISSUE_TEMPLATE/`](../.github/ISSUE_TEMPLATE/config.yml) | Bug, feature and engineering-task forms; private security reporting |
 | [`.github/labels.json`](../.github/labels.json) | Shared issue/PR label catalog (type, area, priority, status and risk) |
 | [`.github/workflows/governance.yml`](../.github/workflows/governance.yml) | Read-only PR/push configuration tests for CodeRabbit, forms, labels and label-sync safety |
-| [`.github/workflows/sync-labels.yml`](../.github/workflows/sync-labels.yml) | **Manual main-only** workflow to provision/update labels after governance merge; never runs on PRs |
+| [`.github/workflows/sync-labels.yml`](../.github/workflows/sync-labels.yml) | Trusted-main label catalog sync (automatically on catalog push or manually on `main`); never runs on PRs |
 | [`.github/CODEOWNERS`](../.github/CODEOWNERS) | Initial governance reviewer ownership; not a substitute for independent review |
 | [`CONTRIBUTING.md`](../CONTRIBUTING.md) | Contribution, PR and issue lifecycle, acceptance criteria and CI expectations |
 | [`SECURITY.md`](../SECURITY.md) | Private vulnerability reporting and sensitive security surfaces |
