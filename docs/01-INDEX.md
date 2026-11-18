@@ -50,7 +50,7 @@ Only documents explicitly approved by the project owner belong in this section. 
 | [`18-SCALABILITY.md`](18-SCALABILITY.md) | Owner-requested 500-founder concurrent capacity model, queue/pooling design and load-test criteria | **Draft — requires capacity test and review** |
 | [`DECISIONS.md`](DECISIONS.md) | Active decision register with approved decisions and unresolved vendor/architecture records | **ACTIVE register — not blanket approval of open ADRs** |
 
-**Review blockers:** Database design needs final DDL/RLS/migrations; API contracts need complete frozen schemas; AI engine has approved provider routing but still needs provider privacy/quota verification, model evaluation and calibrated thresholds; MCP requires production auth/write-consent design and client handshake; source adapters need legal/technical access proof; deployment runbook needs actual hosting/worker choice. Design palette is approved; full design awaits the founder's additional Markdown file. Scaling awaits measured capacity. **None of these drafts proves implementation or provider availability.**
+**Review blockers:** Database design needs final DDL/RLS/migrations; API contracts need complete frozen schemas; AI engine has approved provider routing but still needs provider privacy/quota verification, model evaluation and calibrated thresholds; MCP requires production auth/write-consent design and client handshake; broad source strategy is approved but each adapter (especially Reddit) still needs specific authorized access, terms, quota and live-result proof; deployment runbook needs actual hosting/worker choice. Design palette is approved; full design awaits the founder's additional Markdown file. Scaling awaits measured capacity. **None of these drafts proves implementation or provider availability.**
 
 ## Architecture Decisions
 
@@ -58,7 +58,7 @@ Record consequential architecture decisions in `docs/decisions/` as numbered, da
 
 **Approved product and architectural direction decisions**, the founder-requested 500-user target, Edviro design reference, and unresolved architecture issues are tracked in [DECISIONS.md](DECISIONS.md). The authentication/database/access architecture choice is approved in ADR-002; other provider-specific ADRs remain pending.
 
-**Approved ADRs:** [002 — Auth, database and backend boundary](decisions/002-authentication-database-and-api-boundary.md); [008 — managed API/worker hosting strategy](decisions/008-managed-hosting-and-worker.md); [005 — Groq primary + conditional Gemini fallback](decisions/005-ai-inference-providers.md). All are approved architectural **strategies**, not evidence of deployed services, real free quotas, privacy compliance or 500-user load capacity. Still pending: exact vendor/plan selections, model and source access tests, and MCP authorization.
+**Approved ADRs:** [002 — Auth, database and backend boundary](decisions/002-authentication-database-and-api-boundary.md); [008 — managed API/worker hosting strategy](decisions/008-managed-hosting-and-worker.md); [005 — Groq primary + conditional Gemini fallback](decisions/005-ai-inference-providers.md); [004 — broad, permission-gated multi-platform source integration](decisions/004-broad-authorized-source-integration.md). All are approved **strategies**, not evidence of working integrations, granted Reddit access, current free quotas, privacy compliance, or 500-user capacity. Still pending: exact deployment plans, model/source verification and MCP authorization.
 
 ## Superseded Documents
 
