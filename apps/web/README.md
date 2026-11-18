@@ -36,7 +36,7 @@ npm run start
 npm run audit
 ```
 
-`test:ci` executes unit tests **and** Chromium smoke tests. Vitest writes fresh
+`test:ci` executes unit tests **and** Chromium smoke tests. Node.js writes fresh
 JUnit XML to `test-results/junit.xml`. The repo-level quality gate intentionally
 removes a prior report before every test invocation and rejects missing, empty,
 skipped-only or failing reports.

@@ -16,8 +16,8 @@
     "format:check": "prettier --check .",
     "check:style": "npm run lint && npm run format:check",
     "typecheck": "tsc --noEmit",
-    "test:unit": "vitest run",
-    "test:ci": "vitest run --reporter=default --reporter=junit --outputFile.junit=test-results/junit.xml && playwright test",
+    "test:unit": "node scripts/run-unit-tests.mjs",
+    "test:ci": "node scripts/run-unit-tests.mjs --junit && playwright install chromium && playwright test",
     "test:smoke": "playwright test",
     "audit": "npm audit --audit-level=high"
   },
@@ -34,7 +34,6 @@
     "eslint": "^9.39.1",
     "eslint-config-next": "16.4.6",
     "prettier": "3.6.2",
-    "typescript": "5.9.3",
-    "vitest": "5.1.0"
+    "typescript": "5.9.3"
   }
 }
