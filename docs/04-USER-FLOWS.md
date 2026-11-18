@@ -93,7 +93,7 @@ The user should always know **which product workspace is active**, **whether an 
 | CRM | Progress saved leads and next actions | Stage, notes, dates, drafts, activity |
 | History / settings | Resume work, view limits and providers | Reopen reports, see disclosures, change workspace |
 
-Navigation model: **persistent compact app navigation + contextual flow actions**. The detailed layout and exact route names remain open until `11-UI-UX-SPEC.md` is approved.
+Navigation model: **persistent compact app navigation + contextual flow actions**. The detailed layout and exact route names remain open until `12-UI-UX-SPEC.md` is approved.
 
 ## 4. Detailed user flows
 
@@ -360,7 +360,7 @@ Navigation model: **persistent compact app navigation + contextual flow actions*
 - Rate limit/upstream failure → distinct, bounded and recoverable error.
 - Long-running research → asynchronous job reference or bounded response (exact pattern decided in API spec).
 
-**Acceptance:** **two independently callable working endpoints** cover discovery and competitor teardown; automated API contract tests pass. Exact methods and payloads belong to `07-API-CONTRACTS.md`.
+**Acceptance:** **two independently callable working endpoints** cover discovery and competitor teardown; automated API contract tests pass. Exact methods and payloads belong to `08-API-CONTRACTS.md`.
 
 ### UF-14 — External MCP research and controlled write [P0; R0 breadth]
 
@@ -545,12 +545,12 @@ A test is complete only after executable evidence on the expected environment, w
 
 The following are **open**, not implicitly approved by this flow draft:
 
-- Visual flow presentation, exact page/route hierarchy, progress style, animation, small-screen graph and CRM layout (`11-UI-UX-SPEC.md`).
-- Precise normalized evidence/graph schema, confidence logic, profile versioning and scenario recalculation (`08-AI-ENGINE.md` and `06-DATABASE-DESIGN.md`).
+- Visual flow presentation, exact page/route hierarchy, progress style, animation, small-screen graph and CRM layout (`12-UI-UX-SPEC.md`).
+- Precise normalized evidence/graph schema, confidence logic, profile versioning and scenario recalculation (`09-AI-ENGINE.md` and `07-DATABASE-DESIGN.md`).
 - Authentication provider/session lifecycle, permission middleware, persistence architecture, long-running jobs and deployment ([`05-SYSTEM-ARCHITECTURE.md`](05-SYSTEM-ARCHITECTURE.md)).
-- HTTP request/response contracts, status codes, async semantics and API versioning (`07-API-CONTRACTS.md`).
-- MCP transport, client auth method, tool schema, approval policy, server/tool audit (`09-MCP-INTEGRATION.md`).
-- Final permitted source inventory, source access methods, quota and policy validation (`10-DATA-SOURCES.md`).
+- HTTP request/response contracts, status codes, async semantics and API versioning (`08-API-CONTRACTS.md`).
+- MCP transport, client auth method, tool schema, approval policy, server/tool audit (`10-MCP-INTEGRATION.md`).
+- Final permitted source inventory, source access methods, quota and policy validation (`11-DATA-SOURCES.md`).
 - Whether and how scheduled monitoring (P1) ships. Its absence cannot be mislabeled as complete; expanded R0 tool/source objectives require separate tracking and explicit owner decisions.
 
 ## 12. Approval and change control
