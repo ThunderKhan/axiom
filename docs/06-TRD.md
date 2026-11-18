@@ -22,7 +22,7 @@ The TRD states **technology choices, engineering constraints and objectively tes
 | Auth | **Supabase Auth (approved)** | Verified JWT issuer/signature/audience/expiry, normal login |
 | DB access | **SQLAlchemy 2.x + Alembic (approved)** | Verify clean-install, upgrade and role isolation |
 | Async jobs | PostgreSQL-backed queue, independent Python worker process | Test live process, lease and restart on actual host |
-| Data sources | Hacker News + permitted feeds; manual public URL; Bluesky candidate | Legal access check, successful real retrieval, useful results |
+| Data sources | **Broad acquisition:** Hacker News, allowed RSS/Atom, Bluesky, Reddit **if officially authorized**, manual URLs and more vetted platforms ([ADR-004](decisions/004-broad-authorized-source-integration.md)) | Strategy approved, per-provider permission/terms/quotas/live usage unverified |
 | Model | **Groq primary with conditional Gemini fallback** ([ADR-005](decisions/005-ai-inference-providers.md)) | Verify current no-charge quota, policy/consent, models, typed output and latency |
 | External agent protocol | Maintained Python MCP SDK / compatible Streamable HTTP | Real remote client handshake and scoped auth |
 | Quality | pytest, Playwright, lint/type/build, migrations and security tests | CI and deployed smoke evidence |
@@ -119,7 +119,7 @@ Targets below are **proposals until benchmarked**; do not advertise them as achi
 | Auth and DB implementation | **Approved stack: Supabase Auth, PostgreSQL, FastAPI-only domain access, SQLAlchemy + Alembic**. Verify login, JWT, RLS and API ownership | **Chosen — not implemented** |
 | Hosting and worker | Real deployment, queue claim, completion after restart | Open |
 | Free model/provider | **Groq primary, Gemini conditional strategy approved**; actual provider calls, privacy/consent, quotas and failures | **Chosen — not verified** |
-| Third source family | Legitimate access, quality, bounded quota, live result | Open |
+| Broad source-family program | **Approved target**: 3+ families R0 plus additional authorized platforms, Reddit permission pending. Require lawful access, live samples, quota and provenance | **Scope approved — integration unverified** |
 | MCP auth/protocol | Remote client initialize/call, user scopes and denied write | Open |
 | Migrations / ORM | Clean/upgrade/schema drift test | Open |
 | Graph library | Keyboard/mobile accessible view + performance sample | Open |
@@ -151,3 +151,10 @@ Targets below are **proposals until benchmarked**; do not advertise them as achi
 - **TRD-AI-08:** A single typed model adapter sends eligible jobs to Groq first. Gemini free-tier fallback requires per-request data classification, verified current terms permitting that input and applicable consent; **no silent disclosure of founder-private ideas, profile, CRM, notes, drafts, or mixed/unknown content**.
 - **TRD-AI-09:** If neither route is permissible or available, show honest deterministic/manual degradation or blocked/unavailable status; keep source/citation validation, bounded retries and redacted model trace information.
 - **TRD-AI-10:** Verify actual no-charge API calls, model versions, data policies, limits, 429/timeout behavior, license/terms, and maintain **₹0 paid external AI/research API** spend. See [ADR-005](decisions/005-ai-inference-providers.md). This is strategy approval, **not** integration completion.
+
+## 14. Broad source strategy — decision 4 of 6
+
+- **TRD-DATA-03:** Per [ADR-004](decisions/004-broad-authorized-source-integration.md), maintain an extensible source-adapter registry for HN, permitted RSS/Atom, Bluesky, Reddit **after specific authorization**, manual safe URLs and further legitimate platforms. Track target/disabled/permission-pending/verified-live per family, with current terms, license, quota, retention and actual sample evidence.
+- **TRD-DATA-04:** Neither an adapter name nor internet reachability proves provider permission. **Do not run Reddit or any access-restricted API before permitted credentials and acceptable terms are verified**; do not circumvent API restrictions or pay external research API charges under the current ₹0 rule.
+- **TRD-DATA-05:** Keep P0 two genuine families and R0 three-plus families, **plus expanded legal platform breadth as a founder-approved target**. Report status of each target and escalate blockers for explicit founder scope decisions. Count distinct connectors/platform families; label manually provided, seeded, cached, and live evidence honestly.
+- **TRD-DATA-06:** Apply normalized schemas, source attribution, rate-limit/error controls, dedupe, SSRF-safe URL checks and 500-founder fair job admission to every enabled adapter. This approval does not verify or implement any source.
