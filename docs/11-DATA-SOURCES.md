@@ -30,7 +30,7 @@ Before enabling any connector, record a row in a maintained source registry with
 - Source name + exact endpoint/method + provider terms URL, date reviewed and responsible reviewer.
 - Access mechanism/credentials (never secrets in docs), whether auth is required.
 - Allowed use: retrieval, processing, excerpt retention, attribution, redisplay and permitted redistribution.
-- API limits, backoff, concurrency and budget with explicit §₹0§ external API spending.
+- API limits, backoff, concurrency and budget with explicit `₹0` external API spending.
 - Query semantics, index coverage, date range, regional/industry skew and recall limitations.
 - Normalization strategy, source identifier, canonical URL, retrieval/published time, deletion/update policy.
 - Unit fixtures, successful live test evidence and known failure states.
@@ -38,7 +38,7 @@ Before enabling any connector, record a row in a maintained source registry with
 
 ## 4. Normalized public source record
 
-§§§json
+```json
 {
   "source_record_id": "example-id",
   "source_family": "hacker_news",
@@ -53,9 +53,9 @@ Before enabling any connector, record a row in a maintained source registry with
   "access_status": "fixture",
   "attribution": "SYNTHETIC EXAMPLE"
 }
-§§§
+```
 
-Use §live§ for genuinely retrieved permitted records, §cached§ with original retrieval time for snapshots, §seeded§ for demonstration fixtures, §user_provided§ for manual evidence, §inferred§ for derived interpretation, and §unknown§ for unavailable facts. Display these states in UI, graph, exports and API/MCP.
+Use `live` for genuinely retrieved permitted records, `cached` with original retrieval time for snapshots, `seeded` for demonstration fixtures, `user_provided` for manual evidence, `inferred` for derived interpretation, and `unknown` for unavailable facts. Display these states in UI, graph, exports and API/MCP.
 
 ## 5. Safe network acquisition protocol
 
