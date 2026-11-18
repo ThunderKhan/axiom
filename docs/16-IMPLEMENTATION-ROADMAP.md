@@ -1,6 +1,6 @@
 # Axiom — Implementation Roadmap
 
-**Status:** DRAFT — in review · **Version:** 0.1 · **Date:** 18 November 2026  
+**Status:** APPROVED — planning baseline and risk gates, not completed engineering · **Version:** 1.0 · **Approved:** 18 November 2026  
 **Deadline:** 26 November 2026, 11:59 PM IST  
 **Source:** [PRD](02-PRD.md), [MVP](03-MVP.md), [System Architecture](05-SYSTEM-ARCHITECTURE.md), [TRD](06-TRD.md)
 
@@ -93,3 +93,23 @@ Do not begin sophisticated graph motion before confirming source and storage arc
 Landing/login/app URL and evaluator account test; live source evidence; 10 labeled examples; sourced competitor; four verdicts including negative/abstain; graph/list parity; two saved scenarios; CRM persistence; tested HTTP/MCP; source/LLM disclosures; dependency/license inventory; backup, CI/E2E, browser/mobile/security test run. Submit without disclosing evaluator secrets in public materials.
 
 **Current implementation status:** No feature is asserted implemented by this document. Only actual code/test/deployment evidence can change a work package to Verified.
+
+## 8. Capacity, effort sizing and delivery risk
+
+**Founder requirement:** plan to support **500 concurrently active founders**, defined and testable in [18-SCALABILITY.md](18-SCALABILITY.md). In the November 26 window, implement stateless API behavior, workspace-indexed database queries, bounded worker concurrency, quota transparency and scalable contracts. Run a meaningful initial load test; any hard 500-user release guarantee requires actual deployed load evidence and a founder-approved gate decision.
+
+The mistakenly introduced separate `T-shirt.md` is not needed. Retain these coarse **relative effort estimates here** without presenting them as guaranteed durations:
+
+| Workstream | Relative size | Risk |
+|---|---|---|
+| Auth/multi-workspace + RLS | L–XL | Identity and cross-tenant safety |
+| Live 2–3+ source families | XL–XXL | Legal access, coverage, throttling |
+| Sourced competitor extraction | XL | Website safety and missing data |
+| Evidence graph/assessment | XL | Source/graph consistency |
+| Advanced Counterfactual | XL–XXL | Frozen evidence and versioning |
+| Advanced CRM | L–XL | Persistence and permissions |
+| MCP read and write tools | L–XL | Remote client auth and consent |
+| Hosted API, worker, DB and load capacity | XL–XXL | Free-tier limits and operational durability |
+| Full E2E, security and deployment verification | XL | Cross-system integration |
+
+Sizes are directional only and may exceed the available schedule; keep verified P0 vertical slices first while surfacing R0 tradeoffs for explicit owner decisions. **This document's approval does not mean its tasks are finished.**
