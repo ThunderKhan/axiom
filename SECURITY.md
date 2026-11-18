@@ -4,15 +4,15 @@ Axiom handles founder product profiles, research evidence, CRM drafts, and exter
 
 ## Private reporting
 
-**Do not open public GitHub issues or PR comments with exploit details, credentials, private customer records, tokens, or sensitive security logs.**
+**Do not disclose exploit details, credentials, private customer records, tokens, or sensitive security logs in public GitHub issues, pull requests, or discussions.**
 
-**Current limitation:** GitHub Private Vulnerability Reporting has not been enabled for this repository, and no verified private security mailbox has been supplied. Consequently, this repository does **not currently provide a working confidential external intake route**. Do **not** submit sensitive reports, access tokens, exploit details, or personal data through public issues, discussions or PR comments. If you already have an established private contact with the maintainer, use it without publishing details.
+To report a vulnerability confidentially, use GitHub's [Report a vulnerability](https://github.com/ThunderKhan/axiom/security/advisories/new) workflow. Open the repository's **Security and quality → Advisories** page and select **Report a vulnerability** to submit a private report visible to the repository maintainers.
 
-**Tracking:** [Issue #3 — enable and verify private vulnerability reporting](https://github.com/ThunderKhan/axiom/issues/3). This is a confirmed outstanding repository-setting dependency, not an implemented feature.
+Include the affected component or version, potential impact, reproduction conditions, and a minimal, sanitized proof of concept. Share sensitive reproduction details **only inside the private report**; never publish secrets, third-party personal data, or access tokens.
 
-**Required owner configuration before inviting external vulnerability reports:** enable *Private vulnerability reporting* under repository **Settings → Code security and analysis**, verify an external reporter can submit through **Security → Report a vulnerability**, then update this policy and the issue chooser with the tested private report URL. Do not claim that the private reporting feature is live until verified. No production security SLA is claimed.
+**If GitHub does not offer the private reporting form**, do not fall back to a public issue or PR comment. Use a private contact already established with the maintainer and ask for a confidential reporting route. The owner has reported enabling private vulnerability reporting on 18 November 2026; availability to an external reporter has not been independently verified by repository CI or the connected GitHub integration.
 
-Include the affected component, impact, reproduction conditions, and a minimal sanitized example. Do not conduct active scans or tests against production or other users' workspaces without explicit permission.
+Do not conduct active scans or tests against production or other users' workspaces without explicit permission.
 
 ## Security-sensitive areas
 
