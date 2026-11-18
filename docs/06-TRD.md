@@ -24,7 +24,7 @@ The TRD states **technology choices, engineering constraints and objectively tes
 | Async jobs | PostgreSQL-backed queue, independent Python worker process | Test live process, lease and restart on actual host |
 | Data sources | **Broad acquisition:** Hacker News, allowed RSS/Atom, Bluesky, Reddit **if officially authorized**, manual URLs and more vetted platforms ([ADR-004](decisions/004-broad-authorized-source-integration.md)) | Strategy approved, per-provider permission/terms/quotas/live usage unverified |
 | Model | **Groq primary with conditional Gemini fallback** ([ADR-005](decisions/005-ai-inference-providers.md)) | Verify current no-charge quota, policy/consent, models, typed output and latency |
-| External agent protocol | Maintained Python MCP SDK / compatible Streamable HTTP | Real remote client handshake and scoped auth |
+| External agent protocol | **MCP Streamable HTTP + OAuth 2.1 delegated scoped clients** ([ADR-006](decisions/006-mcp-oauth-and-write-approval.md)) | Authorization server, PKCE/metadata, resource-bound tokens, consent/revocation and actual client test required |
 | Quality | pytest, Playwright, lint/type/build, migrations and security tests | CI and deployed smoke evidence |
 | Hosting | **Managed web + managed FastAPI/worker + Supabase** ([ADR-008](decisions/008-managed-hosting-and-worker.md)) | Strategy approved; provider/plan, cost and real worker uptime not verified |
 
@@ -120,7 +120,7 @@ Targets below are **proposals until benchmarked**; do not advertise them as achi
 | Hosting and worker | Real deployment, queue claim, completion after restart | Open |
 | Free model/provider | **Groq primary, Gemini conditional strategy approved**; actual provider calls, privacy/consent, quotas and failures | **Chosen — not verified** |
 | Broad source-family program | **Approved target**: 3+ families R0 plus additional authorized platforms, Reddit permission pending. Require lawful access, live samples, quota and provenance | **Scope approved — integration unverified** |
-| MCP auth/protocol | Remote client initialize/call, user scopes and denied write | Open |
+| MCP auth/protocol | **OAuth 2.1 strategy approved** ([ADR-006](decisions/006-mcp-oauth-and-write-approval.md)); choose AS, implement metadata, scoped consent and denied writes, test client | **Chosen — not implemented** |
 | Migrations / ORM | Clean/upgrade/schema drift test | Open |
 | Graph library | Keyboard/mobile accessible view + performance sample | Open |
 
@@ -158,3 +158,10 @@ Targets below are **proposals until benchmarked**; do not advertise them as achi
 - **TRD-DATA-04:** Neither an adapter name nor internet reachability proves provider permission. **Do not run Reddit or any access-restricted API before permitted credentials and acceptable terms are verified**; do not circumvent API restrictions or pay external research API charges under the current ₹0 rule.
 - **TRD-DATA-05:** Keep P0 two genuine families and R0 three-plus families, **plus expanded legal platform breadth as a founder-approved target**. Report status of each target and escalate blockers for explicit founder scope decisions. Count distinct connectors/platform families; label manually provided, seeded, cached, and live evidence honestly.
 - **TRD-DATA-06:** Apply normalized schemas, source attribution, rate-limit/error controls, dedupe, SSRF-safe URL checks and 500-founder fair job admission to every enabled adapter. This approval does not verify or implement any source.
+
+## 15. MCP authorization requirements (technical decision 5 of 6)
+
+- **TRD-MCP-06:** Use OAuth 2.1 Authorization Code + PKCE S256 for user-delegated remote MCP connections with protected resource and authorization-server metadata/discovery, resource/audience-bound tokens and correct issuer validation.
+- **TRD-MCP-07:** Select a compatible OAuth authorization server/broker integrating **Supabase Auth user identity**; a browser Supabase JWT must not automatically be accepted as a token for Axiom MCP resource. Confirm consent and client registration/discovery support.
+- **TRD-MCP-08:** Each tool call checks granted scopes **and** user/workspace/object authorization; enforce revocation, idempotent low-risk consented CRM writes, separate confirmation for sensitive changes, and complete audit.
+- **TRD-MCP-09:** Initial remote MCP mode excludes personal API tokens and hybrid auth. [ADR-006](decisions/006-mcp-oauth-and-write-approval.md) is strategy approval, **not** verified AS or tool compatibility.
