@@ -22,10 +22,13 @@ The following are **engineering governance files**, not new product requirements
 
 | File | Purpose |
 |---|---|
+| [`README.md`](../README.md) | Honest project status and navigation to approved specifications and contribution rules |
+| [`.gitignore`](../.gitignore) | Secrets and generated-artifact exclusions without ignoring package lockfiles |
 | [`.coderabbit.yaml`](../.coderabbit.yaml) | CodeRabbit V2 auto-review with correctness, tenancy, AI-source, database, security and CI path instructions |
 | [`.github/PULL_REQUEST_TEMPLATE.md`](../.github/PULL_REQUEST_TEMPLATE.md) | Structured PR description with traceability, risk and actual test evidence |
 | [`.github/ISSUE_TEMPLATE/`](../.github/ISSUE_TEMPLATE/config.yml) | Bug, feature and engineering-task forms; private security reporting |
 | [`.github/labels.json`](../.github/labels.json) | Shared issue/PR label catalog (type, area, priority, status and risk) |
+| [`.github/workflows/governance.yml`](../.github/workflows/governance.yml) | Read-only PR/push configuration tests for CodeRabbit, forms, labels and label-sync safety |
 | [`.github/workflows/sync-labels.yml`](../.github/workflows/sync-labels.yml) | **Manual main-only** workflow to provision/update labels after governance merge; never runs on PRs |
 | [`.github/CODEOWNERS`](../.github/CODEOWNERS) | Initial governance reviewer ownership; not a substitute for independent review |
 | [`CONTRIBUTING.md`](../CONTRIBUTING.md) | Contribution, PR and issue lifecycle, acceptance criteria and CI expectations |
