@@ -138,3 +138,7 @@ The approved release gates still require an actual deployable end-to-end researc
 ## 11. Hosting cost/scale decision boundary
 
 The founder approved **managed infrastructure with a modest potential hosting budget**, [ADR-008](decisions/008-managed-hosting-and-worker.md). Scaling from one API process/worker to multiple replicas may incur additional costs and DB connection pressure; **no capacity-based scaling purchase is authorized without exact plan and cost review**. The separate **₹0 paid external AI/research API** rule still applies. 500 active founders is a **performance design and load-test target**, not an achieved guarantee, and never means 500 simultaneous free-LLM calls.
+
+## 12. Broad provider scaling and fairness
+
+[ADR-004](decisions/004-broad-authorized-source-integration.md) expands the target integration families. Each enabled adapter has **independent** provider-wide rate limits, backoff, circuit-breaker/disable controls, per-workspace quotas and availability reporting. Under 500 active founders, a single source's quota/permission loss cannot stall unrelated source jobs, and no user may monopolize public-source processing. New providers are activated only after legitimate access and real sample tests; Reddit/additional services are **not** assumed available. Synthetic load testing must use provider stubs to avoid violating platform policies or spending on external research APIs; real provider smoke stays bounded.
