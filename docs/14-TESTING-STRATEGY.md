@@ -1,6 +1,6 @@
 # Axiom — Testing Strategy and Quality Gates
 
-**Status:** DRAFT — in review · **Version:** 0.1 · **Date:** 18 November 2026  
+**Status:** APPROVED — testing policy and gates; test execution not claimed · **Version:** 1.0 · **Approved:** 18 November 2026  
 **Authority:** [MVP](03-MVP.md), [User Flows](04-USER-FLOWS.md), [TRD](06-TRD.md) and [Architecture](05-SYSTEM-ARCHITECTURE.md)
 
 ## 1. Definition of done
@@ -114,3 +114,14 @@ CI stages: **PR fast** (build/type/lint/unit/API/fixtures) → **migration and s
 ## 8. Checkpoints
 
 19 Nov first real source and competitor extraction; 22 Nov end-to-end saved research and R0 status review; 24 Nov nonessential freeze; 25 Nov complete tests and evaluator rehearsal; 26 Nov final production smoke/submission. These are scheduled goals, not proof of completion.
+
+## 9. 500-founder concurrency and load verification
+
+The founder requests support for **500 concurrently active authenticated users**. This is a **target, not a claim of achieved capacity**. [18-SCALABILITY.md](18-SCALABILITY.md) holds the provisional workload design and pending SLA agreement.
+
+- Use **k6/Locust (or equivalent)** with 500 distinct virtual user principals/workspaces and representative indexed data; do not confuse 500 idle sockets with 500 actively using the product.
+- Run a 10-minute ramp, ≥15-minute steady-state mixed workload (~25 req/s target assumption), heavier ~50 req/s stress, ~60-minute soak, and bounded burst of queued research submissions; record actual achieved rate.
+- Record p50/p95/p99 read/write/job-acceptance latencies, internal 5xx, explicit 429, queue age, worker completion, CPU, memory, database pool saturation and external API quotas.
+- Require **zero cross-workspace data leaks and duplicate mutation effects** under concurrent retries, worker restart and authorization probes.
+- Use stubbed third-party providers for **high-volume load generation**, clearly separate from small lawful real-source integration probes. Do not flood HN, RSS publishers or LLM free APIs.
+- 500-user capacity is **not verified** until a production-like/deployed test passes and its exact environment is recorded. If free hosting cannot sustain the objective, report a blocker and seek an explicit owner scope/release decision, not a fictitious green test.
