@@ -247,7 +247,7 @@ Use Row Level Security (RLS) where relevant as an additional tenant boundary, bu
 | Send email/cold outreach | Denied | **Not supported in MVP** | **Not supported** | **Not supported** |
 | Administration/provision evaluator account | Denied | Founder/operator only through trusted admin workflow | Denied | Denied |
 
-**MCP write approval design is open:** a client-granted narrow `crm:write` scope alone may be sufficient for low-risk lead saves only if the user explicitly authorized that client and can audit/revoke access. Sensitive changes may require explicit per-action confirmation or a queued approval artifact. Define the exact behavior in MCP spec before implementing any write.
+**MCP OAuth 2.1 authentication strategy is approved ([ADR-006](decisions/006-mcp-oauth-and-write-approval.md)); specific write-approval UX remains open:** a client-granted narrow `crm:write` scope alone may be sufficient for low-risk lead saves only if the user explicitly authorized that client and can audit/revoke access. Sensitive changes may require explicit per-action confirmation or a queued approval artifact. Define the exact behavior in MCP spec before implementing any write.
 
 ## 7. Research, ingestion, and scoring pipeline
 
@@ -556,7 +556,7 @@ These checkpoints are **planned**, not completed work. Failures require an expli
 4. **Queue execution:** PostgreSQL job leasing with worker probe versus alternate genuinely durable free job mechanism.
 5. **Broad source delivery:** [ADR-004](decisions/004-broad-authorized-source-integration.md) approves a cross-platform program (HN/RSS/Bluesky, Reddit if specifically authorized, further legal integrations) beyond the three-family R0 floor. Verify each adapter's terms, access, quotas, live data and relevance; no assumed Reddit permission or automatic unbounded crawling.
 6. **Actual AI model:** Identify provider, quota, model output support and fit for cited extraction; run a reproducible evaluation. Deterministic fallback is not falsely labeled as AI reasoning.
-7. **MCP authentication and compatibility:** Confirm client, protocol revision, remote access strategy, explicit write permission and approval mechanism.
+7. **MCP authentication and compatibility:** [ADR-006](decisions/006-mcp-oauth-and-write-approval.md) approves OAuth 2.1, Authorization Code + PKCE and user-scoped, audience-bound clients; validate real AS, metadata, client protocol, consent, revocation, scope and sensitive-write confirmation.
 8. **Data privacy and retention:** Exact retention/deletion rules and whether source snapshots may lawfully be stored or must be represented as bounded excerpts/metadata.
 9. **UI graph performance:** Choose library and large-graph limits, ensure equivalent accessible report mode.
 10. **Scope cuts:** Which R0 objectives need explicit founder review if free-tier constraints prevent full delivery?
@@ -616,3 +616,7 @@ The founder additionally requests architecture capable of serving **500 simultan
 ## 23. Founder-approved broad source acquisition strategy
 
 [ADR-004](decisions/004-broad-authorized-source-integration.md) selects **Option C** (Hacker News, permitted RSS/Atom, Bluesky, Reddit **subject to specific API approval**, manual safe public URLs, and additional permission-vetted platforms). Preserve **two genuine allowed source families P0** and **three-plus distinct allowed source families R0**, with additional broad coverage explicitly tracked rather than implicitly waived. Each adapter requires an access/terms/retention and cost review, actual attributed live data, rate-limit compliance and honest UI status; a strategic decision does **not** mean Reddit/other provider access is authorized. A modular source registry and bounded worker protect fairness for 500 concurrent founders; the ₹0 external paid research API constraint remains unchanged. No source integration is declared implemented by this approval.
+
+## 24. OAuth 2.1 remote MCP authorization strategy
+
+[ADR-006](decisions/006-mcp-oauth-and-write-approval.md) approves scoped **OAuth 2.1** clients with Authorization Code + PKCE (S256), OAuth Protected Resource Metadata, supported AS metadata/discovery, correct issuer/audience resource tokens, grant consent/revocation and per-tool workspace authorization. No initial personal API tokens. **Supabase Auth user identity does not automatically implement the required MCP OAuth authorization server**: select/integrate a compatible AS or broker. A read-only grant cannot write; consented low-risk `save_lead` needs idempotency and audit; sensitive mutations need approved confirmation. This decision does not prove the authorization flow, external client or any MCP write tool works.
