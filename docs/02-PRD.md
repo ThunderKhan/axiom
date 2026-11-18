@@ -374,7 +374,7 @@ These are deliberately **not** fixed in a product PRD:
 
 - [`docs/03-MVP.md`](03-MVP.md) — approved scope, breadth targets, quality gates, and owner-controlled cutlines.
 - [`docs/04-USER-FLOWS.md`](04-USER-FLOWS.md) — detailed journey states, edge cases, errors, and acceptance test scenarios (draft pending approval).
-- `docs/05-SYSTEM-ARCHITECTURE.md`, `docs/06-DATABASE-DESIGN.md`, `docs/07-API-CONTRACTS.md`.
+- [`docs/SystemArchitecture.md`](SystemArchitecture.md), `docs/06-DATABASE-DESIGN.md`, `docs/07-API-CONTRACTS.md`.
 - `docs/08-AI-ENGINE.md`, `docs/09-MCP-INTEGRATION.md`, `docs/10-DATA-SOURCES.md`.
 - `docs/11-UI-UX-SPEC.md`, `docs/12-DESIGN-SYSTEM.md`, `docs/13-IMPLEMENTATION-ROADMAP.md`.
 - Additional engineering references: testing strategy, deployment runbook, decision log.
