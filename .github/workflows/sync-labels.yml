@@ -1,9 +1,16 @@
 name: Sync repository labels
 
-# Run deliberately once after the governance PR is merged to main.
-# Never run write-scoped automation on untrusted pull_request code.
+# Provision labels automatically on the first trusted merge to main, then
+# on catalog changes or deliberate manual dispatch. Never from PR code.
 on:
+  push:
+    branches: [main]
+    paths: ['.github/labels.json']
   workflow_dispatch:
+
+concurrency:
+  group: axiom-main-label-sync
+  cancel-in-progress: false
 
 permissions:
   contents: read
@@ -16,7 +23,7 @@ jobs:
     timeout-minutes: 5
     steps:
       - name: Checkout default branch without persisted token
-        uses: actions/checkout@v7
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
           persist-credentials: false
       - name: Create/update labels from versioned catalog
