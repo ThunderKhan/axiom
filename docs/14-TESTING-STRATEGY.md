@@ -125,3 +125,7 @@ The founder requests support for **500 concurrently active authenticated users**
 - Require **zero cross-workspace data leaks and duplicate mutation effects** under concurrent retries, worker restart and authorization probes.
 - Use stubbed third-party providers for **high-volume load generation**, clearly separate from small lawful real-source integration probes. Do not flood HN, RSS publishers or LLM free APIs.
 - 500-user capacity is **not verified** until a production-like/deployed test passes and its exact environment is recorded. If free hosting cannot sustain the objective, report a blocker and seek an explicit owner scope/release decision, not a fictitious green test.
+
+## 10. Groq/Gemini strategy acceptance suite
+
+[ADR-005](decisions/005-ai-inference-providers.md) approves Groq primary and privacy/consent-gated Gemini fallback, **not** a working integration. Test an actual no-charge Groq structured call, allowed Gemini fallback for suitably permitted public-source content, denial of Gemini fallback for private founder and mixed/unknown content, absence of required consent, quota exhausted/429, timeouts, malformed JSON, hallucinated source IDs, prompt injection, tenant-isolated prompt cache, accurate provider/audit attribution and **₹0 paid external inference cost**. Load tests should mock expensive provider traffic; keep real provider smoke calls bounded.
