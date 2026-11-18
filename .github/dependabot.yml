@@ -8,6 +8,5 @@ updates:
       interval: weekly
       day: monday
     open-pull-requests-limit: 3
-    labels:
-      - "type:chore"
-      - "area:infra"
+    # Custom labels are assigned after the initial trusted label-catalog sync.
+    # Avoid missing-label races on the first merge.
