@@ -1,6 +1,6 @@
 # Axiom — MCP Integration Specification
 
-**Status:** DRAFT — in review · **Version:** 0.1 · **Date:** 18 November 2026  
+**Status:** APPROVED — MCP protocol, tool boundaries and authorization architecture; **authorization-server and real-client deployment NOT verified** · **Version:** 1.0 · **Approved:** 18 November 2026  
 **Authority:** [PRD](02-PRD.md), [MVP](03-MVP.md), [Architecture](05-SYSTEM-ARCHITECTURE.md), [API Contracts](08-API-CONTRACTS.md)
 
 ## 1. Overview
@@ -112,3 +112,7 @@ Handle client connection interruption and retries without duplicate write; audit
 ## 9. OAuth 2.1 authorization contract — approved decision 5 of 6
 
 Required end-to-end: remote MCP client discovers OAuth Protected Resource Metadata → compatible authorization-server metadata → Authorization Code + PKCE S256, requested resource and scopes → founder login and consent → audience-bound access token → MCP server verifies issuer/signature/expiry/audience/scopes → shared FastAPI domain verifies workspace membership and object authorization on **every** tool call. Select authorization server/broker compatible with Supabase user identity; a regular Supabase login token is not a substitute. Choose client registration/discovery according to pinned MCP revision and actual external-client compatibility. Read-only clients cannot call `save_lead`; scoped `crm:write` requires explicit consent/idempotency/audit, with separately reviewed confirmation for higher-risk mutations. Test PKCE, metadata, token denial/revocation, cross-tenant calls, consented writes, and a real external client. This document remains DRAFT until implemented and tested. See [current MCP authorization spec](https://modelcontextprotocol.io/specification/2026-07-28/basic/authorization) and [MCP Python SDK](https://py.sdk.modelcontextprotocol.io/run/authorization/).
+
+## 10. Formal design-approval scope
+
+**Approved as a design standard:** the bounded remote MCP Streamable HTTP approach, tool catalog, shared FastAPI authorization boundary, OAuth 2.1 Authorization Code + PKCE and resource-scoped token strategy under [ADR-006](decisions/006-mcp-oauth-and-write-approval.md), explicit client consent, workspace/tool permissions, idempotency and audit. **Not approved as integrated or ready to deploy:** selection/configuration of the actual OAuth authorization server/broker, client registration/discovery, exact consent and higher-risk write-confirmation UX, resource-token issuance/verification, model/client compatibility, pinned protocol version, and a successful real MCP client handshake. No privileged write tool should be exposed until those detailed security gates pass. Formal approval of this architecture baseline **does not override** these still-open execution blockers.
