@@ -11,7 +11,6 @@ import pathlib
 import re
 import subprocess
 import sys
-import tempfile
 import tomllib
 import unittest
 import xml.etree.ElementTree as ET
@@ -63,8 +62,13 @@ def check_fence_boundaries(body: str, file: pathlib.Path, root: pathlib.Path, pa
     """
     # Match markdown-it's CR/LF normalization; splitlines() also splits U+2028
     # and would desynchronize token.map indices from the parser.
-    lines = body.replace("\r\n", "\n").replace("\r", "\n").split("\n")
-    for token in parser.parse(body):
+    normalized = body.replace("\r\n", "\n").replace("\r", "\n")
+    # A final LF prevents a Markdown quote/list container ending at EOF from
+    # masquerading as an explicit empty closing fence in older parser versions.
+    if normalized and not normalized.endswith("\n"):
+        normalized += "\n"
+    lines = normalized.split("\n")
+    for token in parser.parse(normalized):
         if token.type != "fence" or not token.map:
             continue
         start, end = token.map
@@ -213,8 +217,10 @@ def check_workflow(root: pathlib.Path) -> None:
             shell = step.get("shell") or job_shell or workflow_shell or "bash"
             if not isinstance(shell, str) or not shell.strip():
                 fail(f"Required {job_name}/{mode} must run in a supported command shell")
-            executable = pathlib.PurePosixPath(shell.split()[0].replace("\\", "/")).name.lower()
-            if executable not in {"bash", "sh", "pwsh", "powershell"}:
+            # GitHub custom shell templates can use -n, -c or even discard the
+            # generated script while exiting zero. Only allow whole known
+            # shell values, not merely a safe-looking executable basename.
+            if shell.strip() not in {"bash", "sh", "pwsh", "powershell"}:
                 fail(f"Required {job_name}/{mode} must run in a supported command shell, not {shell}")
             matching.append(step)
         if not matching:
@@ -403,10 +409,17 @@ def check_junit_test_evidence(path: pathlib.Path, name: str) -> None:
 
 
 @contextlib.contextmanager
-def locked_test_report(report: pathlib.Path):
-    """Serialize cleanup, execution and validation for one report across processes."""
-    digest = hashlib.sha256(os.fsencode(report)).hexdigest()
-    lock_path = pathlib.Path(tempfile.gettempdir()) / f"axiom-quality-{digest}.lock"
+def locked_test_report(report: pathlib.Path, root: pathlib.Path):
+    """One stable per-checkout lock per report, regardless of TMPDIR or worker."""
+    digest = hashlib.sha256(os.fsencode(report.resolve())).hexdigest()
+    # Git metadata is stable across local processes and never cleaned by app
+    # build/test commands. Standalone test fixtures without .git use a
+    # checkout-root directory rather than a process-specific temp directory.
+    git_metadata = root / ".git"
+    lock_directory = (git_metadata / "axiom-quality-locks"
+                      if git_metadata.is_dir() else root / ".axiom-quality-locks")
+    lock_directory.mkdir(parents=True, exist_ok=True)
+    lock_path = lock_directory / f"{digest}.lock"
     fd = os.open(lock_path, os.O_CREAT | os.O_RDWR | os.O_NOFOLLOW, 0o600)
     with os.fdopen(fd, "rb+"):
         fcntl.flock(fd, fcntl.LOCK_EX)
@@ -480,12 +493,15 @@ def run_application(root: pathlib.Path, files: list[pathlib.Path]) -> None:
                     fail(f"Package {name}: go test reported zero successfully executed tests")
             elif key == "test":
                 report = (directory / spec["test_report"]).resolve()
-                with locked_test_report(report):
+                with locked_test_report(report, root):
                     assert_generated_report(root, directory, report, spec, files, name)
                     # The lock covers cleanup, test invocation and evidence validation.
                     # Another parallel process cannot supply a report for this run.
                     report.unlink(missing_ok=True)
                     subprocess.run(cmd, cwd=directory, check=True)
+                    # The runner might replace the newly generated file with a
+                    # symlink to stale data; re-check identity within the lock.
+                    assert_generated_report(root, directory, report, spec, files, name)
                     check_junit_test_evidence(report, name)
             else:
                 subprocess.run(cmd, cwd=directory, check=True)
