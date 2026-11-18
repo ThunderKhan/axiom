@@ -117,14 +117,14 @@ CI stages: **PR fast** (build/type/lint/unit/API/fixtures) → **migration and s
 
 ## 9. 500-founder concurrency and load verification
 
-The founder requests support for **500 concurrently active authenticated users**. This is a **target, not a claim of achieved capacity**. [18-SCALABILITY.md](18-SCALABILITY.md) holds the provisional workload design and pending SLA agreement.
+The founder requires design for **500 concurrently active authenticated users**, but no capacity is yet measured. [ADR-010](decisions/010-staged-500-founder-capacity-release.md) fixes the **staged acceptance gates**: 100 and 250 active-user preliminary tests before the November 26 fellowship submission, full 500-user benchmark required before broader production access. [18-SCALABILITY.md](18-SCALABILITY.md) contains the detailed workloads and provisional SLOs.
 
 - Use **k6/Locust (or equivalent)** with 500 distinct virtual user principals/workspaces and representative indexed data; do not confuse 500 idle sockets with 500 actively using the product.
-- Run a 10-minute ramp, ≥15-minute steady-state mixed workload (~25 req/s target assumption), heavier ~50 req/s stress, ~60-minute soak, and bounded burst of queued research submissions; record actual achieved rate.
+- **Pre-submission stage:** run documented 100- and 250-active-user tests (after correctness baseline) on representative hosting, report actual RPS/p50/p95/error/429/DB/worker/queue results. **Production acceptance stage:** separately run ramp to 500, ≥15-minute steady-state (~25 req/s initial workload assumption), ~50 req/s stress, ≥60-minute soak, bounded queued-research burst, worker restart and concurrent cross-tenant probes.
 - Record p50/p95/p99 read/write/job-acceptance latencies, internal 5xx, explicit 429, queue age, worker completion, CPU, memory, database pool saturation and external API quotas.
 - Require **zero cross-workspace data leaks and duplicate mutation effects** under concurrent retries, worker restart and authorization probes.
 - Use stubbed third-party providers for **high-volume load generation**, clearly separate from small lawful real-source integration probes. Do not flood HN, RSS publishers or LLM free APIs.
-- 500-user capacity is **not verified** until a production-like/deployed test passes and its exact environment is recorded. If free hosting cannot sustain the objective, report a blocker and seek an explicit owner scope/release decision, not a fictitious green test.
+- 500-user capacity is **not verified** until a reproducible load test passes on intended production tier or defensibly equivalent infrastructure. If managed hosting cannot sustain the objective, report the bottleneck and seek infrastructure cost/plan review; **block broader public production rollout until the 500-user gate passes**. A functional fellowship deployment without that benchmark must be labeled limited/unverified and pass all separate P0 gates.
 
 ## 10. Groq/Gemini strategy acceptance suite
 
@@ -137,3 +137,9 @@ The founder requests support for **500 concurrently active authenticated users**
 ## 12. MCP OAuth 2.1 security and client-compatibility tests
 
 [ADR-006](decisions/006-mcp-oauth-and-write-approval.md) approves OAuth Authorization Code + PKCE, protected resource/authorization-server discovery, audience-bound scopes, explicit consent and revocation. **Test on a real remote MCP client**: authorization metadata and login/consent, redirect/issuer/PKCE correctness, client registration support, token issuance, invalid/expired/revoked/wrong-issuer/wrong-audience tokens, unrelated Supabase browser JWT rejection, cross-workspace denial, read-only `save_lead` rejection, consented idempotent write, higher-risk confirmation and redacted audit. Record the authorization server, SDK/client versions and actual evidence. These tests have **not** been run by approving the strategy.
+
+## 13. Capacity release-stage test report (decision 6 of 6)
+
+[ADR-010](decisions/010-staged-500-founder-capacity-release.md) is approved. **S1 before November 26:** execute realistic **100 and 250 authenticated active-user tests**, with actual API/CRM/job traffic and protected workspace identities; log achieved load and any failures. **S2 fellowship submission:** existing P0 functional, security, source integrity and operational gates remain mandatory; no automatic 500-user performance block. **S3 wider production:** require a passing **500-active-founder** load/soak/restart/security benchmark and documented capacity limits before opening broad production access.
+
+Publish redacted test harness/settings, date, commit, runtime tier, virtual-user count, realistic request mix, p50/p95/p99, errors/429, DB connections, queue waits and privacy/tenant-isolation assertions. Mock permitted third-party APIs for high-volume runs and separately verify live source integrations with bounded calls. **Do not report 100/250, 500 or any SLO as achieved until measured.**
