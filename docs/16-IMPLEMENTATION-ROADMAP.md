@@ -49,7 +49,7 @@ These dates are **targets**, not completion statuses. Do not overpromise which b
 
 | Package | Scope | Definition of done |
 |---|---|---|
-| WP-01 Repository foundation | Next.js/FastAPI layout, environment examples, lint/type/test commands, CI | Clean install and reproducible build |
+| WP-01 Repository foundation | `apps/web` Next.js + `services/api` FastAPI layout, backend Docker image/Compose, Vercel/Railway root mapping, environment examples, real lockfiles and CI checks ([topology plan](19-DOCKER-AND-DEPLOYMENT-TOPOLOGY.md)) | Clean install, real frontend/backend tests, Docker image build, Compose validation and independent API/worker startup; no placeholder green CI |
 | WP-02 Auth/workspaces | Session, provisioning, ownership, two product workspaces | Auth failure and cross-tenant tests |
 | WP-03 Product onboarding | Adaptive 10–15 questions, confirm/version profile, fallback | Idea and live branches, resume |
 | WP-04 Source adapters | **Broad target**: HN, permitted RSS/Atom, Bluesky, Reddit **if separately authorized**, safe public URL and additional legal platform adapters ([ADR-004](decisions/004-broad-authorized-source-integration.md)) | Live authorized sample per adapter; registry/terms/quota, honest blocked status, provenance and false-positive checks |

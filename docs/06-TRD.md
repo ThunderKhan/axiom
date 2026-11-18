@@ -26,11 +26,14 @@ The TRD states **technology choices, engineering constraints and objectively tes
 | Model | **Groq primary with conditional Gemini fallback** ([ADR-005](decisions/005-ai-inference-providers.md)) | Verify current no-charge quota, policy/consent, models, typed output and latency |
 | External agent protocol | **MCP Streamable HTTP + OAuth 2.1 delegated scoped clients** ([ADR-006](decisions/006-mcp-oauth-and-write-approval.md)) | Authorization server, PKCE/metadata, resource-bound tokens, consent/revocation and actual client test required |
 | Quality | pytest, Playwright, lint/type/build, migrations and security tests | CI and deployed smoke evidence |
+| Container packaging | **Docker for Python API/worker**, Docker Compose for local orchestration | Shared locked backend image, separate startup commands; build/Compose/smoke checks required when source arrives |
 | Hosting | **Managed web + managed FastAPI/worker + Supabase** ([ADR-008](decisions/008-managed-hosting-and-worker.md)) | Strategy approved; provider/plan, cost and real worker uptime not verified |
 
 **TRD-STACK-01:** Production dependencies must have reproducible lockfiles; record chosen version and license.
 **TRD-STACK-02:** **Modest paid hosting/infrastructure is allowed under ADR-008**; require explicit approval of any specific paid plan/cost before provisioning. **Paid AI/research APIs remain excluded** under the ₹0 external API constraint; do not use inaccessible or policy-incompatible services.
 **TRD-STACK-03:** Main API and research worker share typed domain services, not duplicated business rules. Avoid unnecessary Redis/Kafka/microservices for initial release.
+**TRD-STACK-04:** Repository package boundaries are `apps/web` (Next.js, proposed Vercel project root) and `services/api` (one FastAPI Python package and Dockerfile for two separately deployed API/worker process roles, proposed Railway service root). Keep secrets out of frontend bundles and Docker build contexts. See [deployment topology](19-DOCKER-AND-DEPLOYMENT-TOPOLOGY.md).
+**TRD-STACK-05:** The PR that first adds the Python backend must also supply a working Dockerfile, `.dockerignore`, local Compose config, real container-build/startup validation in the required application CI job, actual package lockfiles and tests. No application/source or Docker tests are claimed implemented yet.
 
 ## 3. Web requirements
 

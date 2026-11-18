@@ -61,6 +61,7 @@ Only documents explicitly approved by the project owner belong in this section. 
 | [`16-IMPLEMENTATION-ROADMAP.md`](16-IMPLEMENTATION-ROADMAP.md) | Milestones, implementation dependencies and risk sizing | **Approved — planning baseline** |
 | [`17-SECURITY.md`](17-SECURITY.md) | Workspace isolation, source/AI attack boundaries and security tests | **Approved — security policy** |
 | [`18-SCALABILITY.md`](18-SCALABILITY.md) | 500-founder architecture; 100/250 preliminary tests before Nov 26, full 500 test before broad production | **Approved — capacity design and staged release gates only** |
+| [`19-DOCKER-AND-DEPLOYMENT-TOPOLOGY.md`](19-DOCKER-AND-DEPLOYMENT-TOPOLOGY.md) | Approved monorepo `apps/web` and `services/api` boundaries, Docker/Compose backend packaging, prospective Vercel/Railway service roots, and fail-closed container CI requirements | **Approved — implementation setup; not implemented/deployed** |
 
 **Current access requirement:** The product's entry flow is **landing page → login page → authenticated web app**. Fellowship evaluators receive credentials privately and use the normal application. A public guest sandbox or judge-only demo page is **not** required.
 

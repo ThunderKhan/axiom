@@ -25,6 +25,10 @@ Axiom serves an authenticated Next.js app, FastAPI domain API, independently run
 6. **₹0 external AI/research API expenditure stays in force.** Paying for hosting **does not authorize paid LLM or research APIs** or violate that separate budget classification. Costs of API, database and worker hosting must be tracked independently from AI/research provider usage.
 7. Design the deployment to **scale toward 500 concurrently active authenticated founders**, not 500 unlimited simultaneous external AI requests. Horizontal scale, connection pooling and job limits are governed by measured bottlenecks, not assumed from provider marketing.
 
+## Implementation packaging clarification — 18 November 2026
+
+The owner additionally selected **Docker for the Python FastAPI and worker packaging** and a monorepo with independent deployment roots. The intended frontend path is `apps/web` (native Next.js build on a candidate Vercel project); the backend path is `services/api` (one Python/Docker image serving two separately started Railway-candidate services, API and worker). Compose may orchestrate local API/worker development but **is not a production database or job durability solution**. This refines packaging only: it does not authorize a vendor purchase, prove container CI is running, or alter the approved managed-hosting strategy. The executable acceptance contract is in [19-DOCKER-AND-DEPLOYMENT-TOPOLOGY.md](../19-DOCKER-AND-DEPLOYMENT-TOPOLOGY.md).
+
 ## Rationale
 
 Managed processes avoid the operational complexity of maintaining a Linux VPS while allowing a dedicated worker, secure secrets/configuration and separate API/frontend deployment. A modest infrastructure budget reduces the risk of choosing a nominally free platform that cannot run a durable worker. This strategy preserves the approved modular system design and future capacity option.
