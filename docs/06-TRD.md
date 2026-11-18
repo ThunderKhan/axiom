@@ -1,0 +1,129 @@
+# Axiom — Technical Requirements Document (TRD)
+
+**Status:** DRAFT — requires owner review  
+**Version:** 0.1 · **Date:** 18 November 2026 · **Release:** 26 November 2026, 23:59 IST  
+**Authority:** [PRD](02-PRD.md) · [MVP](03-MVP.md) · [User Flows](04-USER-FLOWS.md) · [System Architecture](05-SYSTEM-ARCHITECTURE.md)
+
+## 1. Scope, precedence and terminology
+
+The TRD states **technology choices, engineering constraints and objectively testable technical requirements**. It does not replace product specifications, implementation-oriented coding rules in root \`engineering.md\`, or agent instructions in root \`agents.md\`. The [documentation index](01-INDEX.md) governs status/reading order. Technology options below are **proposed**, not asserted to be deployed. Unresolved vendor/free-host choices must pass feasibility tests and be recorded as decisions.
+
+**P0** is the essential verified product release floor; **R0** is an additional founder-requested November 26 objective that cannot be silently deferred. Advanced Counterfactual Lab, 3+ permitted sources, advanced CRM and extensive MCP are R0, not automatically out of scope. **₹0 planned external AI/research API expenditure** is an explicit constraint; don't infer hosting, quota or capacity is free.
+
+## 2. Proposed technology selection
+
+| Layer | Candidate | Decision/proof |
+|---|---|---|
+| Web | Next.js maintained LTS, React, TypeScript strict | Pin compatible package versions and run production build |
+| UI | Tailwind CSS + accessible component primitives; purpose-built editorial layouts | Test focus, keyboard, mobile, reduced motion |
+| Evidence graph | @xyflow/react, or measured equivalent | Test keyboard/list parity and dense graphs |
+| API | Python 3.12+, FastAPI, Pydantic v2 | Type validation, OpenAPI and deployment support |
+| Database | PostgreSQL, Supabase candidate | Migrations, isolation, quota and persistence proof |
+| Auth | Supabase Auth candidate | Verified JWT issuer/signature/audience/expiry, normal login |
+| DB access | SQLAlchemy 2 + Alembic **or** consistent SQL migrations | Select one style before coding |
+| Async jobs | PostgreSQL-backed queue, independent Python worker process | Test live process, lease and restart on actual host |
+| Data sources | Hacker News + permitted feeds; manual public URL; Bluesky candidate | Legal access check, successful real retrieval, useful results |
+| Model | Provider-agnostic structured-output LLM adapter | Choose only on verified legitimate free quota/latency |
+| External agent protocol | Maintained Python MCP SDK / compatible Streamable HTTP | Real remote client handshake and scoped auth |
+| Quality | pytest, Playwright, lint/type/build, migrations and security tests | CI and deployed smoke evidence |
+| Hosting | Compatible HTTPS frontend/API/worker + managed DB | Not chosen; free-tier persistence and uptime unverified |
+
+**TRD-STACK-01:** Production dependencies must have reproducible lockfiles; record chosen version and license.
+**TRD-STACK-02:** Adopt no paid, inaccessible or policy-incompatible dependency without explicit owner approval.
+**TRD-STACK-03:** Main API and research worker share typed domain services, not duplicated business rules. Avoid unnecessary Redis/Kafka/microservices for initial release.
+
+## 3. Web requirements
+
+- **TRD-FE-01 (P0):** Landing → login → authenticated application. No public judge-only or guest workspace.
+- **TRD-FE-02:** Main application must support multiple workspaces, conversational adaptive onboarding (approximately 10–15 questions), opportunity feed, investigation, competitors, graph+report, scenarios and CRM.
+- **TRD-FE-03:** TypeScript strict mode; typed API contracts generated/validated from OpenAPI; current workspace ID included in query/cache isolation.
+- **TRD-FE-04:** On every async operation render distinct queued, running, partial, completed, empty, failed, stale/cache and seeded states; never show false completion.
+- **TRD-FE-05:** Evidence graph accessible by keyboard and equivalent textual/report UI on mobile; do not require dragging to inspect citations.
+- **TRD-FE-06:** Proper focus, labels, contrast, reduced-motion and responsive behavior; no privileged tokens bundled client-side.
+- **TRD-FE-07 (R0):** Real multi-scenario editor/compare and advanced lead/follow-up workflows, not static demonstration screens.
+
+**Verify:** real login and workspace-switch Playwright tests, mobile viewports, graph keyboard access, no cross-workspace stale display, proper session expiration.
+
+## 4. Backend, data and job requirements
+
+- **TRD-BE-01:** Versioned JSON API with typed request/response DTOs, consistent validation/errors, health/readiness endpoints.
+- **TRD-BE-02:** At least two independently callable real HTTP operations: discovery and competitor teardown. Web and MCP call identical application/domain use cases.
+- **TRD-BE-03:** Authenticate and authorize *every* private read/write, including downloads, job progress and MCP calls; supplied workspace IDs do not prove authority.
+- **TRD-BE-04:** Long research/extraction operations use bounded jobs, retries, rate limits, correlation IDs and durable progress state; no unbounded synchronous requests.
+- **TRD-BE-05:** A crash/restart probe must prove a job is retried without duplicate business mutations. If free worker hosting fails, disclose blocker and propose an approved alternative.
+- **TRD-DB-01:** Workspace-scoped foreign keys, profile/source snapshot versioning, relational evidence nodes/edges, transactional CRM writes, idempotency.
+- **TRD-DB-02:** Clean-install + upgrade migration tests, backup/restore plan and documented data deletion/retention policy.
+- **TRD-DB-03:** Privileged Supabase service/secret credentials bypass RLS; server-side workspace checks remain mandatory, with RLS defense in depth where applicable.
+
+**Verify:** migration dry run, cross-tenant IDOR on API/MCP, worker crash recovery, repeated lead-save and scenario replay test.
+
+## 5. AI, provenance and research
+
+- **TRD-AI-01:** Every public record records canonical URL, actual provider/source ID, fetched timestamp, excerpt, origin (live/cached/seeded/user-provided), limitations and stable evidence references.
+- **TRD-AI-02:** Score relevance, solution intent, capability fit, freshness and evidence quality separately; rule/model methods and missing confidence exposed.
+- **TRD-AI-03:** Structured LLM outputs validated with schema, source IDs and quoted locators; unsupported factual assertions marked unverified/unknown or rejected.
+- **TRD-AI-04:** A company advertising a feature is sourced as *a claim*, not proof it works. Idea-stage features remain hypothetical.
+- **TRD-AI-05:** Explicit Pursue, Research further, Skip and Insufficient evidence verdicts; hard mismatches/contradictions override attractive composite scores.
+- **TRD-AI-06 (R0):** Two+ named scenarios with multiple assumptions/positioning and qualitative pricing changes; compare against frozen evidence snapshot; persist and reopen; no fabricated conversion/revenue forecasts.
+- **TRD-AI-07:** Provider outages, exhausted free quotas and invalid model JSON yield honest deterministic degradation or failure, not fake model research.
+- **TRD-DATA-01:** Only legitimately accessible public sources; source adapter registry must document terms, permissions, quota, usage and fallback.
+- **TRD-DATA-02:** Safe external URL fetch with DNS/IP and redirect revalidation, size/time limits, HTML escaping, no bypass of authentication/paywalls.
+
+**Verify:** labeled 10+ cases including strong fit, false positive, high intent/poor fit, unknown pricing, absent evidence, prompt injection, model outage and scenario reproducibility. All material external competitor statements must be cited or explicitly unverified.
+
+## 6. MCP and integration
+
+- **TRD-MCP-01 (P0):** Real authenticated external MCP client can invoke discover_opportunities, research_competitor, assess_opportunity, list_saved_leads and save_lead.
+- **TRD-MCP-02 (R0):** Independently track update_lead_stage, create_followup, inspect_evidence, compare_scenarios, generate_outreach_draft, list_workspaces and appropriate monitoring tools.
+- **TRD-MCP-03:** Typed inputs, outputs, error codes, workspace scoping, least-privilege authorization, audit and safe idempotency for writes.
+- **TRD-MCP-04:** User-approved scopes and sensitive-action approval semantics; no unrestricted write/admin token, autonomous sending, secret exposure or bypass via agent content.
+- **TRD-MCP-05:** Test MCP transport/protocol version and deployment host/origin settings using a genuine client.
+
+## 7. Security and privacy
+
+- **TRD-SEC-01:** Verify JWT cryptographically (issuer, signature, audience and expiry); fail closed; provision evaluator credentials privately without committing them.
+- **TRD-SEC-02:** Enforce workspace membership on every object and background job, even with service-role database access.
+- **TRD-SEC-03:** SSRF/DNS rebinding, redirects, XSS and prompt-injection test fixtures required before public URL analysis.
+- **TRD-SEC-04:** No automatic cold outreach; AI drafts are editable and explicitly unsent.
+- **TRD-SEC-05:** Redacted audit logs, per-workspace quotas, secure secrets and private data retention/deletion decision.
+- **TRD-SEC-06:** Avoid leaking competitors' raw HTML or sources into client rendering without sanitization.
+
+## 8. Proposed non-functional targets
+
+Targets below are **proposals until benchmarked**; do not advertise them as achieved SLAs.
+
+| Area | Candidate acceptance | How to measure |
+|---|---|---|
+| UI responsiveness | User sees accepted research job state within ~1s | Browser traces |
+| Cached API p95 | ≤800ms at light demo load, excluding upstream source fetch | Repeatable benchmark |
+| Authenticated app usability | First useful view ≤3s on typical broadband, excluding live research | Playwright 20 runs |
+| Tenant isolation | Zero unauthorized cross-tenant access in negative suite | API, DB, MCP tests |
+| Data integrity | No duplicate CRM writes after retry/double submission | Idempotency and crash tests |
+| Fact attribution | Every external competitor fact source-backed or tagged unverified | Labeled assessment set |
+| Accessibility | No critical automated audit failures; keyboard paths functional | Playwright/axe and manual |
+| Deployment | HTTPS frontend+API+worker actually function and recover | Production-like smoke/restore |
+| Budget | ₹0 paid external AI/research API usage | Actual provider quotas and usage |
+
+## 9. Required operations and documentation
+
+- Lockfiles, .env.example (variable **names only**), local/test/deployment instructions, versioned migrations, OpenAPI, documented real model/source provider IDs and fallbacks.
+- CI checks: install, build, lint, type, unit/API/security and DB migration tests; separate real-source and hosted browser smoke.
+- Structured logs with request/run/workspace IDs (opaque) and redacted secrets; no production passwords or sensitive prompts in logs.
+- Release proof: tested evaluator account, two live source families targeted and 3+ R0 coverage assessed, real competitor extraction, graph/report, 2 saved scenarios, CRM persistence and external MCP.
+- Requirement traceability to PRD FR-01…FR-12, MVP-01…MVP-14 and [14-TESTING-STRATEGY.md](14-TESTING-STRATEGY.md).
+
+## 10. Open technical decisions
+
+| Decision | Proof needed | Status |
+|---|---|---|
+| Auth and DB implementation | Valid login, JWT verification, RLS + API ownership test | Open |
+| Hosting and worker | Real deployment, queue claim, completion after restart | Open |
+| Free model/provider | Actual structured inference call, quota, model/version and failure case | Open |
+| Third source family | Legitimate access, quality, bounded quota, live result | Open |
+| MCP auth/protocol | Remote client initialize/call, user scopes and denied write | Open |
+| Migrations / ORM | Clean/upgrade/schema drift test | Open |
+| Graph library | Keyboard/mobile accessible view + performance sample | Open |
+
+**Approval:** Technology choices and targets remain proposed until reviewed; architectural direction approved on 18 November 2026 does not imply any hosted provider or specific library has been tested.
+
+**Official implementation references:** [Next.js supported releases](https://nextjs.org/support-policy), [Supabase JWT](https://supabase.com/docs/guides/auth/jwts), [Supabase RLS](https://supabase.com/docs/guides/database/postgres/row-level-security), [MCP Python SDK](https://github.com/modelcontextprotocol/python-sdk).
