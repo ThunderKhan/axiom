@@ -29,7 +29,7 @@
 | ADR-003 | Database hosting and migration implementation | **Chosen:** Supabase PostgreSQL, SQLAlchemy 2.x + Alembic (per ADR-002) | Actual DB project/quota, migrations, backup, pooling and RLS tests | **Approved stack — implementation unverified** |
 | [ADR-004](decisions/004-broad-authorized-source-integration.md) | **Broad authorized source integration:** Hacker News, RSS/Atom, Bluesky, Reddit (subject to official approval) and further permitted platforms | Provider policy/permission, credentials, quotas, live fetch and provenance | **Approved target strategy — access/integration unverified** |
 | [ADR-005](decisions/005-ai-inference-providers.md) | Groq primary; Gemini conditional privacy/consent-gated fallback | Verify current no-charge quotas, provider terms, model quality and real calls | **Approved strategy — implementation unverified** |
-| ADR-006 | MCP remote auth and version | Python SDK, Streamable HTTP | External client handshake, scope/denied write | Open |
+| [ADR-006](decisions/006-mcp-oauth-and-write-approval.md) | OAuth 2.1 scoped/consented MCP clients; PKCE, audience/resource-bound tokens; no initial personal API tokens | Select authorization server, prove metadata, consent/revocation, remote client, denied writes | **Approved strategy — implementation unverified** |
 | ADR-007 | Frontend/graph libraries and visual tokens | Next.js + accessible graph/list | Build, interaction/accessibility stress | Open |
 | [ADR-008](decisions/008-managed-hosting-and-worker.md) | Managed frontend + FastAPI API + dedicated worker; modest hosting spend allowed | Actual host choice, terms/pricing, worker restart, HTTPS and capacity load tests | **Approved strategy — provider/cost and deployment unverified** |
 | ADR-009 | Data retention and source excerpts | Minimal permitted excerpts | Policy/terms and deletion review | Open |
@@ -49,6 +49,10 @@
 ## 3D. Founder-approved technical decision 4 of 6 (18 November 2026)
 
 **Option C selected:** Broad multi-platform opportunity discovery with Hacker News, permitted RSS/Atom, Bluesky, **Reddit when specifically authorized**, safe manual public URLs and additional legitimate sources (see [ADR-004](decisions/004-broad-authorized-source-integration.md)). **This expands target scope beyond a three-family ceiling**, while preserving the P0 two-live-family floor and R0 at least three live families plus further breadth. Every provider must separately pass legal/API access, terms, cost/quota, attribution, deletion and live-results verification. **Reddit is a candidate requiring permission, not a presumed free API.** ₹0 paid external AI/research API spending is unchanged; unauthorized scraping is prohibited. No adapters are asserted deployed.
+
+## 3E. Founder-approved technical decision 5 of 6 (18 November 2026)
+
+**Option A:** OAuth 2.1 scoped remote MCP clients with PKCE, resource-bound tokens, discovery, user consent and revocation ([ADR-006](decisions/006-mcp-oauth-and-write-approval.md)). Supabase Auth authenticates users but **is not automatically an MCP OAuth authorization server**. Select/integrate a compatible authorization server and prove the real remote-client flow. Scope and write-consent architecture approved; specific provider, consent UI, token issuance and client handshake are not verified. No initial personal API tokens.
 
 ## 3A. New founder requirements (18 November 2026)
 
@@ -77,7 +81,7 @@ If a proposal affects an approved PRD/MVP commitment, require founder's **explic
 - **Broad authorized acquisition approved** ([ADR-004](decisions/004-broad-authorized-source-integration.md)); verify P0 two live families and R0 three-plus with further permitted-platform breadth. Reddit/additional sources remain gated by specific approval, live API access, source terms, quotas and ₹0 external research API spending.
 - **Hosting strategy approved:** managed web/API plus durable worker, modest infrastructure charges permitted. Confirm an **actual worker** runs on selected hosting; choose specific providers, instance costs and test restart before deployment acceptance.
 - **AI routing approved** ([ADR-005](decisions/005-ai-inference-providers.md)); verify real Groq/Gemini no-charge inference, terms/data handling/consent, structured outputs, quota and deterministic degraded path.
-- Resolve MCP client auth and write approval, not just a tool list.
+- **OAuth 2.1 MCP authorization strategy approved** ([ADR-006](decisions/006-mcp-oauth-and-write-approval.md)); authorization-server choice, actual scopes/consent, write-confirmation behavior, external client tests and revocation still require verification.
 - **Stack chosen:** Supabase Auth/PostgreSQL/FastAPI/SQLAlchemy/Alembic. **Still verify** exact PostgreSQL schema, JWT validation, RLS/privileged server behavior and actual deployment.
 - Reconcile scope and tech targets at November 19 and 22 gates; record evidence.
 
