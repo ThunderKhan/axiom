@@ -8,7 +8,10 @@ body:
       value: |
         Please include enough evidence to reproduce this issue. Never post
         API keys, access tokens, customer data or security exploit details.
-        Report sensitive vulnerabilities privately via the repository Security tab.
+        Private vulnerability reporting has not yet been enabled for this
+        repository. Do not post vulnerability details in issues. Maintainers
+        must enable GitHub Private Vulnerability Reporting before accepting
+        confidential reports from external contributors.
   - type: textarea
     id: behavior
     attributes:
