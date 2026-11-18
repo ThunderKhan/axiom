@@ -1,9 +1,11 @@
 # Axiom — Scalability and Capacity Design (500 Concurrent Founders)
 
-**Status:** DRAFT — capacity architecture target proposed; **not load-tested or approved as achieved**  
-**Version:** 0.1 · **Date:** 18 November 2026  
+**Status:** APPROVED — architecture and staged release-gate baseline; **NOT a claim of tested 500-founder capacity**  
+**Version:** 1.0 · **Approved:** 18 November 2026 · **Scope:** staged capacity plan only  
 **Owner requirement:** Axiom should be engineered to accommodate **at least 500 founders actively using the application concurrently**.  
 **References:** [System Architecture](05-SYSTEM-ARCHITECTURE.md), [TRD](06-TRD.md), [Database Design](07-DATABASE-DESIGN.md), [API Contracts](08-API-CONTRACTS.md), [Testing](14-TESTING-STRATEGY.md), [Deployment](15-DEPLOYMENT-RUNBOOK.md)
+
+**Release policy:** [ADR-010](decisions/010-staged-500-founder-capacity-release.md) approves **Option B**: architect for 500 now, run preliminary **100- and 250-active-founder** load tests before the November 26 fellowship submission, and require the **full passing 500-founder benchmark before broad production rollout**. No full capacity claim until proven. The benchmark numbers below are proposed engineering targets, not measured production SLAs.
 
 ## 1. Capacity objective and honest interpretation
 
@@ -102,18 +104,34 @@ Research is the primary capacity bottleneck, not the ability to render 500 clien
 - Record queue wait p50/p95, run duration, completion/failure, per-source calls, model tokens, cost/quota and pending age.
 - **Do not promise all 500 founders can run expensive research simultaneously for ₹0** without verified compute/provider capacity. A queued experience that communicates limits is acceptable for first capacity objective only if the product remains usable and user expectations are honest.
 
-## 8. Load test plan
+## 8. Load test plan — split into pre-submission and production acceptance stages
 
-### Phases
+### S0 — correctness baseline (before capacity testing)
 
-1. **Fixture correctness baseline:** reproduce 2 users/2 workspaces negative isolation, duplicates, and source provenance checks before load.
-2. **Read/write baseline:** warm the test DB with realistic workspace contents; 50 users → 100 → 250 → **500** over 10 minutes, monitoring CPU, memory, query time, pool pressure and errors.
-3. **Steady state:** 500 active authenticated virtual users for ≥15 minutes at target mix and measured 25 req/s aggregate; record p50/p95/p99 reads and writes.
-4. **Burst:** maintain 500 sessions with 50 req/s interactive mix, plus a **bounded cluster** of research submissions (e.g., 50–75 near-simultaneously), verifying fast acceptance/throttling and queue fairness. Do not require that all 75 external research jobs finish immediately.
-5. **Soak:** 60 minutes under the agreed mix; observe connection leakage, queue-age drift, memory and retry accumulation.
-6. **Failure injection:** stop worker mid-job, simulate source 429/model outage, invalidate auth, restart API; normal read/write functionality must remain available and data must stay isolated.
-7. **Security under concurrency:** concurrent cross-workspace requests, repeated idempotency keys and racing CRM stage edits; zero unauthorized access and no duplicate side effects.
-8. **Report:** include test date, environment, code SHA, host resource tier, DB limits, user count, exact requests/s, rate limits, latency distributions, 5xx, 429, queue depth/wait times, CPU/memory/DB, provider quota and conclusion. Report cannot overclaim beyond measured workload.
+Confirm authenticated two-user/two-workspace negative isolation, job retry/idempotency, evidence origin labeling, migrations, and login correctness before concurrency testing. Seed realistic DB entities; use independently scoped identities.
+
+### S1 — mandatory preliminary testing and reporting, **before 26 November 2026**
+
+1. Run representative **100** and **250 concurrently active** authenticated virtual-user workloads (not idle sessions), at separately recorded achieved RPS; use a phased ramp such as 50 → 100 → 250, with actual read/CRM/job-submit traffic.
+2. Measure p50/p95/p99 reads/writes/acceptance, error rates and 429s, source-model stub usage, DB pool connections and locks, API/worker CPU/RAM and queue wait; check per-workspace authorization and mutation idempotency under load.
+3. Do **not** flood real social-platform/LLM free APIs; mock external services for throughput, while separately using bounded lawful live-source smoke tests.
+4. Record failures and remediation in the submission documentation. These tests are a **pre-submission validation objective/reporting obligation**, not the full 500-user hard fellowship-release gate. Independently required P0 functionality and security cannot be waived.
+
+### S2 — fellowship deployment on 26 November 2026
+
+If P0 functional, security, source-integrity and operational release gates pass, an **honestly labeled capacity-unverified or limited-capacity fellowship deployment** may be submitted without a 500-user success claim. Do not represent 100/250 preliminary results as proof of 500-user capacity.
+
+### S3 — **blocking gate before broader public production rollout**
+
+1. Gradually ramp up to **500 distinct authenticated, concurrently active founders** with representative workspaces and data on the actual intended production tier or a defensible equivalent.
+2. Hold **≥15 minutes** steady at documented active mix; initial illustrative target ~25 interactive requests/s **plus separately measured polling**. Stress at ~50 interactive requests/s and bounded bursts (e.g. 50–75 research submissions) with fair queue admission.
+3. Run **≥60-minute soak**, API/worker restart/failure injection, external service 429/model outage simulation, revoked sessions and cross-workspace access probes.
+4. Require the documented accepted throughput/latency/error/authorization thresholds and **zero cross-tenant leakage or duplicate committed business writes**. Review any revised SLO against owner-approved benchmarks before claiming launch readiness.
+5. **No passing, reproducible 500-user benchmark → no broader production rollout.** Investigate, scale/reconfigure or obtain approved changes, then retest.
+
+### S4 — ongoing operations
+
+Monitor actual users, retries, queue age, pool saturation and provider quotas; rebenchmark after material infrastructure changes. Report the real tier, code SHA, test harness, load shape, error/429 rate, latency percentiles, resource and cost envelope for every stage.
 
 ### Suggested tools
 
@@ -127,11 +145,11 @@ Use **k6** or **Locust** for application-level virtual users, plus **Playwright*
 - **If worker concurrency is low:** preserve 500-user interactive app usability while transparently queueing/limiting external research, and report queue completion limits.
 - **If provider terms or budget prohibit testing with real traffic:** run isolated provider mocks with clear labels and separately verify actual permitted live adapter behavior.
 
-**Review gates:** CAP-01–CAP-10, confirmed host/provider free-tier limits, traffic mix, source/LLM rates and retention. Record decisions in [DECISIONS.md](DECISIONS.md). The 500-founder objective is owner-requested but **performance acceptance is pending load evidence**.
+**Review gates:** CAP-01–CAP-10, confirmed managed host/provider limits, traffic mix, source/LLM rates and retention; [ADR-010](decisions/010-staged-500-founder-capacity-release.md) fixes **S1 pre-submission 100/250 testing** and **S3 mandatory 500-user success before wider production**. Individual numeric thresholds and actual performance remain pending measurement.
 
 ## 10. Relationship to November 26 MVP
 
-The approved release gates still require an actual deployable end-to-end research journey. Design for scalable stateless services, pooling and bounded queue **now**, but do not abandon working core features to build speculative multi-region infrastructure. The 500-founder design is an explicit nonfunctional target to validate. Whether it is a **hard November 26 release block** versus a post-submission capacity milestone must be recorded as an explicit owner decision, not inferred from this draft.
+The approved release gates still require an actual deployable end-to-end research journey. Design for scalable stateless services, pooling and bounded queues **now**, but do not abandon working core features to build speculative multi-region infrastructure. **Founder decision B is recorded in [ADR-010](decisions/010-staged-500-founder-capacity-release.md):** 100/250 active-user preliminary tests before the November 26 fellowship submission, and a **successful full 500-founder benchmark is a hard gate for broader public production rollout**, not an automatic fellowship-submission gate. All P0 security and product gates remain binding.
 
 **Status at creation:** no load tests run, no production concurrency measured, no 500-user capacity verified.
 
@@ -142,3 +160,9 @@ The founder approved **managed infrastructure with a modest potential hosting bu
 ## 12. Broad provider scaling and fairness
 
 [ADR-004](decisions/004-broad-authorized-source-integration.md) expands the target integration families. Each enabled adapter has **independent** provider-wide rate limits, backoff, circuit-breaker/disable controls, per-workspace quotas and availability reporting. Under 500 active founders, a single source's quota/permission loss cannot stall unrelated source jobs, and no user may monopolize public-source processing. New providers are activated only after legitimate access and real sample tests; Reddit/additional services are **not** assumed available. Synthetic load testing must use provider stubs to avoid violating platform policies or spending on external research APIs; real provider smoke stays bounded.
+
+## 13. Formal approval scope and outstanding verification
+
+**Approved:** the 500-concurrent-founder architecture and staged evaluation policy under [ADR-010](decisions/010-staged-500-founder-capacity-release.md), including fair durable research queues, stateless API and bounded PostgreSQL pools. **Not approved as achieved:** any throughput, latency, queue completion, 100/250/500-user load test result, target hosting plan, revised performance SLO or production-scale claim. The quantitative targets in this file are **initial engineering hypotheses** until validated and explicitly accepted on the intended deployment tier.
+
+**Next actions:** choose/test actual host tier and worker; run S0 correctness suite, S1 preliminary load tests and redacted capacity report before 26 November; after fellowship, pass S3 full benchmark before marketing or opening broad production access.
