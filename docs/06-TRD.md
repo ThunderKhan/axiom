@@ -6,7 +6,7 @@
 
 ## 1. Scope, precedence and terminology
 
-The TRD states **technology choices, engineering constraints and objectively testable technical requirements**. It does not replace product specifications, implementation-oriented coding rules in root `engineering.md`, or agent instructions in root `agents.md`. The [documentation index](01-INDEX.md) governs status/reading order. Technology options below are **proposed**, not asserted to be deployed. Unresolved vendor/free-host choices must pass feasibility tests and be recorded as decisions.
+The TRD states **technology choices, engineering constraints and objectively testable technical requirements**. It does not replace product specifications, implementation-oriented coding rules in root `ENGINEERING.md`, or agent instructions in root `AGENTS.md`. The [documentation index](01-INDEX.md) governs status/reading order. Technology options below are **proposed**, not asserted to be deployed. Unresolved vendor/free-host choices must pass feasibility tests and be recorded as decisions.
 
 **P0** is the essential verified product release floor; **R0** is an additional founder-requested November 26 objective that cannot be silently deferred. Advanced Counterfactual Lab, 3+ permitted sources, advanced CRM and extensive MCP are R0, not automatically out of scope. **₹0 planned external AI/research API expenditure** is an explicit constraint; don't infer hosting, quota or capacity is free.
 

@@ -19,7 +19,7 @@ This document proposes the technical **how** for the already approved product **
 - The approved PRD and MVP take precedence over this draft for product requirements.
 - References to technologies, services, costs, source APIs, limits, and route names in this draft are **proposals** unless explicitly labeled an approved product requirement.
 - Do not infer that a product feature has been implemented from diagrams or schema examples.
-- As specified by the repository index, coding agents must read the actual root `agents.md` and `engineering.md` and this index before implementation; this document does not replace their rules.
+- As specified by the repository index, coding agents must read the actual root `AGENTS.md` and `ENGINEERING.md` and this index before implementation; this document does not replace their rules.
 - The single evaluator flow remains **landing → login → authenticated app**, with normal, privately provisioned low-privilege credentials. No guest-only path or judge-only demo page is part of this design.
 - Priorities **P0** and **R0** retain their approved meaning. Architecture must accommodate the broader **R0** source, simulation, CRM, and MCP objectives without describing them as already delivered or silently deferring them.
 

@@ -76,7 +76,7 @@ Each seed is labeled `seeded` in UI, database, API and exports. Actual live retr
 
 ## 6. CI gates and developer commands
 
-Exact commands follow repository root `engineering.md` and the chosen package managers. Typical commands (illustrative, not claims they exist yet):
+Exact commands follow repository root `ENGINEERING.md` and the chosen package managers. Typical commands (illustrative, not claims they exist yet):
 
 ```bash
 # Web (once configured)

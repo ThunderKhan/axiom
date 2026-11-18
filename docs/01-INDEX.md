@@ -11,8 +11,8 @@ The following files live at the repository root and govern engineering work. The
 
 | File | Purpose | Reading order |
 |---|---|---|
-| [`agents.md`](../agents.md) | Instructions and operating context for coding agents | First |
-| [`engineering.md`](../engineering.md) | Engineering standards, quality expectations, and development workflow | Second |
+| [`AGENTS.md`](../AGENTS.md) | Instructions and operating context for coding agents | First |
+| [`ENGINEERING.md`](../ENGINEERING.md) | Engineering standards, quality expectations, and development workflow | Second |
 
 **Important:** Read both files in their actual repository versions before planning or implementing code changes. This index records their existence and intended role; it does not reproduce or override their contents. Respect repository filename casing.
 
@@ -73,7 +73,7 @@ When replacing a previously approved specification:
 
 ## Reading Rules
 
-1. **Read root `agents.md` and `engineering.md` first**, using their exact case-sensitive paths. Follow their applicable instructions during coding work.
+1. **Read root `AGENTS.md` and `ENGINEERING.md` first**, using their exact case-sensitive paths. Follow their applicable instructions during coding work.
 2. **Consult `docs/01-INDEX.md`** before beginning an implementation task.
 3. Read the **approved** specifications relevant to the task, starting with `docs/02-PRD.md`.
 4. Use only **approved documents and recorded approved decisions** as the authority for product behavior; planned, draft, and superseded documents do not override them.

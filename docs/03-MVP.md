@@ -16,7 +16,7 @@
 
 This document translates the approved PRD into a finite, demonstrable November 26 release. It defines **what must work**, **which broader features remain explicit release objectives**, **how each result will be tested**, and **what requires an owner-approved change**. It is not a system architecture, final schema, or an assertion that any feature is already implemented.
 
-If this draft conflicts with the approved PRD, **the PRD controls** until the founder explicitly approves a PRD change. Technical design documents may refine implementation without changing product behavior. Read root agents.md, engineering.md, and [01-INDEX.md](01-INDEX.md) under the repository's documented reading rules before implementation.
+If this draft conflicts with the approved PRD, **the PRD controls** until the founder explicitly approves a PRD change. Technical design documents may refine implementation without changing product behavior. Read root AGENTS.md, ENGINEERING.md, and [01-INDEX.md](01-INDEX.md) under the repository's documented reading rules before implementation.
 
 ### Priority / commitment notation
 
