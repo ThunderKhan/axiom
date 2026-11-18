@@ -117,6 +117,7 @@ flowchart TD
 | Graph visualization | Client graph library with typed node/edge DTOs | Evidence graph can be interactive without graph DB | Accessible report/list is mandatory |
 | MCP transport | Python MCP SDK / current compatible Streamable HTTP | Real external integration; shared domain logic | Confirm client compatibility/auth against supported protocol revision before committing |
 | Tests | pytest, Playwright, type/lint/build quality gates | Contract, isolation and deployed E2E evidence | Actual commands and CI workflow follow engineering standards |
+| Backend packaging / local orchestration | **Docker** for the shared FastAPI/worker image; Docker Compose for local API/worker | Reproducible Python runtime and two separately started process roles | Docker builds/CI become mandatory when backend source exists; native Next.js on Vercel |
 | Hosting | **Managed web host + managed FastAPI host and worker + Supabase** ([ADR-008](decisions/008-managed-hosting-and-worker.md)) | Modest hosting budget accepted; Vercel/Railway are candidates, **not selected vendor commitments** | Verify provider terms, spend, dedicated worker, HTTPS, quotas and scale |
 
 **Not proposed for MVP:** managed Kafka, paid vector DB, graph DB, microservice mesh, autonomous outreach service, GPU-dependent inference, or unbounded crawlers. For "semantic" ranking, model-assisted structured relevance and/or small in-process embedding batches are optional only if real free provider/hardware capacity is demonstrated. Deterministic search + honest model-unavailable disclosure is the minimum fallback, **not equivalent** to shipped AI intelligence.
@@ -161,7 +162,9 @@ axiom/
 └── infra/                        # environment examples and deployment config
 ```
 
-This is a **module boundary sketch**, not a mandate to create all empty folders now. Prefer lean subpackages when code exists. The web client should use generated or schema-checked API types, not copy/paste diverging interfaces.
+The separation is intentional: **`apps/web` is the frontend deployment root** and **`services/api` is the backend source/build root** for both the API and its separate worker process. Docker packages the Python backend; Vercel builds Next.js natively. The deployment and container acceptance criteria are recorded in [19-DOCKER-AND-DEPLOYMENT-TOPOLOGY.md](19-DOCKER-AND-DEPLOYMENT-TOPOLOGY.md).
+
+This remains a **target layout, not an assertion the folders or Dockerfiles already exist**. Create buildable components and real tests in WP-01, not empty placeholder folders. The web client should use generated or schema-checked API types, not copy/paste diverging interfaces.
 
 ### Domain responsibilities
 
@@ -511,7 +514,7 @@ Browser
                     └─ genuinely available free model API or labeled fallback
 ```
 
-**Hosting decisions remain open.** The architecture assumes that the API and worker can reach managed PostgreSQL securely and that at least one worker can run when research is submitted. If the selected free tier shuts down idle processes, queue execution may stall. A **real deployed worker probe is an architecture prerequisite**, not a post-release concern.
+**Deployment roots:** The proposed Vercel project targets `apps/web`; two separate Railway services (API and worker) each target `services/api`, build the same backend Dockerfile, and use different runtime commands. See [the Docker and deployment plan](19-DOCKER-AND-DEPLOYMENT-TOPOLOGY.md). **Hosting vendor, tier and cost selection remain open** even though this folder/image approach is accepted. The architecture assumes that the API and worker can reach managed PostgreSQL securely and that at least one worker can run when research is submitted. If the selected free tier shuts down idle processes, queue execution may stall. A **real deployed worker probe is an architecture prerequisite**, not a post-release concern.
 
 ### 16.2 Environment configuration examples (names illustrative)
 
