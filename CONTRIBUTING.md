@@ -15,7 +15,7 @@ Use shared **issues and PR labels** from [the catalog](.github/labels.json): one
 1. Create a branch from current `main`: `feat/*`, `fix/*`, `ci/*`, `docs/*`, or `chore/*` (consistent descriptive suffix).
 2. Keep changes focused and link the issue, requirement IDs, approved ADRs, behavior and acceptance criteria in the PR template.
 3. Run actual build, lint, type checks, automated tests and security checks for affected packages. **Never use placeholder commands or silently suppress missing tests.**
-4. PRs that introduce the first application code must add the project’s actual lockfiles, test files and `ci/quality.toml` scripts in the **same change**, as documented in [ci/README.md](ci/README.md) once the CI PR is merged.
+4. PRs that introduce the first application code must add the project’s actual lockfiles, test files and `ci/quality.toml` scripts in the **same change**, as documented in `ci/README.md` once the separate CI PR is merged.
 5. Disclose real test commands, revision, results, skipped tests and limitations. Mocked sources/models are not evidence of working live integrations.
 6. Review CodeRabbit findings; fix reproducible correctness/security issues, respond with evidence to false positives. AI review does **not** replace CI or qualified human review.
 7. Do not merge or deploy without authorization and passing protected checks. Production secrets, migrations and external API entitlements need separate verified approval.
