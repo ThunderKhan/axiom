@@ -23,17 +23,17 @@ Only documents explicitly approved by the project owner belong in this section. 
 | Document | Purpose | Status |
 |---|---|---|
 | [`02-PRD.md`](02-PRD.md) | Product vision, target users, requirements, release objectives, user journeys, acceptance criteria, and constraints | **Approved — v1.0** |
+| [`03-MVP.md`](03-MVP.md) | November 26 MVP scope, P0 verification floor, preserved R0 objectives, acceptance tests and release gates | **Approved — v1.0** |
 
 **Current access requirement:** The product's entry flow is **landing page → login page → authenticated web app**. Fellowship evaluators receive credentials privately and use the normal application. A public guest sandbox or judge-only demo page is **not** required.
 
-## Planned Documents — Not Yet Approved
+## In-Review and Planned Documents — Not Yet Approved
 
-These entries are the intended documentation roadmap, **not** claims that the files already exist. Do not treat them as implementation authority until they have been written, reviewed, and explicitly approved.
+Entries marked **Draft — in review** exist but are **not approved implementation authority**. Entries marked **Planned** describe files not yet completed. Approval requires an explicit founder decision; a GitHub commit alone is not approval.
 
 | Planned document | Purpose | Status |
 |---|---|---|
-| [`03-MVP.md`](03-MVP.md) | November 26 MVP scope, P0 verification floor, preserved R0 objectives, acceptance tests and release gates | **Draft — in review** |
-| `04-USER-FLOWS.md` | Detailed journeys, interaction states, edge cases, and errors | Planned |
+| [`04-USER-FLOWS.md`](04-USER-FLOWS.md) | 15 concrete user journeys, onboarding branching, error states, and test traceability | **Draft — in review** |
 | `05-SYSTEM-ARCHITECTURE.md` | System context, backend and AI boundaries, deployment design | Planned |
 | `06-DATABASE-DESIGN.md` | Data model, relationships, isolation, migrations, retention | Planned |
 | `07-API-CONTRACTS.md` | HTTP APIs, schemas, authentication, error contracts | Planned |
