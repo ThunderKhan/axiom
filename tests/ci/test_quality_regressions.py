@@ -33,6 +33,15 @@ class QualityRegressionTests(unittest.TestCase):
         target.write_text(data, encoding="utf-8")
         return target
 
+    def parsed_workflow(self):
+        """BaseLoader retains 'on' but returns empty YAML values as strings."""
+        import yaml
+        data = yaml.load(self.original_workflow, Loader=yaml.BaseLoader)
+        for event in ("pull_request", "workflow_dispatch"):
+            if data["on"].get(event) == "":
+                data["on"][event] = None
+        return data
+
     def check_workflow_mutation(self, mutated, message):
         self.write(".github/workflows/quality.yml", mutated)
         with self.assertRaisesRegex(gate.QualityError, message):
@@ -212,7 +221,7 @@ sys.exit(0 if result.wasSuccessful() else 1)
     def test_required_application_gate_invocation_cannot_disappear(self):
         import yaml
 
-        parsed = yaml.load(self.original_workflow, Loader=yaml.BaseLoader)
+        parsed = self.parsed_workflow()
         steps = parsed["jobs"]["application"]["steps"]
         target = next(
             step for step in steps
@@ -528,7 +537,7 @@ sys.exit(0 if result.wasSuccessful() else 1)
         import yaml
         for mode in ("self-test", "repository"):
             with self.subTest(mode=mode):
-                data = yaml.load(self.original_workflow, Loader=yaml.BaseLoader)
+                data = self.parsed_workflow()
                 steps = data["jobs"]["repository"]["steps"]
                 old_count = len(steps)
                 data["jobs"]["repository"]["steps"] = [
@@ -546,7 +555,7 @@ sys.exit(0 if result.wasSuccessful() else 1)
 
     def test_required_application_command_is_a_whole_step(self):
         import yaml
-        data = yaml.load(self.original_workflow, Loader=yaml.BaseLoader)
+        data = self.parsed_workflow()
         app = next(step for step in data["jobs"]["application"]["steps"]
                    if step.get("run", "").strip().endswith("quality_gate.py application"))
         app["run"] = (
@@ -561,7 +570,7 @@ sys.exit(0 if result.wasSuccessful() else 1)
 
     def test_required_application_command_accepts_python3_shell_step(self):
         import yaml
-        data = yaml.load(self.original_workflow, Loader=yaml.BaseLoader)
+        data = self.parsed_workflow()
         app = next(step for step in data["jobs"]["application"]["steps"]
                    if "quality_gate.py application" in step.get("run", ""))
         app["run"] = "python3 ci/quality_gate.py application"
@@ -572,7 +581,7 @@ sys.exit(0 if result.wasSuccessful() else 1)
         import yaml
         for level in ("workflow", "job", "step"):
             with self.subTest(level=level):
-                data = yaml.load(self.original_workflow, Loader=yaml.BaseLoader)
+                data = self.parsed_workflow()
                 job = data["jobs"]["application"]
                 step = next(step for step in job["steps"]
                             if "quality_gate.py application" in step.get("run", ""))
@@ -586,7 +595,7 @@ sys.exit(0 if result.wasSuccessful() else 1)
                     yaml.safe_dump(data, sort_keys=False),
                     "must run in a supported command shell",
                 )
-        data = yaml.load(self.original_workflow, Loader=yaml.BaseLoader)
+        data = self.parsed_workflow()
         data["defaults"] = {"run": {"shell": "python"}}
         data["jobs"]["application"]["defaults"] = {"run": {"shell": "bash"}}
         self.write(".github/workflows/quality.yml", yaml.safe_dump(data, sort_keys=False))
