@@ -1,17 +1,17 @@
 # Axiom — Design Reference and Landing Experience
 
-**Status:** ON HOLD — design reference draft; **not approved**  
-**Version:** 0.2 (palette approved; design draft on hold) · **Updated:** 18 November 2026  
+**Status:** APPROVED — founder-approved direct landing-page code reuse, responsive/motion structure, and global Axiom palette  
+**Version:** 1.0 · **Approved by founder:** 18 November 2026  
 **File:** `docs/13-DESIGN.md`  
 **Reference implementation:** [ThunderKhan/edviro-clone](https://github.com/ThunderKhan/edviro-clone), specifically [DESIGN.md](https://github.com/ThunderKhan/edviro-clone/blob/main/DESIGN.md), [visual-specification.md](https://github.com/ThunderKhan/edviro-clone/blob/main/docs/visual-specification.md), [motion-forensics.md](https://github.com/ThunderKhan/edviro-clone/blob/main/docs/motion-forensics.md), [interaction-state-machines.md](https://github.com/ThunderKhan/edviro-clone/blob/main/docs/interaction-state-machines.md), [Home.tsx](https://github.com/ThunderKhan/edviro-clone/blob/main/src/components/sites/edviro/Home.tsx), and [globals.css](https://github.com/ThunderKhan/edviro-clone/blob/main/src/app/globals.css).
 
-**Design ownership:** Founder approved the ten-value Axiom brand palette in Section 3 for **both public pages and authenticated application** on 18 November 2026. The founder will still supply an additional design-system Markdown file; the **complete design document remains ON HOLD** pending reconciliation and explicit approval. This draft records structural and motion references from the Edviro clone.
+**Design ownership:** The founder explicitly approved this **complete design direction** on 18 November 2026. **Directly reuse/copy the landing-page implementation from the founder's Edviro clone into Axiom's own codebase**, then replace its colors, text, imagery, branding, navigation destinations, and section content with Axiom equivalents. The ten approved CSS variables in Section 3 apply to both the landing page and all authenticated application screens. **No additional design-system Markdown file or separate palette approval is required.** This approval establishes the implementation reference; it does not claim the Axiom landing page has already been coded or visually tested.
 
 ## 1. Design objective and reuse boundary
 
-Axiom's **landing page** should adopt the Edviro clone's **layout grammar, geometry, typography, spacing, navigation behaviors, interaction choreography, scroll-linked sections and responsive structure**, replacing all Edviro facilities content with original Axiom product content. The founder-provided Axiom palette in Section 3 is **approved for all pages**; current Edviro forest greens are **not** Axiom's palette.
+Axiom's **landing page will begin by directly copying/importing the Edviro clone's landing-page code into Axiom's codebase**, preserving the **layout grammar, section ordering, component geometry, typography, spacing, navigation structure, CTA styling, responsive behavior, interaction choreography, hover states and existing animations**. Replace Edviro-specific facilities content, imagery, brand identity, destinations and colors with original Axiom versions. This is **source-code reuse**, not merely a visual inspiration exercise. The founder-provided Axiom palette in Section 3 is **approved for all pages**; current Edviro forest greens are **not** Axiom's palette.
 
-Axiom is **not Edviro**: all headings, navigation destinations, screenshots, illustrations, logos, public-source badges, metrics, testimonial claims and dashboard content must be Axiom-specific. Adapt the reusable implementation patterns; do not mechanically ship Edviro brand identity. The clone's README says its app code is MIT-licensed and Geist font uses SIL OFL, but it also includes Edviro-origin logos, photographs and imagery on the basis of an earlier user permission statement for the clone. **That does not independently establish permission to redistribute those assets in the Axiom product.** Default to newly made/licensed Axiom visuals and keep third-party assets out until permitted use for this product is confirmed. Attribute borrowed licensed code as required.
+Axiom is **not Edviro**: reuse the landing **code and motion behavior**, but all headings, navigation destinations, screenshots, illustrations, logos, public-source badges, metrics, testimonial claims and dashboard content must be Axiom-specific. Replace the **section content**, retaining layout and animation where feasible. Do not ship Edviro brand identity or facilities-specific functionality. The clone's README says its app code is MIT-licensed and Geist font uses SIL OFL, but it also includes Edviro-origin logos, photographs and imagery on the basis of an earlier user permission statement for the clone. **That does not independently establish permission to redistribute those assets in the Axiom product.** Default to newly made/licensed Axiom visuals and keep third-party assets out until permitted use for this product is confirmed. Attribute borrowed licensed code as required.
 
 The **authenticated research application** should share typography, spacing, buttons and refinement, but a sticky marketing-page scroll animation must **not** be forcibly applied to dense, task-oriented investigation/CRM workflows. Functional correctness and keyboard accessibility take priority.
 
@@ -109,7 +109,7 @@ Computed WCAG contrast ratios for solid background/text pairs:
 
 ### Approval boundary
 
-**Palette is founder-approved.** The complete **`13-DESIGN.md` remains ON HOLD** until the founder supplies their additional design-system Markdown file, any overriding rules are reconciled, asset rights and responsive examples are reviewed, and the founder approves the finished visual specification. This partial approval does **not** make the full design document approved.
+**The entire design direction is now founder-approved:** direct reuse of the Edviro clone landing-page implementation, Axiom-specific replacement text/sections/images/navigation, and the exact ten brand tokens for both public and authenticated pages. **There is no design-approval hold.** Reused source-code license notices must be preserved and third-party visual asset rights respected. Component QA, accessibility and responsive testing remain **implementation acceptance tests**, not further design approval prerequisites.
 
 ## 4. Edviro homepage section choreography mapped to Axiom
 
@@ -174,8 +174,8 @@ The separate autonomous 13-step work-order demo on an Edviro *secondary route* i
 
 | Reference code | Role | Reuse/adaptation |
 |---|---|---|
-| `src/app/globals.css` | Typography, geometry, motion primitives, media queries | Extract geometry/motion tokens; **replace all colors later** |
-| `src/components/sites/edviro/Home.tsx` | Header, Hero, Dashboard, Stats, Workflow, Platform, Buildings, Results, Integrations, FAQ, CTA, Footer composition | Derive Axiom components and content; only keep interactions appropriate to function |
+| `src/app/globals.css` | Typography, geometry, motion primitives, media queries | **Copy and adapt** relevant layout/motion CSS locally; replace Edviro palette with approved Axiom `:root` variables **immediately** |
+| `src/components/sites/edviro/Home.tsx` | Header, Hero, Dashboard, Stats, Workflow, Platform, Buildings, Results, Integrations, FAQ, CTA, Footer composition | **Copy landing-page implementation into Axiom**, then replace Edviro branding/sections/images/content, preserve working motion/responsiveness and adapt navigation/actions |
 | `src/components/sites/edviro/data.ts` | Menu groups and section data | Replace with Axiom navigation, workflows, use cases and FAQ |
 | `docs/visual-specification.md` | Measured desktop/mobile bounding boxes | Use as geometry QA baseline |
 | `docs/motion-forensics.md` | Timing/driver observations | Establish animation regression checklist |
@@ -184,7 +184,7 @@ The separate autonomous 13-step work-order demo on an Edviro *secondary route* i
 | `src/components/ui/button.tsx` | CTA component structure | Adapt capsules and states, check accessibility |
 | `tests/` and visual comparison scripts | Regression methods | Reuse methodology and allowed code, not Edviro copyrighted visuals |
 
-Implementation policy: **reference the clone's source but do not import Edviro components as runtime dependencies**; author independent Axiom components so product-specific UI and data types remain clean. Confirm license of reusable source code and separately confirm all assets.
+**Approved implementation policy:** **reuse the clone's landing source code directly**, copied/vendor-adapted **into Axiom's repository** rather than importing Edviro as an external runtime dependency. Rename/refactor Edviro-specific components and CSS into Axiom-owned modules and replace facility-domain data with Axiom workflows. Preserve existing animation mechanics and responsive structure unless they conflict with real functionality, accessibility or reduced-motion requirements. Preserve the verified MIT license notice for reused source as applicable; Geist/font license obligations also apply. Do **not** carry over source images, logos, brand text, unlicensed third-party assets or fabricated demo metrics. This source-code reuse is now an **approved project decision**, not an optional inspiration reference.
 
 ## 9. Visual QA and acceptance gate
 
@@ -195,13 +195,12 @@ Implementation policy: **reference the clone's source but do not import Edviro c
 - Confirm all buttons have correct semantic actions, source links and keyboard access. Page speed and 500-founder API capacity are **separate system quality properties**, not proof from marketing visuals.
 - Do not copy Edviro images/logos/text or publish its clone disclaimer as Axiom's identity.
 
-## 10. Approval hold and next inputs
+## 10. Founder approval and engineering acceptance
 
-**Approved component:** All ten founder-provided color values in Section 3 for landing, login and authenticated app. **Still not approved:** imagery/background assets, final Axiom logo, the founder's forthcoming design-system Markdown file, and resulting full visual specification. This document remains **ON HOLD** until:
-1. Founder supplies their additional design-system Markdown file (palette already received).
-2. Resolve conflicts between that design system and the Edviro-derived structural reference (founder decides).
-3. Select permitted assets and confirm licensing.
-4. Review sample Axiom desktop/mobile compositions and focus/reduced-motion behavior.
-5. Explicitly approve `docs/13-DESIGN.md`.
+**Approved on 18 November 2026:** This complete `docs/13-DESIGN.md` is implementation authority for the visual design direction. The Edviro clone landing-page source is the starting implementation—not just a mood board. **Copy its landing code locally into Axiom**, apply the exact founder-approved 10-color palette globally, replace all Edviro brand content, imagery, navigation and section data with real Axiom counterparts, and preserve its geometry, typography, responsive structure, CTA geometry and animations.
 
-**Authority boundary:** This draft does not supersede approved functional PRD/MVP/user flows, and it does not turn Edviro-specific visual demos into Axiom implementation requirements.
+**No additional visual specification or approval is required to begin.** Axiom-specific images/logo may be created during implementation; they must not be redistributed from Edviro without appropriate rights. Ensure any reused code's MIT notices and font licenses are respected.
+
+**Implementation acceptance checks, not approval blockers:** actual Axiom landing is built, links/CTA lead to normal login, images are replaced, fake numbers/claims removed, desktop/mobile layout checked, existing motion adapted and keyboard/reduced-motion support tested. The authenticated application uses the same **approved color palette and visual tokens**, but retains task-oriented UI structures for evidence/CRM rather than blindly cloning marketing-page scrolling.
+
+**Authority boundary:** This approved design direction does not supersede PRD/MVP/security/user flows, nor claim the code has been imported or the UI tested.
