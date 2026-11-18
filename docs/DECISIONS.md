@@ -1,6 +1,6 @@
 # Axiom — Decision Register
 
-**Status:** DRAFT — working register · **Date:** 18 November 2026  
+**Status:** ACTIVE — canonical decision register (individual decision statuses remain authoritative) · **Date:** 18 November 2026  
 **Authority:** [Documentation Index](01-INDEX.md), [PRD](02-PRD.md), [MVP](03-MVP.md), [Architecture](05-SYSTEM-ARCHITECTURE.md)
 
 ## 1. Decision states
@@ -33,6 +33,14 @@
 | ADR-007 | Frontend/graph libraries and visual tokens | Next.js + accessible graph/list | Build, interaction/accessibility stress | Open |
 | ADR-008 | Production hosting | Candidate free hosts | HTTPS worker/API/DB health and stability | Blocked by verification |
 | ADR-009 | Data retention and source excerpts | Minimal permitted excerpts | Policy/terms and deletion review | Open |
+
+## 3A. New founder requirements (18 November 2026)
+
+| ID | Decision / scope | Status | Notes |
+|---|---|---|---|
+| DEC-007 | Design for **500 founders concurrently active**; no untested concurrency guarantee | **Owner requested** | Capacity implementation and exact release gate are unapproved pending [18-SCALABILITY.md](18-SCALABILITY.md) testing/decision |
+| DEC-008 | Use [edviro-clone](https://github.com/ThunderKhan/edviro-clone) layout, typography, spacing, navigation and landing animations as Axiom design **reference**, with Axiom-specific content | **Owner direction** | Final colors and user-supplied design-system file pending; [13-DESIGN.md](13-DESIGN.md) **ON HOLD** |
+| DEC-009 | Remove accidental T-shirt effort-sizing document; maintain necessary effort/risk notes in roadmap | **Owner clarification** | [16-IMPLEMENTATION-ROADMAP.md](16-IMPLEMENTATION-ROADMAP.md) records sizing |
 
 ## 4. ADR template and procedure
 
