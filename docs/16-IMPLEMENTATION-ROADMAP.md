@@ -8,7 +8,7 @@
 
 Use **tested vertical slices**, not separate weeks of frontend then backend then AI. The first complete user journey is: authenticated workspace → confirm profile → lawful live source → ranked signal → cited competitor → evidence verdict → saved CRM lead → reopen. Then expand to graph, two-scenario comparison and MCP/tool coverage. Every task must include failure and tenant security tests.
 
-**Constraints:** ¥0 is **not** the budget: the approved constraint is **₹0 planned external AI/research API spend**. Free hosting and long-lived workers must be verified; inability to run a worker changes the implementation strategy. A visual shell is not a milestone.
+**Constraints:** The approved budget is **₹0 planned external AI/research API spend**. Free hosting and long-lived workers must be verified; inability to run a worker changes the implementation strategy. A visual shell is not a milestone.
 
 ### Workstream dependency graph
 
