@@ -43,7 +43,7 @@ No separate evaluator-only page, public guest sandbox, bulk sending service or u
 | API | `CORS_ALLOWED_ORIGINS` | Specific HTTPS origins |
 | API/worker | `SOURCE_ALLOWED_FAMILIES`, `FETCH_TIMEOUT_S` | Reviewed adapter policy |
 | Worker | `JOB_LEASE_SECONDS`, `JOB_MAX_ATTEMPTS`, `WORKER_CONCURRENCY` | Bounded and tested |
-| API/worker | `AI_PROVIDER` / provider-specific API key | Secret, only after actual zero-cost provider verified |
+| API/worker | `GROQ_API_KEY`, `GEMINI_API_KEY`, `AI_PROVIDER_PRIMARY`, `AI_GEMINI_FALLBACK_ENABLED` | Server-only secrets; Groq primary. **Gemini fallback disabled by default** until current terms and data/consent guard are verified |
 | MCP | `MCP_RESOURCE_AUDIENCE`, `MCP_AUTH_ISSUER` | Provider-aligned client auth |
 | All | `LOG_LEVEL`, `ENVIRONMENT`, `APP_VERSION` | Redacted logs, traceability |
 
@@ -108,3 +108,7 @@ Do not claim release complete if P0 gates remain unverified, a protected route i
 ## 10. Approved hosting strategy and procurement gate
 
 The founder chose **Option A (managed hosting with a modest infrastructure budget)** on 18 November 2026; see [ADR-008](decisions/008-managed-hosting-and-worker.md). **Do not purchase or select a paid tier solely from this broad approval:** record and obtain agreement on concrete vendor, plan, monthly cost, billing account, eligible use, worker lifetime and limits. A working managed worker/restart test, HTTPS ingress and DB connection pooling are required before calling deployment done. Keep AI/research API spending at ₹0 unless the founder explicitly changes that separate constraint. This runbook remains **DRAFT** until actual provider selections and deployment proof are complete.
+
+## 11. Approved AI provider rollout requirements
+
+[ADR-005](decisions/005-ai-inference-providers.md) selects **Groq primary + conditional Gemini secondary**. Do not enable broad fallback just because both API credentials exist. Verify actual no-charge models, current provider terms for each classified input, required founder disclosure/consent, source data rights, rate/quota caps and schema validation. Protect secrets in server-only environment. Permit Gemini only for content passing the policy gate; founder-private and mixed/unknown data must **not** silently fail over. Report deterministic/manual degraded state on block/unavailability. Record model ID, redacted provider telemetry and actual paid spend (which must remain ₹0 for external AI/research APIs). This runbook remains draft until deployed integrations are proven.
