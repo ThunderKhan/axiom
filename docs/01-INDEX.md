@@ -56,9 +56,9 @@ Only documents explicitly approved by the project owner belong in this section. 
 
 Record consequential architecture decisions in `docs/decisions/` as numbered, dated decision records (ADRs), with **context, options, decision, consequences, and status**.
 
-**Approved product and architectural direction decisions**, the founder-requested 500-user target, Edviro design reference, and unresolved architecture issues are tracked in [DECISIONS.md](DECISIONS.md). No provider-specific ADRs are approved yet.
+**Approved product and architectural direction decisions**, the founder-requested 500-user target, Edviro design reference, and unresolved architecture issues are tracked in [DECISIONS.md](DECISIONS.md). The authentication/database/access architecture choice is approved in ADR-002; other provider-specific ADRs remain pending.
 
-Pending provider-specific decisions include authentication, persistence/migrations, model/provider choices, data ingestion, job execution and hosting. **Approval of the system architecture does not select a hosting vendor or validate a free tier.**
+**Approved ADR:** [002 — Supabase Auth, PostgreSQL, FastAPI domain access and SQLAlchemy/Alembic](decisions/002-authentication-database-and-api-boundary.md). User-selected implementation stack is locked; actual Supabase configuration, quotas, migrations and authorization tests remain pending. Other open decisions: hosting/worker, free AI provider, lawful source adapters, remote MCP auth and capacity verification.
 
 ## Superseded Documents
 
