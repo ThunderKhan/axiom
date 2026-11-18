@@ -13,16 +13,16 @@ Axiom should look like a serious research instrument: **editorial hierarchy + pr
 
 | Token | Candidate | Purpose |
 |---|---|---|
-| §--bg§ | #F7F7F4 | Warm neutral canvas |
-| §--surface§ | #FFFFFF | Cards, forms, reports |
-| §--text§ | #171B1B | Main readable text |
-| §--muted§ | #626A6A | Supporting descriptions, metadata |
-| §--border§ | #DDE1DC | Delicate structural separators |
-| §--accent§ | #255D54 | Deep teal/green intentional actions |
-| §--accent-soft§ | #E6F0EC | Selected/related evidence |
-| §--negative§ | #9A433B | Known mismatches / errors |
-| §--caution§ | #8B651D | Uncertain or requires investigation |
-| §--focus§ | #2563EB | Keyboard focus indication |
+| `--bg` | #F7F7F4 | Warm neutral canvas |
+| `--surface` | #FFFFFF | Cards, forms, reports |
+| `--text` | #171B1B | Main readable text |
+| `--muted` | #626A6A | Supporting descriptions, metadata |
+| `--border` | #DDE1DC | Delicate structural separators |
+| `--accent` | #255D54 | Deep teal/green intentional actions |
+| `--accent-soft` | #E6F0EC | Selected/related evidence |
+| `--negative` | #9A433B | Known mismatches / errors |
+| `--caution` | #8B651D | Uncertain or requires investigation |
+| `--focus` | #2563EB | Keyboard focus indication |
 
 Candidates should be measured for WCAG contrast at actual font sizes; **do not assume every pair meets requirements**. Dark mode optional only if consistent tokens and testing are available; don't ship an incomplete toggle. Avoid using color alone to differentiate evidence origin or verdict.
 
@@ -68,7 +68,7 @@ Use label text and iconography alongside palette; screen reader descriptions ide
 
 ## 6. Motion, responsiveness and accessibility
 
-**Motion purposes:** entering a research state, opening evidence inspector, focusing related graph nodes, showing a comparison diff, acknowledging persisted action. Default transition range about 100–240ms as a *design proposal*, no distracting looping effects. Respect §prefers-reduced-motion§ with instant changes or none.
+**Motion purposes:** entering a research state, opening evidence inspector, focusing related graph nodes, showing a comparison diff, acknowledging persisted action. Default transition range about 100–240ms as a *design proposal*, no distracting looping effects. Respect `prefers-reduced-motion` with instant changes or none.
 
 **Breakpoints:** mobile narrow, tablet intermediate, desktop wide; exact token values established in implementation after screenshots. Evidence graph becomes readable list/report on narrow screens; competitor and scenario tables use overflow with context/stacking rather than cropped columns. Login/onboarding must work one-handed and via keyboard.
 
