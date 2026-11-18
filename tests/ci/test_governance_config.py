@@ -28,8 +28,8 @@ class GovernanceConfigTests(unittest.TestCase):
         self.assertEqual(reviews["auto_apply_labels"], "false")
         self.assertTrue(reviews["path_instructions"])
         self.assertTrue(reviews["labeling_instructions"])
-        label_names = set(json.loads((GITHUB / "labels.json").read_text(encoding="utf-8"))[i]["name"]
-                          for i in range(len(json.loads((GITHUB / "labels.json").read_text(encoding="utf-8")))))
+        labels = json.loads((GITHUB / "labels.json").read_text(encoding="utf-8"))
+        label_names = {item["name"] for item in labels}
         self.assertTrue(all(entry["label"] in label_names
                             for entry in reviews["labeling_instructions"]))
 
