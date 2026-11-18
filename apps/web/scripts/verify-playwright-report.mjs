@@ -1,9 +1,10 @@
 import { existsSync, readdirSync } from "node:fs";
+import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const report = fileURLToPath(new URL("../playwright-report/", import.meta.url));
-const index = fileURLToPath(new URL("../playwright-report/index.html", import.meta.url));
-const attachments = fileURLToPath(new URL("../playwright-report/data/", import.meta.url));
+const index = join(report, "index.html");
+const attachments = join(report, "data");
 
 if (!existsSync(index) || !existsSync(attachments)) {
   console.error("Playwright HTML report or attachments are missing");
