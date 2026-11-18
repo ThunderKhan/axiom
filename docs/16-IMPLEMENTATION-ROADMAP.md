@@ -52,7 +52,7 @@ These dates are **targets**, not completion statuses. Do not overpromise which b
 | WP-01 Repository foundation | Next.js/FastAPI layout, environment examples, lint/type/test commands, CI | Clean install and reproducible build |
 | WP-02 Auth/workspaces | Session, provisioning, ownership, two product workspaces | Auth failure and cross-tenant tests |
 | WP-03 Product onboarding | Adaptive 10–15 questions, confirm/version profile, fallback | Idea and live branches, resume |
-| WP-04 Source adapters | HN, permitted RSS, safe URL, R0 third family | Live records, terms registry, honest fail |
+| WP-04 Source adapters | **Broad target**: HN, permitted RSS/Atom, Bluesky, Reddit **if separately authorized**, safe public URL and additional legal platform adapters ([ADR-004](decisions/004-broad-authorized-source-integration.md)) | Live authorized sample per adapter; registry/terms/quota, honest blocked status, provenance and false-positive checks |
 | WP-05 Ranking/evidence | Separate intent/fit, validation, four verdicts | False positive, negative, abstention tests |
 | WP-06 Competitor intelligence | Confirm URLs, safe extraction, cite claims, unknown | Real sourced public page + export |
 | WP-07 Graph/report | Typed nodes/edges, sync report, mobile fallback | Same source IDs, keyboard parity |
@@ -65,7 +65,7 @@ These dates are **targets**, not completion statuses. Do not overpromise which b
 
 **P0 release floor:** authenticated deployed app, end-to-end persisted journey, at least two permitted source families targeted with documented limitations if access blocks, 10 clearly labeled examples, real competitor extraction, explainable scoring/verdict, graph+report, CRM, 2 HTTP operations, 5 P0 MCP tools, security tests.
 
-**R0 requested breadth:** 3+ source families, advanced CRM workflows, advanced multi-assumption scenario comparisons, additional MCP tools and exploratory intelligence. **Do not silently defer**. On 19/22/24 November review what is verified, blocked or at risk and present tradeoff to owner; only explicit decision can waive/reduce requirement.
+**R0 requested breadth:** 3+ permitted source families **plus founder-approved wider legal source integration** ([ADR-004](decisions/004-broad-authorized-source-integration.md)) including Reddit only if authorized, advanced CRM workflows, advanced multi-assumption scenario comparisons, additional MCP tools and exploratory intelligence. **Do not silently defer**. On 19/22/24 November review what is verified, blocked or at risk and present tradeoff to owner; only explicit decision can waive/reduce requirement.
 
 **P1/P2:** scheduled monitoring depth, team collaboration, provider email sending and autonomous campaigns are not default MVP gates. No unauthorized cold outreach under any priority.
 
@@ -86,7 +86,7 @@ These dates are **targets**, not completion statuses. Do not overpromise which b
 
 Do not begin sophisticated graph motion before confirming source and storage architecture. Do not declare model inference without actual compatible no-charge provider calls; the Groq-primary, conditional Gemini strategy is approved by [ADR-005](decisions/005-ai-inference-providers.md) but has not been deployed. Do not deploy MCP writes before approval/authorization semantics are implemented.
 
-**Needed decisions:** Supabase Auth/PostgreSQL/FastAPI and SQLAlchemy/Alembic are approved; managed hosting strategy approved (ADR-008) but **vendor, plan, cost and worker runtime remain unverified**; source registry and remote MCP auth still need decisions. The Groq-primary / conditional Gemini **strategy** is approved but model IDs, terms and real calls remain unverified. Use [DECISIONS.md](DECISIONS.md) for open/approved choices.
+**Needed decisions:** Supabase Auth/PostgreSQL/FastAPI and SQLAlchemy/Alembic are approved; managed hosting strategy approved (ADR-008) but **vendor, plan, cost and worker runtime remain unverified**; **Broad source strategy is now approved** ([ADR-004](decisions/004-broad-authorized-source-integration.md)); each provider's authorization/technical access (especially Reddit) still needs verification. Remote MCP auth still needs a decision. The Groq-primary / conditional Gemini **strategy** is approved but model IDs, terms and real calls remain unverified. Use [DECISIONS.md](DECISIONS.md) for open/approved choices.
 
 ## 7. Final release evidence
 
@@ -121,3 +121,7 @@ Founder-approved [ADR-008](decisions/008-managed-hosting-and-worker.md) permits 
 ## 10. AI model routing implementation (technical decision 3 of 6)
 
 Implement [ADR-005](decisions/005-ai-inference-providers.md) as a **shared Groq-primary, privacy/consent-gated Gemini-fallback** adapter. Validate one real no-charge Groq call, a strictly allowed Gemini fallback, blocked private/mixed fallback, citation/schema correctness, deterministic degraded path, quotas, redaction, logs and zero paid external AI/research API costs. This architecture decision **does not** count as a completed model integration.
+
+## 11. Broad data-source delivery (decision 4 of 6)
+
+[ADR-004](decisions/004-broad-authorized-source-integration.md) expands the approved *target* beyond HN/RSS/Bluesky to include Reddit where official permission and affordable terms allow, and further authorized platforms. Build a source registry and normalized adapter contract first; then validate actual HN, allowed RSS and Bluesky access, while promptly investigating Reddit approval/terms and additional source candidates. **Do not describe this ordered rollout as permission to drop the extra targets**. Maintain an explicit live/blocked/pending log and ask the founder to approve scope changes if the November 26 deadline or provider policies prevent integration. Never scrape restricted sources or break ₹0 external paid research API rules.
