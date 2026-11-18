@@ -15,18 +15,18 @@ Design is content-first, accessible, information-dense where needed but breathab
 
 | Route candidate | Main purpose / required controls |
 |---|---|
-| §/§ | Public landing; real product narrative and CTA to login, accurate YARC attribution |
-| §/login§ | Secure normal login, validation, errors and session recovery as supported |
-| §/app§ or §/app/opportunities§ | Current workspace opportunity feed, discovery, filters and state |
-| §/app/workspaces/new§ | Create product workspace |
-| §/app/onboarding/[workspaceId]§ | Adaptive conversational questions, save/resume/profile confirmation |
-| §/app/opportunities/[signalId]§ | Signal detail, intent/fit reasoning, source links |
-| §/app/evidence/[assessmentId]§ | Graph, report, verdict, provenance and actions |
-| §/app/competitors§ | Search/suggest, confirm, analyze and compare competitors |
-| §/app/scenarios/[assessmentId]§ | Counterfactual alternatives and baseline comparison |
-| §/app/crm§ | Saved leads, stages, notes, follow-ups, drafts |
-| §/app/history§ | Saved runs, reports and exports |
-| §/app/settings§ | Profile, integrations, provider and data limitations |
+| `/` | Public landing; real product narrative and CTA to login, accurate YARC attribution |
+| `/login` | Secure normal login, validation, errors and session recovery as supported |
+| `/app` or `/app/opportunities` | Current workspace opportunity feed, discovery, filters and state |
+| `/app/workspaces/new` | Create product workspace |
+| `/app/onboarding/[workspaceId]` | Adaptive conversational questions, save/resume/profile confirmation |
+| `/app/opportunities/[signalId]` | Signal detail, intent/fit reasoning, source links |
+| `/app/evidence/[assessmentId]` | Graph, report, verdict, provenance and actions |
+| `/app/competitors` | Search/suggest, confirm, analyze and compare competitors |
+| `/app/scenarios/[assessmentId]` | Counterfactual alternatives and baseline comparison |
+| `/app/crm` | Saved leads, stages, notes, follow-ups, drafts |
+| `/app/history` | Saved runs, reports and exports |
+| `/app/settings` | Profile, integrations, provider and data limitations |
 
 These are **proposed UI URLs**, not final API contracts. Route authorization and workspace selection must be enforced server-side, not merely through navigation.
 
