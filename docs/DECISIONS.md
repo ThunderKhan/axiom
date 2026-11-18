@@ -27,7 +27,7 @@
 | ADR-001 | Backend app/worker process deployment | One FastAPI codebase + worker process | Hosting probe, durable lease/restart | Proposed |
 | [ADR-002](decisions/002-authentication-database-and-api-boundary.md) | Identity and workspace policy | Supabase Auth, JWT validation, FastAPI-only domain access, RLS defense | Real login and cross-tenant tests still required | **Approved choice — implementation unverified** |
 | ADR-003 | Database hosting and migration implementation | **Chosen:** Supabase PostgreSQL, SQLAlchemy 2.x + Alembic (per ADR-002) | Actual DB project/quota, migrations, backup, pooling and RLS tests | **Approved stack — implementation unverified** |
-| ADR-004 | Permitted discovery source families | HN, approved RSS, Bluesky candidate | Live retrieval, terms, usefulness, limits | Open |
+| [ADR-004](decisions/004-broad-authorized-source-integration.md) | **Broad authorized source integration:** Hacker News, RSS/Atom, Bluesky, Reddit (subject to official approval) and further permitted platforms | Provider policy/permission, credentials, quotas, live fetch and provenance | **Approved target strategy — access/integration unverified** |
 | [ADR-005](decisions/005-ai-inference-providers.md) | Groq primary; Gemini conditional privacy/consent-gated fallback | Verify current no-charge quotas, provider terms, model quality and real calls | **Approved strategy — implementation unverified** |
 | ADR-006 | MCP remote auth and version | Python SDK, Streamable HTTP | External client handshake, scope/denied write | Open |
 | ADR-007 | Frontend/graph libraries and visual tokens | Next.js + accessible graph/list | Build, interaction/accessibility stress | Open |
@@ -45,6 +45,10 @@
 ## 3C. Founder-approved technical decision 3 of 6 (18 November 2026)
 
 **Option C:** Groq as primary inference, Gemini as a privacy/terms-gated fallback through a shared model adapter ([ADR-005](decisions/005-ai-inference-providers.md)). No silent fallback of confidential founder ideas, profiles, CRM data or mixed inputs to a free tier with unverified data-use conditions; use deterministic/manual degradation if not permissible. **₹0 paid external AI/research API spending** remains unchanged. Provider model IDs, terms, quotas, actual requests and quality remain unverified.
+
+## 3D. Founder-approved technical decision 4 of 6 (18 November 2026)
+
+**Option C selected:** Broad multi-platform opportunity discovery with Hacker News, permitted RSS/Atom, Bluesky, **Reddit when specifically authorized**, safe manual public URLs and additional legitimate sources (see [ADR-004](decisions/004-broad-authorized-source-integration.md)). **This expands target scope beyond a three-family ceiling**, while preserving the P0 two-live-family floor and R0 at least three live families plus further breadth. Every provider must separately pass legal/API access, terms, cost/quota, attribution, deletion and live-results verification. **Reddit is a candidate requiring permission, not a presumed free API.** ₹0 paid external AI/research API spending is unchanged; unauthorized scraping is prohibited. No adapters are asserted deployed.
 
 ## 3A. New founder requirements (18 November 2026)
 
@@ -70,7 +74,7 @@ If a proposal affects an approved PRD/MVP commitment, require founder's **explic
 
 ## 5. Pending issue / risk ledger
 
-- Confirm R0 3+ source families under lawful access and ₹0 provider budget.
+- **Broad authorized acquisition approved** ([ADR-004](decisions/004-broad-authorized-source-integration.md)); verify P0 two live families and R0 three-plus with further permitted-platform breadth. Reddit/additional sources remain gated by specific approval, live API access, source terms, quotas and ₹0 external research API spending.
 - **Hosting strategy approved:** managed web/API plus durable worker, modest infrastructure charges permitted. Confirm an **actual worker** runs on selected hosting; choose specific providers, instance costs and test restart before deployment acceptance.
 - **AI routing approved** ([ADR-005](decisions/005-ai-inference-providers.md)); verify real Groq/Gemini no-charge inference, terms/data handling/consent, structured outputs, quota and deterministic degraded path.
 - Resolve MCP client auth and write approval, not just a tool list.
