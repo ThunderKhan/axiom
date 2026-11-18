@@ -18,9 +18,9 @@ The TRD states **technology choices, engineering constraints and objectively tes
 | UI | Tailwind CSS + accessible component primitives; purpose-built editorial layouts | Test focus, keyboard, mobile, reduced motion |
 | Evidence graph | @xyflow/react, or measured equivalent | Test keyboard/list parity and dense graphs |
 | API | Python 3.12+, FastAPI, Pydantic v2 | Type validation, OpenAPI and deployment support |
-| Database | PostgreSQL, Supabase candidate | Migrations, isolation, quota and persistence proof |
-| Auth | Supabase Auth candidate | Verified JWT issuer/signature/audience/expiry, normal login |
-| DB access | SQLAlchemy 2 + Alembic **or** consistent SQL migrations | Select one style before coding |
+| Database | **Supabase-hosted PostgreSQL (approved)** | Migrations, isolation, quota and persistence proof |
+| Auth | **Supabase Auth (approved)** | Verified JWT issuer/signature/audience/expiry, normal login |
+| DB access | **SQLAlchemy 2.x + Alembic (approved)** | Verify clean-install, upgrade and role isolation |
 | Async jobs | PostgreSQL-backed queue, independent Python worker process | Test live process, lease and restart on actual host |
 | Data sources | Hacker News + permitted feeds; manual public URL; Bluesky candidate | Legal access check, successful real retrieval, useful results |
 | Model | Provider-agnostic structured-output LLM adapter | Choose only on verified legitimate free quota/latency |
@@ -116,7 +116,7 @@ Targets below are **proposals until benchmarked**; do not advertise them as achi
 
 | Decision | Proof needed | Status |
 |---|---|---|
-| Auth and DB implementation | Valid login, JWT verification, RLS + API ownership test | Open |
+| Auth and DB implementation | **Approved stack: Supabase Auth, PostgreSQL, FastAPI-only domain access, SQLAlchemy + Alembic**. Verify login, JWT, RLS and API ownership | **Chosen — not implemented** |
 | Hosting and worker | Real deployment, queue claim, completion after restart | Open |
 | Free model/provider | Actual structured inference call, quota, model/version and failure case | Open |
 | Third source family | Legitimate access, quality, bounded quota, live result | Open |
@@ -127,6 +127,8 @@ Targets below are **proposals until benchmarked**; do not advertise them as achi
 **Approval:** Technology choices and targets remain proposed until reviewed; architectural direction approved on 18 November 2026 does not imply any hosted provider or specific library has been tested.
 
 **Official implementation references:** [Next.js supported releases](https://nextjs.org/support-policy), [Supabase JWT](https://supabase.com/docs/guides/auth/jwts), [Supabase RLS](https://supabase.com/docs/guides/database/postgres/row-level-security), [MCP Python SDK](https://github.com/modelcontextprotocol/python-sdk).
+
+**Selected foundation (owner decision 1 of 6):** [ADR-002](decisions/002-authentication-database-and-api-boundary.md) governs Supabase Auth/PostgreSQL, FastAPI-only domain data reads/writes and SQLAlchemy 2.x/Alembic. This supersedes the conflicting *candidate* wording above without asserting operational completion.
 
 ## 11. Owner-requested capacity target: 500 concurrent founders
 
