@@ -9,7 +9,7 @@ Axiom must be reachable via stable **HTTPS landing page → login → authentica
 
 ### Proposed topology
 
-§§§text
+```text
 HTTPS Browser → Next.js Frontend → FastAPI REST + MCP
                                   ↓
                           PostgreSQL / Auth
@@ -17,7 +17,7 @@ HTTPS Browser → Next.js Frontend → FastAPI REST + MCP
                         Python Research Worker
                                   ↓
               Permitted source APIs / free inference if verified
-§§§
+```
 
 No separate evaluator-only page, public guest sandbox, bulk sending service or unrestricted agent runtime.
 
@@ -36,18 +36,18 @@ No separate evaluator-only page, public guest sandbox, bulk sending service or u
 
 | Process | Example variable | Handling |
 |---|---|---|
-| Frontend | §NEXT_PUBLIC_API_BASE_URL§ | Public config only |
-| Frontend | §NEXT_PUBLIC_SUPABASE_URL§ / publishable key if selected | Public config, **not** secret/service key |
-| API/worker | §DATABASE_URL§ | Secret, server only |
-| API | §AUTH_ISSUER§, §AUTH_AUDIENCE§, §AUTH_JWKS_URL§ | Verify against chosen auth provider |
-| API | §CORS_ALLOWED_ORIGINS§ | Specific HTTPS origins |
-| API/worker | §SOURCE_ALLOWED_FAMILIES§, §FETCH_TIMEOUT_S§ | Reviewed adapter policy |
-| Worker | §JOB_LEASE_SECONDS§, §JOB_MAX_ATTEMPTS§, §WORKER_CONCURRENCY§ | Bounded and tested |
-| API/worker | §AI_PROVIDER§ / provider-specific API key | Secret, only after actual zero-cost provider verified |
-| MCP | §MCP_RESOURCE_AUDIENCE§, §MCP_AUTH_ISSUER§ | Provider-aligned client auth |
-| All | §LOG_LEVEL§, §ENVIRONMENT§, §APP_VERSION§ | Redacted logs, traceability |
+| Frontend | `NEXT_PUBLIC_API_BASE_URL` | Public config only |
+| Frontend | `NEXT_PUBLIC_SUPABASE_URL` / publishable key if selected | Public config, **not** secret/service key |
+| API/worker | `DATABASE_URL` | Secret, server only |
+| API | `AUTH_ISSUER`, `AUTH_AUDIENCE`, `AUTH_JWKS_URL` | Verify against chosen auth provider |
+| API | `CORS_ALLOWED_ORIGINS` | Specific HTTPS origins |
+| API/worker | `SOURCE_ALLOWED_FAMILIES`, `FETCH_TIMEOUT_S` | Reviewed adapter policy |
+| Worker | `JOB_LEASE_SECONDS`, `JOB_MAX_ATTEMPTS`, `WORKER_CONCURRENCY` | Bounded and tested |
+| API/worker | `AI_PROVIDER` / provider-specific API key | Secret, only after actual zero-cost provider verified |
+| MCP | `MCP_RESOURCE_AUDIENCE`, `MCP_AUTH_ISSUER` | Provider-aligned client auth |
+| All | `LOG_LEVEL`, `ENVIRONMENT`, `APP_VERSION` | Redacted logs, traceability |
 
-Keep §.env.example§ with names/placeholders, not tokens. Use hosting secrets manager or protected environment; never expose admin/service-role key via §NEXT_PUBLIC_*§. Do not commit real evaluator password, API key or personal token.
+Keep `.env.example` with names/placeholders, not tokens. Use hosting secrets manager or protected environment; never expose admin/service-role key via `NEXT_PUBLIC_*`. Do not commit real evaluator password, API key or personal token.
 
 ## 4. Deployment procedure (once host selected)
 
@@ -55,7 +55,7 @@ Keep §.env.example§ with names/placeholders, not tokens. Use hosting secrets m
 2. Install from lockfile; ensure frontend build, Python imports/type/lint/tests, migration check and API schema generation pass.
 3. Provision database/auth resources with least-privilege secrets; enable and verify RLS where appropriate, while enforcing app-layer workspace checks.
 4. Apply versioned migrations transactionally/with a forward-fix plan; verify schema version, essential indices and constraints.
-5. Deploy API and separate worker (same Python source, different start command). Validate §/health§ and readiness DB probe.
+5. Deploy API and separate worker (same Python source, different start command). Validate `/health` and readiness DB probe.
 6. Deploy frontend with **public** API/Auth configuration; check HTTPS, redirect to login, CORS and cookies/tokens.
 7. Run real bounded source retrieval and competitor teardown through API; confirm worker actually processes queued jobs.
 8. Test persisted profile, graph/report and Counterfactual scenario re-open; create lead, note, follow-up and unsent draft.
