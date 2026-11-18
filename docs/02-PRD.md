@@ -240,7 +240,7 @@ An original, high-quality, editorial landing page with a concise headline, produ
 
 **Navigation:** compact persistent navigation with contextual “Discover → Investigate → Evaluate → Act” transitions. Avoid a crowded multi-dashboard shell. The evidence graph is a primary desktop interaction, but its nodes, links, source citations, and conclusions must remain available in an accessible list/report format.
 
-**Visual direction:** editorial intelligence platform—strong typography, information hierarchy, purposeful motion, refined color system, responsive layouts, polished skeletons, and deliberate empty/error states. Detailed design tokens belong in `docs/12-DESIGN-SYSTEM.md`.
+**Visual direction:** editorial intelligence platform—strong typography, information hierarchy, purposeful motion, refined color system, responsive layouts, polished skeletons, and deliberate empty/error states. Detailed design tokens belong in `docs/13-DESIGN-SYSTEM.md`.
 
 ## 8. AI behavior, truthfulness, and evaluation
 
@@ -374,9 +374,9 @@ These are deliberately **not** fixed in a product PRD:
 
 - [`docs/03-MVP.md`](03-MVP.md) — approved scope, breadth targets, quality gates, and owner-controlled cutlines.
 - [`docs/04-USER-FLOWS.md`](04-USER-FLOWS.md) — detailed journey states, edge cases, errors, and acceptance test scenarios (draft pending approval).
-- [`docs/05-SYSTEM-ARCHITECTURE.md`](05-SYSTEM-ARCHITECTURE.md), `docs/06-DATABASE-DESIGN.md`, `docs/07-API-CONTRACTS.md`.
-- `docs/08-AI-ENGINE.md`, `docs/09-MCP-INTEGRATION.md`, `docs/10-DATA-SOURCES.md`.
-- `docs/11-UI-UX-SPEC.md`, `docs/12-DESIGN-SYSTEM.md`, `docs/13-IMPLEMENTATION-ROADMAP.md`.
+- [`docs/05-SYSTEM-ARCHITECTURE.md`](05-SYSTEM-ARCHITECTURE.md), `docs/07-DATABASE-DESIGN.md`, `docs/08-API-CONTRACTS.md`.
+- `docs/09-AI-ENGINE.md`, `docs/10-MCP-INTEGRATION.md`, `docs/11-DATA-SOURCES.md`.
+- `docs/12-UI-UX-SPEC.md`, `docs/13-DESIGN-SYSTEM.md`, `docs/16-IMPLEMENTATION-ROADMAP.md`.
 - Additional engineering references: testing strategy, deployment runbook, decision log.
 
 ---
