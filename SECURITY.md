@@ -8,6 +8,8 @@ Axiom handles founder product profiles, research evidence, CRM drafts, and exter
 
 **Current limitation:** GitHub Private Vulnerability Reporting has not been enabled for this repository, and no verified private security mailbox has been supplied. Consequently, this repository does **not currently provide a working confidential external intake route**. Do **not** submit sensitive reports, access tokens, exploit details, or personal data through public issues, discussions or PR comments. If you already have an established private contact with the maintainer, use it without publishing details.
 
+**Tracking:** [Issue #3 — enable and verify private vulnerability reporting](https://github.com/ThunderKhan/axiom/issues/3). This is a confirmed outstanding repository-setting dependency, not an implemented feature.
+
 **Required owner configuration before inviting external vulnerability reports:** enable *Private vulnerability reporting* under repository **Settings → Code security and analysis**, verify an external reporter can submit through **Security → Report a vulnerability**, then update this policy and the issue chooser with the tested private report URL. Do not claim that the private reporting feature is live until verified. No production security SLA is claimed.
 
 Include the affected component, impact, reproduction conditions, and a minimal sanitized example. Do not conduct active scans or tests against production or other users' workspaces without explicit permission.
