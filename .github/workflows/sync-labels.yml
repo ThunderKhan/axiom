@@ -1,0 +1,27 @@
+name: Sync repository labels
+
+# Run deliberately once after the governance PR is merged to main.
+# Never run write-scoped automation on untrusted pull_request code.
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  sync-labels:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Checkout default branch without persisted token
+        uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - name: Create/update labels from versioned catalog
+        run: python3 scripts/sync_labels.py
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+          GITHUB_REF: ${{ github.ref }}
