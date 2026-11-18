@@ -501,7 +501,7 @@ sys.exit(0 if result.wasSuccessful() else 1)
 
         def holder():
             try:
-                with gate.locked_test_report(report):
+                with gate.locked_test_report(report, self.root):
                     holding.set()
                     if not release.wait(timeout=4):
                         raise AssertionError("test lock release timeout")
@@ -510,7 +510,7 @@ sys.exit(0 if result.wasSuccessful() else 1)
 
         def waiter():
             try:
-                with gate.locked_test_report(report):
+                with gate.locked_test_report(report, self.root):
                     second_entered.set()
             except BaseException as exc:
                 errors.append(exc)
@@ -621,6 +621,56 @@ sys.exit(0 if result.wasSuccessful() else 1)
         doc = self.write("docs/unicode.md", f"{fence}\rline\u2028continued\r")
         with self.assertRaisesRegex(gate.QualityError, "Unbalanced"):
             gate.check_document_links(self.root, [doc])
+
+
+    def test_unclosed_empty_quote_fence_without_terminal_lf_fails(self):
+        opener = chr(126) * 3
+        invalid = self.write("docs/quote.md", f"> {opener}\n>")
+        with self.assertRaisesRegex(gate.QualityError, "Unbalanced"):
+            gate.check_document_links(self.root, [invalid])
+        valid = self.write("docs/quote.md", f"> {opener}\n> {opener}")
+        self.assertEqual(1, gate.check_document_links(self.root, [valid]))
+
+    def test_custom_bash_shell_syntax_only_bypass_is_rejected(self):
+        import yaml
+        for shell in ("bash -n {0}", "bash -c true {0}", "sh -n {0}"):
+            with self.subTest(shell=shell):
+                data = self.parsed_workflow()
+                app = next(step for step in data["jobs"]["application"]["steps"]
+                           if "quality_gate.py application" in step.get("run", ""))
+                app["shell"] = shell
+                self.check_workflow_mutation(
+                    yaml.safe_dump(data, sort_keys=False),
+                    "must run in a supported command shell",
+                )
+
+    def test_test_report_lock_is_checkout_local_not_tmpdir_dependent(self):
+        report = self.root / "apps/web/build/junit.xml"
+        from unittest.mock import patch as mock_patch
+        with mock_patch("tempfile.gettempdir", return_value="/does-not-exist"):
+            with gate.locked_test_report(report, self.root):
+                locks = list((self.root / ".axiom-quality-locks").glob("*.lock"))
+                self.assertEqual(1, len(locks))
+        with mock_patch("tempfile.gettempdir", return_value="/different-tmpdir"):
+            with gate.locked_test_report(report, self.root):
+                self.assertEqual(locks, list((self.root / ".axiom-quality-locks").glob("*.lock")))
+
+    def test_post_run_symlink_to_stale_junit_report_is_rejected(self):
+        root = self.make_package(manifest="pyproject.toml", lockfile="uv.lock",
+                                 test_file="tests/test_sample.py")
+        source = root / "src/app.ts"
+        report = root / "build/junit.xml"
+        stale = self.write("apps/web/build/old.xml",
+                           '<testsuite><testcase name="stale-pass"/></testsuite>')
+        def fake_run(cmd, *, cwd=None, check=False, **kwargs):
+            if "test" in cmd:
+                report.symlink_to(stale)
+            return subprocess.CompletedProcess(cmd, 0)
+        with patch.object(gate.subprocess, "run", side_effect=fake_run):
+            with self.assertRaisesRegex(gate.QualityError, "symlink"):
+                gate.run_application(self.root, [source])
+        self.assertTrue(report.is_symlink())
+        self.assertTrue(stale.is_file())
 
 
 if __name__ == "__main__":
