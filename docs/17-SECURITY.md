@@ -86,7 +86,7 @@ Evaluator account credentials are shared privately and rotated/revoked after jud
 - [ ] Secrets scan clean; production logs redacted; evaluator creds private.
 - [ ] Rate limits, worker retries and audit events verified.
 
-**Open decisions:** exact identity/MCP OAuth implementation, data retention period, RLS roles, source storage/licensing, CSP/session strategy, backup capabilities, abuse thresholds and incident operator. This is a technical draft, not a certification.
+**Open implementation items:** OAuth 2.1 strategy is approved under [ADR-006](decisions/006-mcp-oauth-and-write-approval.md), but authorization-server choice, consent UX, resource audience tokens and interoperability remain unverified; data retention period, RLS roles, source storage/licensing, CSP/session strategy, backup capabilities, abuse thresholds and incident operator. This is a technical draft, not a certification.
 
 ## 8. Additional controls for 500 active founders
 
@@ -104,3 +104,7 @@ Evaluator account credentials are shared privately and rotated/revoked after jud
 ## 10. Restricted source and broad acquisition threat controls
 
 The founder's [ADR-004](decisions/004-broad-authorized-source-integration.md) approves **investigating and integrating** HN, permitted RSS/Atom, Bluesky, Reddit (if specifically authorized), manual public URLs and additional allowed platforms. It **does not authorize** using private platform APIs, bypassing logins/paywalls, scraping unauthorized endpoints, collecting private communications, enriching profiles with sensitive traits, or ignoring data deletion/attribution rules. Each adapter requires a documented current platform-terms/licensing/retention and quotas review; Reddit SaaS usage is **permission pending**, not assumed free or allowed. Block/disable sources until vetted. Maintain safe URL fetch/SSRF protections, source-content prompt-injection defenses and per-workspace quotas for all enabled connectors. If provider authorization is refused or priced beyond the ₹0 research API budget, report and seek an explicit founder change rather than circumvent.
+
+## 11. Delegated MCP OAuth 2.1 security boundary
+
+[ADR-006](decisions/006-mcp-oauth-and-write-approval.md) approves Authorization Code + PKCE S256, OAuth Protected Resource Metadata, valid authorization-server metadata, intended MCP resource/audience, scope-based user consent and revocation. Supabase Auth identifies Axiom users, **not automatically an MCP OAuth authorization server**. Never accept a token for an unrelated application or forward a user's bearer to external APIs; validate signature/issuer/expiry/audience and account/workspace rights on every call. Read-only clients cannot perform writes; sensitive actions need reviewed confirmation and mutations need idempotency/audit. Test PKCE, issuer mix-up/redirect confusion, wrong-resource token, revoked grants, unauthorized tool scope and multi-tenant IDOR before exposing endpoints. The security design approval is **not** an implementation security certification.
