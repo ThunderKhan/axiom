@@ -2,7 +2,7 @@
 
 **Project:** Axiom  
 **Repository:** [ThunderKhan/axiom](https://github.com/ThunderKhan/axiom)  
-**Last updated:** 18 November 2026 (all six architecture decisions approved; staged capacity gate and scoped documentation approval reconciled)  
+**Last updated:** 18 November 2026 (all six technical decisions and full design direction approved)  
 **Purpose:** Canonical map of product specifications, architectural decisions, and documentation authority for Axiom.
 
 ## Repository-Level Engineering Instructions
@@ -29,7 +29,8 @@ Only documents explicitly approved by the project owner belong in this section. 
 | [`06-TRD.md`](06-TRD.md) | Project-specific technical requirements and 500-founder target | **Approved — requirements baseline (vendor choices open)** |
 | [`10-MCP-INTEGRATION.md`](10-MCP-INTEGRATION.md) | OAuth 2.1 MCP protocol, tool schemas, scopes and guarded writes; live authorization server/client not verified | **Approved — protocol and security architecture only** |
 | [`11-DATA-SOURCES.md`](11-DATA-SOURCES.md) | Broad lawful source acquisition, adapter/provenance policy; individual source permissions not granted | **Approved — integration strategy and access policy only** |
-| [`12-UI-UX-SPEC.md`](12-UI-UX-SPEC.md) | Functional screens, onboarding, evidence/CRM workflows; visual style held | **Approved — functional UX only** |
+| [`12-UI-UX-SPEC.md`](12-UI-UX-SPEC.md) | Functional screens, onboarding, evidence/CRM workflows; styled under approved 13-DESIGN | **Approved — functional UX** |
+| [`13-DESIGN.md`](13-DESIGN.md) | **Directly reuse Edviro landing code**, replace Axiom sections/images and apply ten approved global colors, typography and animation rules | **Approved — design direction v1.0** |
 | [`14-TESTING-STRATEGY.md`](14-TESTING-STRATEGY.md) | Test matrix, security/evidence validation, load test policy | **Approved — testing policy** |
 | [`16-IMPLEMENTATION-ROADMAP.md`](16-IMPLEMENTATION-ROADMAP.md) | Milestones, implementation dependencies and risk sizing | **Approved — planning baseline** |
 | [`17-SECURITY.md`](17-SECURITY.md) | Workspace isolation, source/AI attack boundaries and security tests | **Approved — security policy** |
@@ -37,20 +38,20 @@ Only documents explicitly approved by the project owner belong in this section. 
 
 **Current access requirement:** The product's entry flow is **landing page → login page → authenticated web app**. Fellowship evaluators receive credentials privately and use the normal application. A public guest sandbox or judge-only demo page is **not** required.
 
-## Technical Designs In Review, Active Register, and Design Hold
+## Technical Designs Still In Review and Active Decision Register
 
-**Draft** implementation designs still require final schema, model or selected infrastructure evidence. **ON HOLD** means the Edviro-derived design is waiting for the founder's additional design-system file (the ten-value color palette is already approved). **Scoped approval** of MCP, source policies and capacity design does not certify their provider integration or tested performance. The active decision register is a governance record, not blanket approval of open ADRs.
+**Draft** implementation designs still require final schema, model or selected infrastructure evidence. **The complete Edviro-source-derived design direction and ten-value Axiom palette are now approved**; the landing page should be built by reusing and adapting the clone's actual code. **Scoped approval** of MCP, source policies and capacity design does not certify their provider integration or tested performance. The active decision register is a governance record, not blanket approval of open ADRs.
 
 | Document | Purpose | Status |
 |---|---|---|
 | [`07-DATABASE-DESIGN.md`](07-DATABASE-DESIGN.md) | Data model, workspace-scoped relationships, migrations and evidence versioning | **Draft — in review** |
 | [`08-API-CONTRACTS.md`](08-API-CONTRACTS.md) | REST endpoints, job lifecycle, authentication, typed requests and errors | **Draft — in review** |
 | [`09-AI-ENGINE.md`](09-AI-ENGINE.md) | Source-based scoring, AI extraction, verdicts and counterfactual simulations | **Draft — in review** |
-| [`13-DESIGN.md`](13-DESIGN.md) | Edviro-clone layout, typography and animations; **founder palette approved for whole website/app**; additional design-system input pending | **ON HOLD — full design not approved** |
+
 | [`15-DEPLOYMENT-RUNBOOK.md`](15-DEPLOYMENT-RUNBOOK.md) | Hosting verification, migrations, secrets, smoke tests and rollback | **Draft — in review** |
 | [`DECISIONS.md`](DECISIONS.md) | Active decision register with approved decisions and unresolved vendor/architecture records | **ACTIVE register — not blanket approval of open ADRs** |
 
-**Outstanding review blockers:** `07-DATABASE-DESIGN.md` requires final DDL, RLS and migrations; `08-API-CONTRACTS.md` needs frozen DTOs/OpenAPI and precise errors; `09-AI-ENGINE.md` needs actual Groq/Gemini evaluation, privacy/quota verification and calibrated extraction/decision rules; `15-DEPLOYMENT-RUNBOOK.md` needs selected host plan, working API/worker, backup and OAuth authorization-server deployment evidence. **Approved but not implemented/verified:** MCP's OAuth server/consent/client handshake, each source provider's legal API access (especially Reddit), and actual 100/250/500-user load results. **Design remains ON HOLD** until the founder provides their separate design-system file. No approval asserts working code or provider availability.
+**Outstanding review blockers:** `07-DATABASE-DESIGN.md` requires final DDL, RLS and migrations; `08-API-CONTRACTS.md` needs frozen DTOs/OpenAPI and precise errors; `09-AI-ENGINE.md` needs actual Groq/Gemini evaluation, privacy/quota verification and calibrated extraction/decision rules; `15-DEPLOYMENT-RUNBOOK.md` needs selected host plan, working API/worker, backup and OAuth authorization-server deployment evidence. **Approved but not implemented/verified:** MCP's OAuth server/consent/client handshake, each source provider's legal API access (especially Reddit), and actual 100/250/500-user load results. **Design is approved** for implementation; no additional founder design-system document is required. No approval asserts working code or provider availability.
 
 ## Architecture Decisions
 
@@ -95,7 +96,7 @@ When replacing a previously approved specification:
 
 - **Approved:** Explicitly accepted by the project owner (or reviewed under the owner's delegated approval); authoritative only within its stated scope. Candidate technologies remain candidates.
 - **Draft / In review:** Material implementation choices or evidence unresolved; not implementation authority.
-- **On hold:** Final visual direction awaiting the founder's additional design-system Markdown file; the specified Axiom palette is already approved. Do not finalize yet.
+- **Design approved:** Edviro clone landing-page source may be copied into Axiom and adapted using its exact approved global palette, original Axiom content/assets, responsive structure and motion. Preserve applicable code/font licenses; never reuse unlicensed source imagery.
 - **Active register:** Tracks individually approved and open decisions; its existence is not blanket approval.
 - **Superseded:** Replaced by a newer approved source; historical reference only.
 
