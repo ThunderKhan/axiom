@@ -143,6 +143,23 @@ sys.exit(0 if result.wasSuccessful() else 1)
         with self.assertRaisesRegex(gate.QualityError, "Broken Markdown link"):
             gate.check_document_links(self.root, [doc])
 
+    def test_nested_list_and_quote_fences_are_balanced(self):
+        for body in (
+            "- ```\n  [not a link](missing.md)\n  ```\n",
+            "> ```python\n> print('ok')\n> ```\n",
+            "1. Example\n\n   ````markdown\n   ```\n   ````\n",
+        ):
+            with self.subTest(body=body):
+                doc = self.write("docs/nested.md", body)
+                self.assertEqual(1, gate.check_document_links(self.root, [doc]))
+
+    def test_root_relative_links_resolve_inside_repository(self):
+        doc = self.write("docs/example.md", "[root](/docs/01-INDEX.md)\n")
+        self.assertEqual(1, gate.check_document_links(self.root, [doc]))
+        doc.write_text("[missing](/docs/no-such-file.md)\n")
+        with self.assertRaisesRegex(gate.QualityError, "Broken Markdown link"):
+            gate.check_document_links(self.root, [doc])
+
     def test_unclosed_long_fence_fails(self):
         doc = self.write("docs/open.md", "````python\nprint('broken')\n```\n")
         with self.assertRaisesRegex(gate.QualityError, "Unbalanced Markdown"):
@@ -192,6 +209,15 @@ sys.exit(0 if result.wasSuccessful() else 1)
             "conditionally skip",
         )
 
+    def test_required_application_gate_invocation_cannot_disappear(self):
+        self.check_workflow_mutation(
+            self.original_workflow.replace(
+                "run: python ci/quality_gate.py application",
+                "run: echo application gate missing"
+            ),
+            "does not invoke the application quality gate",
+        )
+
     def test_secret_expression_rejected(self):
         # This is only a synthetic policy test; no actual credential is provided.
         self.check_workflow_mutation(
@@ -227,6 +253,38 @@ sys.exit(0 if result.wasSuccessful() else 1)
             gate.check_application_config(
                 self.root, [self.root / "apps/web/main.go"]
             )
+
+    def test_go_manifest_path_alias_keeps_test_evidence_checks(self):
+        self.make_package(manifest="./go.mod", lockfile="go.sum", test_file="main_test.go")
+        source = self.root / "apps/web/main_test.go"
+        # With the manifest string './go.mod', a zero-exit generic test
+        # previously bypassed the Go-specific -json executed-test policy.
+        with patch.object(gate.subprocess, "run", return_value=subprocess.CompletedProcess([], 0)):
+            with self.assertRaisesRegex(gate.QualityError, "go tests must use go test -json"):
+                gate.run_application(self.root, [source])
+
+    def test_failed_go_command_preserves_diagnostics(self):
+        self.make_package(manifest="go.mod", lockfile="go.sum", test_file="main_test.go")
+        config_file = self.root / "ci/quality.toml"
+        config_file.write_text(
+            config_file.read_text().replace(
+                'test = ["tool", "test"]',
+                'test = ["go", "test", "-json", "./..."]'
+            ), encoding="utf-8",
+        )
+        source = self.root / "apps/web/main_test.go"
+        fake = subprocess.CompletedProcess(
+            args=["go", "test", "-json", "./..."], returncode=1,
+            stdout='{"Action":"fail","Test":"TestBroken"}\n',
+            stderr="assertion: actual != expected\n",
+        )
+        stdout, stderr = io.StringIO(), io.StringIO()
+        with patch.object(gate.subprocess, "run", return_value=fake):
+            with contextlib.redirect_stdout(stdout), contextlib.redirect_stderr(stderr):
+                with self.assertRaises(subprocess.CalledProcessError):
+                    gate.run_application(self.root, [source])
+        self.assertIn("TestBroken", stdout.getvalue())
+        self.assertIn("actual != expected", stderr.getvalue())
 
     def test_go_success_without_executed_tests_is_rejected(self):
         self.make_package(manifest="go.mod", lockfile="go.sum", test_file="main_test.go")
@@ -326,6 +384,13 @@ sys.exit(0 if result.wasSuccessful() else 1)
         with patch.object(gate.subprocess, "run", return_value=subprocess.CompletedProcess([], 0)):
             with self.assertRaisesRegex(gate.QualityError, "missing or oversized"):
                 gate.run_application(self.root, [source])
+
+    def test_junit_rejects_failures_even_with_one_pass(self):
+        report = self.write("apps/web/build/junit.xml",
+                            '<testsuite><testcase name="ok"/>'
+                            '<testcase name="bad"><failure/></testcase></testsuite>')
+        with self.assertRaisesRegex(gate.QualityError, "failed/error tests"):
+            gate.check_junit_test_evidence(report, "web")
 
     def test_junit_rejects_malformed_xml_and_empty_reports(self):
         report = self.write("apps/web/build/junit.xml", "<testsuite>broken")
