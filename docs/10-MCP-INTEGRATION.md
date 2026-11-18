@@ -29,7 +29,7 @@ flowchart LR
 
 ## 3. Authentication and approval
 
-**Undecided:** compliant OAuth 2.1/resource-server authorization (including protected resource metadata where required) versus a carefully designed user-authorized, revocable scoped integration token. A browser auth JWT is **not automatically suitable** as an MCP third-party access token; verify intended audience and token purpose. Reject expired, wrong-issuer, wrong-audience and unauthorized tokens. Do not expose Supabase service-role keys.
+**Approved ([ADR-006](decisions/006-mcp-oauth-and-write-approval.md)): OAuth 2.1**, not personal tokens or a hybrid initial credential model. Use Authorization Code + PKCE (S256), protected resource metadata, compatible authorization-server discovery, audience-bound access tokens, client-specific scopes, user consent and revocation. **Supabase Auth authenticates Axiom users but is not automatically a compatible MCP OAuth authorization server**. Select an appropriate authorization server/broker and securely link to Supabase identities. Reject unrelated browser JWTs, expired/invalid or wrong-audience tokens, and unauthorized tool scopes. Never expose privileged Supabase credentials.
 
 Proposed scopes: `research:read`, `research:run`, `evidence:read`, `scenarios:read`, `scenarios:write`, `crm:read`, `crm:write`, `workspaces:list`.
 
@@ -107,4 +107,8 @@ Handle client connection interruption and retries without duplicate write; audit
 | Client asks to send cold email | No send tool/unsupported |
 | Real external client invokes five P0 tools | Actual domain responses, not fixtures masquerading as live |
 
-**Open:** exact OAuth/token flow, resource metadata/audience, client support, user approval UX for CRM writes, polling and cancellation, MCP SDK pinned versions and hosting topology. **Do not expose write tools until these have an explicit secure resolution.**
+**Approved strategy:** OAuth 2.1 user-delegated clients ([ADR-006](decisions/006-mcp-oauth-and-write-approval.md)). **Still open:** authorization-server selection, actual metadata/PKCE integration, consent/revocation UI, additional confirmation UX for sensitive writes, real MCP client support, polling/cancellation and SDK version pinning. **Do not expose write tools until these have an explicit secure resolution.**
+
+## 9. OAuth 2.1 authorization contract — approved decision 5 of 6
+
+Required end-to-end: remote MCP client discovers OAuth Protected Resource Metadata → compatible authorization-server metadata → Authorization Code + PKCE S256, requested resource and scopes → founder login and consent → audience-bound access token → MCP server verifies issuer/signature/expiry/audience/scopes → shared FastAPI domain verifies workspace membership and object authorization on **every** tool call. Select authorization server/broker compatible with Supabase user identity; a regular Supabase login token is not a substitute. Choose client registration/discovery according to pinned MCP revision and actual external-client compatibility. Read-only clients cannot call `save_lead`; scoped `crm:write` requires explicit consent/idempotency/audit, with separately reviewed confirmation for higher-risk mutations. Test PKCE, metadata, token denial/revocation, cross-tenant calls, consented writes, and a real external client. This document remains DRAFT until implemented and tested. See [current MCP authorization spec](https://modelcontextprotocol.io/specification/2026-07-28/basic/authorization) and [MCP Python SDK](https://py.sdk.modelcontextprotocol.io/run/authorization/).
