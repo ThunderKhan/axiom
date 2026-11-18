@@ -1,7 +1,7 @@
 # Axiom — Technical Requirements Document (TRD)
 
-**Status:** DRAFT — requires owner review  
-**Version:** 0.1 · **Date:** 18 November 2026 · **Release:** 26 November 2026, 23:59 IST  
+**Status:** APPROVED — technical requirement baseline; vendor/hosting choices remain unapproved  
+**Version:** 1.0 · **Date:** 18 November 2026 · **Release:** 26 November 2026, 23:59 IST  
 **Authority:** [PRD](02-PRD.md) · [MVP](03-MVP.md) · [User Flows](04-USER-FLOWS.md) · [System Architecture](05-SYSTEM-ARCHITECTURE.md)
 
 ## 1. Scope, precedence and terminology
@@ -127,3 +127,15 @@ Targets below are **proposals until benchmarked**; do not advertise them as achi
 **Approval:** Technology choices and targets remain proposed until reviewed; architectural direction approved on 18 November 2026 does not imply any hosted provider or specific library has been tested.
 
 **Official implementation references:** [Next.js supported releases](https://nextjs.org/support-policy), [Supabase JWT](https://supabase.com/docs/guides/auth/jwts), [Supabase RLS](https://supabase.com/docs/guides/database/postgres/row-level-security), [MCP Python SDK](https://github.com/modelcontextprotocol/python-sdk).
+
+## 11. Owner-requested capacity target: 500 concurrent founders
+
+**TRD-CAP-01:** Design for at least **500 concurrently active, authenticated founders**, not 500 unlimited simultaneous external AI/crawler jobs. The 500-user target concerns active sessions and responsive normal workflows; expensive research uses bounded, fair asynchronous jobs with truthful status/quotas.
+
+**TRD-CAP-02:** Implement and benchmark **25 requests/s** steady and **50 requests/s** heavier interactive traffic as initial *model assumptions* (not measured production traffic), with 500 simulated active identities/workspaces. Profile p95 DB-backed reads, CRM writes, job acceptance, error rates, queue wait, DB connections, worker capacity and source/model quota.
+
+**TRD-CAP-03:** No service may open one DB connection per founder; stateless API, pooled connections, indexed workspace queries, bounded worker concurrency and jittered/backoff job polling are required. Denial-of-service and cross-tenant correctness tests remain release blockers.
+
+**TRD-CAP-04:** This capacity objective cannot be marketed as **achieved** until the selected deployment passes the reproducible load/soak/failure test in [18-SCALABILITY.md](18-SCALABILITY.md). Whether 500 verified users is a hard November 26 gate or a later capacity milestone remains a founder decision; it is **not silently a waived objective**.
+
+**Approval boundary:** Owner-approved TRD requirements and architecture direction are authoritative; every technology labeled candidate/proposed stays contingent on real provider, cost, license, and deployability evidence. Approval does not claim a built backend or 500-user capacity.
