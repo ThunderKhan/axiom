@@ -2,7 +2,7 @@
 
 **Status:** ON HOLD — design reference draft; **not approved**  
 **Version:** 0.1 · **Prepared:** 18 November 2026  
-**File:** \`docs/13-DESIGN.md\`  
+**File:** `docs/13-DESIGN.md`  
 **Reference implementation:** [ThunderKhan/edviro-clone](https://github.com/ThunderKhan/edviro-clone), specifically [DESIGN.md](https://github.com/ThunderKhan/edviro-clone/blob/main/DESIGN.md), [visual-specification.md](https://github.com/ThunderKhan/edviro-clone/blob/main/docs/visual-specification.md), [motion-forensics.md](https://github.com/ThunderKhan/edviro-clone/blob/main/docs/motion-forensics.md), [interaction-state-machines.md](https://github.com/ThunderKhan/edviro-clone/blob/main/docs/interaction-state-machines.md), [Home.tsx](https://github.com/ThunderKhan/edviro-clone/blob/main/src/components/sites/edviro/Home.tsx), and [globals.css](https://github.com/ThunderKhan/edviro-clone/blob/main/src/app/globals.css).
 
 **Design ownership:** Founder will supply an additional, authoritative design-system Markdown file and final colors. **Do not lock brand colors or mark this document approved until that material is supplied, reconciled, and explicitly approved.** This draft records measurable structural and motion references already available in the Edviro clone.
@@ -59,7 +59,7 @@ Other reference spacing steps include 6, 8, 10, 12, 14, 16, 20, 24, 28, 32, 36, 
 
 Define semantic tokens now, set values only after the founder supplies them:
 
-\`\`\`css
+```css
 :root {
   --color-canvas: unset;        /* founder palette pending */
   --color-surface: unset;
@@ -77,7 +77,7 @@ Define semantic tokens now, set values only after the founder supplies them:
   --color-hypothesis: unset;
   --color-focus: unset;
 }
-\`\`\`
+```
 
 These placeholders describe required roles, **not executable production CSS to merge as-is**. Verify contrast ratios on selected colors, including source/citation labels and graph/decision states; do not convey evidence reliability by color alone.
 
@@ -129,7 +129,7 @@ Reference [motion forensics](https://github.com/ThunderKhan/edviro-clone/blob/ma
 | Header | Scroll direction | Hides downward, returns upward; ~350ms ease |
 | FAQ | User click | Semantic native details/summary; initially one item may be open; independent toggles |
 
-Do **not** add Lenis/inertial scrolling, generic spring physics, blur-to-focus entrances, automatic tab rotation or continuous workflow autoplay. Clone evidence specifically did not observe those behaviors on the homepage. Reuse the clone's animation patterns selectively and honor \`prefers-reduced-motion\` (skip parallax/stack motion and show content immediately).
+Do **not** add Lenis/inertial scrolling, generic spring physics, blur-to-focus entrances, automatic tab rotation or continuous workflow autoplay. Clone evidence specifically did not observe those behaviors on the homepage. Reuse the clone's animation patterns selectively and honor `prefers-reduced-motion` (skip parallax/stack motion and show content immediately).
 
 The separate autonomous 13-step work-order demo on an Edviro *secondary route* is not part of Axiom's landing-page motion system; do not carry over facilities-domain autoplay or fake actions. Motion for graph investigations is different: evidence interactions must be task-driven, keyboard-operable, and never delay critical research.
 
@@ -144,15 +144,15 @@ The separate autonomous 13-step work-order demo on an Edviro *secondary route* i
 
 | Reference code | Role | Reuse/adaptation |
 |---|---|---|
-| \`src/app/globals.css\` | Typography, geometry, motion primitives, media queries | Extract geometry/motion tokens; **replace all colors later** |
-| \`src/components/sites/edviro/Home.tsx\` | Header, Hero, Dashboard, Stats, Workflow, Platform, Buildings, Results, Integrations, FAQ, CTA, Footer composition | Derive Axiom components and content; only keep interactions appropriate to function |
-| \`src/components/sites/edviro/data.ts\` | Menu groups and section data | Replace with Axiom navigation, workflows, use cases and FAQ |
-| \`docs/visual-specification.md\` | Measured desktop/mobile bounding boxes | Use as geometry QA baseline |
-| \`docs/motion-forensics.md\` | Timing/driver observations | Establish animation regression checklist |
-| \`docs/interaction-state-machines.md\` | Hover/focus/scroll/menu behavior | Map to actual Axiom interactions |
-| \`src/app/layout.tsx\` | Geist preload and layout | Adapt font loading to Axiom, preserve license |
-| \`src/components/ui/button.tsx\` | CTA component structure | Adapt capsules and states, check accessibility |
-| \`tests/\` and visual comparison scripts | Regression methods | Reuse methodology and allowed code, not Edviro copyrighted visuals |
+| `src/app/globals.css` | Typography, geometry, motion primitives, media queries | Extract geometry/motion tokens; **replace all colors later** |
+| `src/components/sites/edviro/Home.tsx` | Header, Hero, Dashboard, Stats, Workflow, Platform, Buildings, Results, Integrations, FAQ, CTA, Footer composition | Derive Axiom components and content; only keep interactions appropriate to function |
+| `src/components/sites/edviro/data.ts` | Menu groups and section data | Replace with Axiom navigation, workflows, use cases and FAQ |
+| `docs/visual-specification.md` | Measured desktop/mobile bounding boxes | Use as geometry QA baseline |
+| `docs/motion-forensics.md` | Timing/driver observations | Establish animation regression checklist |
+| `docs/interaction-state-machines.md` | Hover/focus/scroll/menu behavior | Map to actual Axiom interactions |
+| `src/app/layout.tsx` | Geist preload and layout | Adapt font loading to Axiom, preserve license |
+| `src/components/ui/button.tsx` | CTA component structure | Adapt capsules and states, check accessibility |
+| `tests/` and visual comparison scripts | Regression methods | Reuse methodology and allowed code, not Edviro copyrighted visuals |
 
 Implementation policy: **reference the clone's source but do not import Edviro components as runtime dependencies**; author independent Axiom components so product-specific UI and data types remain clean. Confirm license of reusable source code and separately confirm all assets.
 
@@ -172,6 +172,6 @@ Implementation policy: **reference the clone's source but do not import Edviro c
 2. Resolve conflicts between that design system and the Edviro-derived structural reference (founder decides).
 3. Select permitted assets and confirm licensing.
 4. Review sample Axiom desktop/mobile compositions and focus/reduced-motion behavior.
-5. Explicitly approve \`docs/13-DESIGN.md\`.
+5. Explicitly approve `docs/13-DESIGN.md`.
 
 **Authority boundary:** This draft does not supersede approved functional PRD/MVP/user flows, and it does not turn Edviro-specific visual demos into Axiom implementation requirements.

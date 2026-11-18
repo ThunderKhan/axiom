@@ -597,8 +597,12 @@ Do **not** create approved ADR claims merely from this draft. Record selected al
 - FastAPI documentation: https://fastapi.tiangolo.com/
 - PostgreSQL `SKIP LOCKED` behavior: https://www.postgresql.org/docs/current/sql-select.html
 
-**Next detailed design files (not approved yet):** `06-TRD.md` (technical requirements), `07-DATABASE-DESIGN.md`, `08-API-CONTRACTS.md`, `09-AI-ENGINE.md`, `10-MCP-INTEGRATION.md`, `11-DATA-SOURCES.md`, `12-UI-UX-SPEC.md` and `13-DESIGN-SYSTEM.md`. Keep these aligned with approved product specs and record any architecture change before building incompatible code.
+**Next detailed design files (not approved yet):** `06-TRD.md` (technical requirements), `07-DATABASE-DESIGN.md`, `08-API-CONTRACTS.md`, `09-AI-ENGINE.md`, `10-MCP-INTEGRATION.md`, `11-DATA-SOURCES.md`, `12-UI-UX-SPEC.md` and `13-DESIGN.md`. Keep these aligned with approved product specs and record any architecture change before building incompatible code.
 
 ---
 
 **Approval request:** Review the **modular backend + independently runnable worker**, **PostgreSQL evidence model and job strategy**, **API-first authorization**, **LLM fallback behavior**, and **hosting feasibility gates**. Approval record: approved as an architectural direction on 18 November 2026; individual vendor, hosting and protocol choices require their separate verification gates and ADRs.
+
+## 21. Owner-requested concurrent-founder capacity target
+
+The founder additionally requests architecture capable of serving **500 simultaneously active, authenticated founders**. This is an explicit **capacity design objective**, not tested throughput. Keep FastAPI stateless, PostgreSQL connections pooled, source and AI tasks in bounded durable research jobs, cache workspace-scoped reads safely and use jittered/backoff polling to avoid synchronized request storms. See [18-SCALABILITY.md](18-SCALABILITY.md) for workload assumptions, initial 25–50 requests/s test envelope, queue fairness, load/soak testing and the required evidence before capacity can be claimed. Whether verified 500-user capacity is a hard November 26 launch gate remains an explicit founder decision. **No load benchmark has been run.**

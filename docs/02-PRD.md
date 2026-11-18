@@ -240,7 +240,7 @@ An original, high-quality, editorial landing page with a concise headline, produ
 
 **Navigation:** compact persistent navigation with contextual “Discover → Investigate → Evaluate → Act” transitions. Avoid a crowded multi-dashboard shell. The evidence graph is a primary desktop interaction, but its nodes, links, source citations, and conclusions must remain available in an accessible list/report format.
 
-**Visual direction:** editorial intelligence platform—strong typography, information hierarchy, purposeful motion, refined color system, responsive layouts, polished skeletons, and deliberate empty/error states. Detailed design tokens belong in `docs/13-DESIGN-SYSTEM.md`.
+**Visual direction:** editorial intelligence platform—strong typography, information hierarchy, purposeful motion, refined color system, responsive layouts, polished skeletons, and deliberate empty/error states. Detailed design tokens belong in `docs/13-DESIGN.md`.
 
 ## 8. AI behavior, truthfulness, and evaluation
 
@@ -278,6 +278,8 @@ An original, high-quality, editorial landing page with a concise headline, produ
 | **Testability** | Unit, API, data-layer, AI-schema, security, and Playwright E2E tests for core journeys |
 | **Data isolation** | Authenticated user and evaluator workspace isolation, workspace-authorization tests, and no cross-tenant access |
 | **Cost** | **₹0 planned external API expenditure**; use legitimate free tiers/open-source and enforce request quotas. Hosting and available quota must be confirmed before claiming zero operating cost. |
+
+**Owner-requested capacity goal (added 18 November 2026):** Axiom should be designed for **500 concurrently active authenticated founders**. This is **not** a claim of measured capacity, nor an implied promise of 500 simultaneous costly research jobs at ₹0. Workload definition and provisional benchmarks are in [18-SCALABILITY.md](18-SCALABILITY.md); release-gate status awaits explicit owner decision and actual hosting/load-test evidence.
 
 ## 11. Scope reconciliation: vision versus November 26 delivery
 
@@ -378,10 +380,11 @@ These are deliberately **not** fixed in a product PRD:
 - [`docs/04-USER-FLOWS.md`](04-USER-FLOWS.md) — detailed journey states, edge cases, errors, and acceptance test scenarios (draft pending approval).
 - [`docs/05-SYSTEM-ARCHITECTURE.md`](05-SYSTEM-ARCHITECTURE.md), `docs/07-DATABASE-DESIGN.md`, `docs/08-API-CONTRACTS.md`.
 - `docs/09-AI-ENGINE.md`, `docs/10-MCP-INTEGRATION.md`, `docs/11-DATA-SOURCES.md`.
-- `docs/12-UI-UX-SPEC.md`, `docs/13-DESIGN-SYSTEM.md`, `docs/16-IMPLEMENTATION-ROADMAP.md`.
+- `docs/12-UI-UX-SPEC.md`, `docs/13-DESIGN.md`, `docs/16-IMPLEMENTATION-ROADMAP.md`.
 - [`docs/14-TESTING-STRATEGY.md`](14-TESTING-STRATEGY.md) — executable acceptance and security validation.
 - [`docs/15-DEPLOYMENT-RUNBOOK.md`](15-DEPLOYMENT-RUNBOOK.md) — host, secrets, migrations and release operations.
-- [`docs/17-SECURITY.md`](17-SECURITY.md), [`docs/DECISIONS.md`](DECISIONS.md), [`docs/T-shirt.md`](T-shirt.md) — threats, decisions and effort sizing.
+- [`docs/17-SECURITY.md`](17-SECURITY.md), [`docs/DECISIONS.md`](DECISIONS.md) — security and decision register.
+- [`docs/18-SCALABILITY.md`](18-SCALABILITY.md) — proposed validation of 500 concurrently active founders.
 
 ---
 
