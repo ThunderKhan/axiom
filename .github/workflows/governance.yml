@@ -1,0 +1,35 @@
+name: Governance
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: governance-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  configuration:
+    name: Governance / configuration
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout (no persisted credentials)
+        uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - name: Set up Python
+        uses: actions/setup-python@v7
+        with:
+          python-version: '3.12'
+      - name: Install pinned YAML validator
+        run: python -m pip install --disable-pip-version-check 'PyYAML==6.0.3'
+      - name: Verify governance configuration and label-sync safety
+        run: python -m unittest discover -s tests/ci -p 'test_*sync_labels.py' -v
+      - name: Verify CodeRabbit and issue form configuration
+        run: python -m unittest discover -s tests/ci -p 'test_governance_config.py' -v
