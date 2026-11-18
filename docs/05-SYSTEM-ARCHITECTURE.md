@@ -29,8 +29,8 @@ This document proposes the technical **how** for the already approved product **
 |---|---|---|
 | A-01 | Modular FastAPI backend rather than distributed microservices | Proposed |
 | A-02 | Next.js + TypeScript web application | Proposed |
-| A-03 | Managed PostgreSQL, likely via Supabase, as durable primary store | Proposed |
-| A-04 | Supabase Auth as preferred initial identity provider | Proposed |
+| A-03 | **Supabase-hosted PostgreSQL** as durable primary store | **Approved — ADR-002; not yet deployed/benchmarked** |
+| A-04 | **Supabase Auth** for authentication and session issuance | **Approved — ADR-002; configuration unverified** |
 | A-05 | Long-running research executed by an independent process from the same Python codebase, with a durable PostgreSQL job queue | Proposed |
 | A-06 | Typed, evidence-first relational records/edges; no graph database initially | Proposed |
 | A-07 | Provider-agnostic structured LLM adapter with deterministic fallbacks, zero planned paid API use | Proposed |
@@ -107,9 +107,9 @@ flowchart TD
 |---|---|---|---|
 | Product frontend | Next.js, React, TypeScript | Existing skills, cohesive public and authenticated product, responsive rich interaction | Avoid locking framework version before dependency/hosting compatibility check |
 | API and domain | Python FastAPI, Pydantic | Typed API contracts, research/AI ecosystem, service boundaries | Verify deployment/worker behavior |
-| Storage | PostgreSQL (managed Supabase candidate) | Strong transactions, relational integrity, JSONB where necessary | Check free quota, connection/pooling behavior and long-running job viability |
-| Identity | Supabase Auth candidate | Provisioned evaluator login and managed sessions | Exact session flow, JWKS verification and account provisioning must be proven |
-| Data access/migrations | SQLAlchemy/SQLModel or explicit SQL, Alembic or SQL migrations | Testable domain transactions and controlled migrations | Choose **one** data access convention, not two competing ORMs |
+| Storage | **Supabase-hosted PostgreSQL (approved choice)** | Strong transactions, relational integrity, JSONB where necessary | Check free quota, connection/pooling behavior and long-running job viability |
+| Identity | **Supabase Auth (approved choice)** | Provisioned evaluator login and managed sessions | Exact session flow, JWKS verification and account provisioning must be proven |
+| Data access/migrations | **SQLAlchemy 2.x + Alembic (approved choice)** | Typed repositories, transactions and versioned migrations | Prove migrations, DB pool and role isolation |
 | Async work | PostgreSQL-backed jobs with leased worker | No Redis/Kafka requirement; durable state and retries | If free worker infeasible, run bounded tasks with explicit timeout/status |
 | Public-source adapters | HN public API, selected RSS/Atom, Bluesky if independently validated; public URL input | Permitted acquisition and observable data provenance | HN official API is item-oriented, not a general full-text search engine; adapter needs an honest indexing/query strategy |
 | Competitor extraction | Safe HTTP HTML fetch + constrained text extraction; selective crawl tooling only if needed | Bound network and content risk | JS-heavy and blocked pages may remain unknown |
@@ -179,7 +179,7 @@ This is a **module boundary sketch**, not a mandate to create all empty folders 
 
 ## 5. Data architecture and persistence rules
 
-**Database selection is proposed, not final.** Relational storage is adequate for an inspectable evidence graph at this scale; the graph is a set of typed, attributable relationships over source-backed records.
+**Database technology/hosting provider is selected in [ADR-002](decisions/002-authentication-database-and-api-boundary.md), but provisioned infrastructure and exact schema are not verified.** Relational storage is adequate for an inspectable evidence graph at this scale; the graph is a set of typed, attributable relationships over source-backed records.
 
 ### 5.1 Conceptual entities and ownership
 
@@ -233,7 +233,7 @@ This is a **module boundary sketch**, not a mandate to create all empty folders 
 
 Use Row Level Security (RLS) where relevant as an additional tenant boundary, but **do not assume RLS protects server operations made with privileged credentials**. Supabase secret/service-role credentials can bypass RLS, so privileged backend and worker operations must enforce workspace policy explicitly, ideally using least-privileged DB connections and automated negative tests. Never expose secret/service keys to the browser.
 
-**Proposed default:** API owns privileged writes and enforces domain policy, with RLS defense-in-depth if direct client DB access is allowed. Decide whether all browser data goes through FastAPI (simpler unified authorization/contract) versus a deliberate split using Supabase client access (more surface area) before coding. Prefer **all domain data via FastAPI** for consistency with MCP.
+**Approved via [ADR-002](decisions/002-authentication-database-and-api-boundary.md):** All browser, HTTP and MCP **domain-data** reads/writes go through FastAPI. Supabase's public client SDK may handle browser authentication only; no direct browser domain-table reads/writes. Apply app-layer ownership checks to every private operation and RLS as defense in depth where applicable, including server privileged-credential bypass tests.
 
 ### 6.3 Authorization matrix (initial)
 
@@ -552,7 +552,7 @@ These checkpoints are **planned**, not completed work. Failures require an expli
 
 1. **Host reality:** Which truly free, compatible combination can run **frontend + FastAPI + live worker** through judging, with outbound HTTPS, persistent HTTPS endpoint, database connectivity, and no unavoidable credit card?
 2. **Authentication choice:** Supabase Auth plus API JWT verification, and evaluator account issuance/revocation — confirm exact production configuration.
-3. **DB isolation:** API-only data access versus hybrid direct Supabase client access; recommend API-only domain writes plus RLS defense-in-depth.
+3. **DB isolation:** API-only domain data access is **approved in ADR-002**. Verify JWT, workspace scope, privileged RLS bypass and production migrations.
 4. **Queue execution:** PostgreSQL job leasing with worker probe versus alternate genuinely durable free job mechanism.
 5. **Third source family:** Which source passes terms, authenticity, quota, and usefulness checks after HN/RSS? No automatic assumption that Bluesky or Reddit integration is permitted/working.
 6. **Actual AI model:** Identify provider, quota, model output support and fit for cited extraction; run a reproducible evaluation. Deterministic fallback is not falsely labeled as AI reasoning.
