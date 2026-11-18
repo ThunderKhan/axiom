@@ -1,6 +1,6 @@
 # Axiom — System Architecture
 
-**Document path:** `docs/SystemArchitecture.md`  
+**Document path:** `docs/05-SYSTEM-ARCHITECTURE.md`  
 **Project:** Axiom — AI-native market and competitive intelligence  
 **Program:** YARC Builder Fellowship 2027, Track 04 (Acquire + Differentiate)  
 **Version:** 0.1 — architecture proposal  
@@ -157,7 +157,7 @@ axiom/
 │   ├── 02-PRD.md
 │   ├── 03-MVP.md
 │   ├── 04-USER-FLOWS.md
-│   └── SystemArchitecture.md
+│   └── 05-SYSTEM-ARCHITECTURE.md
 └── infra/                        # environment examples and deployment config
 ```
 

@@ -34,7 +34,7 @@ Entries marked **Draft — in review** exist but are **not approved implementati
 
 | Planned document | Purpose | Status |
 |---|---|---|
-| [`SystemArchitecture.md`](SystemArchitecture.md) | Logical/component architecture, identity, research/AI worker, evidence data, HTTP/MCP boundaries and deployment feasibility | **Draft — in review** |
+| [`05-SYSTEM-ARCHITECTURE.md`](05-SYSTEM-ARCHITECTURE.md) | Logical/component architecture, identity, research/AI worker, evidence data, HTTP/MCP boundaries and deployment feasibility | **Draft — in review** |
 | `06-DATABASE-DESIGN.md` | Data model, relationships, isolation, migrations, retention | Planned |
 | `07-API-CONTRACTS.md` | HTTP APIs, schemas, authentication, error contracts | Planned |
 | `08-AI-ENGINE.md` | Discovery, scoring, evidence assessment, simulation, evaluation | Planned |
