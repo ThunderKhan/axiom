@@ -85,10 +85,11 @@ No future revenue/causal change prediction without rigorous independent data.
 
 Define `ModelAdapter` by task, prompt-template version, bounded input excerpts, structured output schema, per-call timeout, quota, provider/model identifier and trace ID. Inputs must exclude secrets, private evaluator credentials and unnecessary personal data.
 
-- Verify a legitimate **free** provider and quota with actual call; no model is selected/connected merely by being named in docs.
+- **Approved provider strategy ([ADR-005](decisions/005-ai-inference-providers.md)):** Groq primary and Gemini as a **conditional** secondary route. Verify actual no-charge models, privacy/retention terms, model/schema support and real calls; neither provider is claimed implemented merely by naming it.
+- Classify each request as `public_source_only`, `founder_private` or `mixed_unknown`; the latter defaults to private. Minimize data and **never silently send confidential founder context to Gemini free tier** without current terms permitting it and necessary user authorization.
 - Pydantic/JSON validation required; limited retry/repair; enforce bounded tokens/concurrency.
 - Cache by profile version + source snapshot digest + schema/prompt version where allowed.
-- If provider unavailable, use deterministic rule fallback **labeled no model used/degraded**; not pretend model-assisted analysis occurred.
+- On Groq 429/timeout/unavailability, route to Gemini **only if policy, consent and quota gates pass**; otherwise use deterministic/manual fallback **labeled no model used/degraded** or explicit blocked state, never pretend AI analysis occurred.
 - Failures show real source/model error states. Model never autonomously sends messages or bypasses workspace policy.
 - Retrieved texts wrapped as untrusted data. Prompt injection should not modify system/tool instructions; server validates outputs independently.
 
@@ -100,4 +101,8 @@ Measure relevant precision@k, intent/fit confusion, false-positive rejection, ci
 
 Ship gates: 100% of material competitor facts source-cited or explicitly marked unverified; fixtures/hypotheses labeled; no knowingly fabricated source URL; negative verdict and abstention demonstrated; seeded vs actual live integrations clearly separated.
 
-**Open:** chosen LLM/provider, quota and licenses, evaluated thresholds, optional embeddings, exact claim entailment validator, source retention and how to handle stale external content.
+**Open:** Groq/Gemini provider **strategy is chosen** ([ADR-005](decisions/005-ai-inference-providers.md)); exact model IDs, plan-specific data-use/retention policies, live calls, legitimate free quotas, output performance, thresholds, entailment validator, source retention and stale-source handling remain unverified.
+
+## 10. Provider router acceptance (decision 3 of 6)
+
+The worker calls a typed model adapter with per-request classification, minimized source excerpts and a versioned output schema. Try eligible Groq first; on failure, check **current Gemini data-use terms and explicit consent where required** before sending. Mixed/confidential inputs never silently fail over. Both outputs pass Pydantic validation, source ID/locator checks, and the deterministic negative/abstention guardrails; provider switches cannot change authorization. Tests must cover public permitted fallback, private blocked fallback, provider 429/quota, malformed JSON, fake citations, prompt injection, redacted logs, zero paid API charges and clear degraded mode. No actual model calls are claimed by this document.
