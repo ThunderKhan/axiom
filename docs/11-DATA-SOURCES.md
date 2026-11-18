@@ -1,6 +1,6 @@
 # Axiom — Data Sources, Access and Provenance
 
-**Status:** DRAFT — in review · **Version:** 0.1 · **Date:** 18 November 2026  
+**Status:** APPROVED — lawful acquisition strategy, provenance and adapter policy; **individual provider permissions/live integrations NOT verified** · **Version:** 1.0 · **Approved:** 18 November 2026  
 **Authority:** [PRD](02-PRD.md), [MVP](03-MVP.md), [System Architecture](05-SYSTEM-ARCHITECTURE.md), [AI Engine](09-AI-ENGINE.md)
 
 **Founder-approved acquisition strategy:** [ADR-004](decisions/004-broad-authorized-source-integration.md) — Option C (broad multi-platform sources), not a source-permission or live-integration approval.
@@ -122,3 +122,7 @@ The founder chose **Option C** in [ADR-004](decisions/004-broad-authorized-sourc
 Track *enabled*, *failed*, *blocked by policy*, *permission pending*, *seeded/cached*, and *live verified* independently. Count only real, separate permitted source families toward P0/R0 gates; do not count several RSS feeds as several source **families** or manual URL entry as a distinct platform integration. All newly enabled families must use the same normalized source schema, canonical dedupe, validation, quota, attribution and data-retention review.
 
 **Risks and escalation:** Broad integration scope increases time/quality/privacy risk before November 26. Implement reusable adapter contracts and genuine sources in a deliberate order **without quietly cancelling Reddit/additional-platform targets**. When platform access cannot be established lawfully within the ₹0 external research API constraint, record the exact blocker and seek founder scope guidance rather than scrape or fabricate availability.
+
+## 11. Formal source policy and strategy approval scope
+
+**Approved as an acquisition policy/adapter design:** broad, permission-gated multi-platform target under [ADR-004](decisions/004-broad-authorized-source-integration.md), normalized provenance schema, source registry, SSRF safety, per-provider legal/terms/quotas checks, honest cached/seeded/live states, P0 two genuine permitted family verification floor and R0 three-plus families with additional authorized breadth. **Not approved as available or shipped:** any individual provider's current permission, pricing, access token, RSS publisher rights, Reddit SaaS use, third-party content retention/redisplay, actual source quality/recall, production quotas or live integrated functionality. Source adapters remain disabled until their independently recorded authorization and real test results satisfy the gating policy. Review and approve provider-specific records separately. This approval is **not permission to scrape restricted services or pay external research API fees**.
