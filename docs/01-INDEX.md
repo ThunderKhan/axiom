@@ -2,7 +2,7 @@
 
 **Project:** Axiom  
 **Repository:** [ThunderKhan/axiom](https://github.com/ThunderKhan/axiom)  
-**Last updated:** 18 November 2026 (founder palette approved; remaining technical decisions in review)  
+**Last updated:** 18 November 2026 (all six architecture decisions approved; staged capacity gate and scoped documentation approval reconciled)  
 **Purpose:** Canonical map of product specifications, architectural decisions, and documentation authority for Axiom.
 
 ## Repository-Level Engineering Instructions
@@ -27,38 +27,45 @@ Only documents explicitly approved by the project owner belong in this section. 
 | [`04-USER-FLOWS.md`](04-USER-FLOWS.md) | 15 concrete user journeys, onboarding branching, error states, and test traceability | **Approved — v1.0** |
 | [`05-SYSTEM-ARCHITECTURE.md`](05-SYSTEM-ARCHITECTURE.md) | Approved modular system design, data and worker boundaries; vendors still pending verification | **Approved — v1.0** |
 | [`06-TRD.md`](06-TRD.md) | Project-specific technical requirements and 500-founder target | **Approved — requirements baseline (vendor choices open)** |
+| [`10-MCP-INTEGRATION.md`](10-MCP-INTEGRATION.md) | OAuth 2.1 MCP protocol, tool schemas, scopes and guarded writes; live authorization server/client not verified | **Approved — protocol and security architecture only** |
+| [`11-DATA-SOURCES.md`](11-DATA-SOURCES.md) | Broad lawful source acquisition, adapter/provenance policy; individual source permissions not granted | **Approved — integration strategy and access policy only** |
 | [`12-UI-UX-SPEC.md`](12-UI-UX-SPEC.md) | Functional screens, onboarding, evidence/CRM workflows; visual style held | **Approved — functional UX only** |
 | [`14-TESTING-STRATEGY.md`](14-TESTING-STRATEGY.md) | Test matrix, security/evidence validation, load test policy | **Approved — testing policy** |
 | [`16-IMPLEMENTATION-ROADMAP.md`](16-IMPLEMENTATION-ROADMAP.md) | Milestones, implementation dependencies and risk sizing | **Approved — planning baseline** |
 | [`17-SECURITY.md`](17-SECURITY.md) | Workspace isolation, source/AI attack boundaries and security tests | **Approved — security policy** |
+| [`18-SCALABILITY.md`](18-SCALABILITY.md) | 500-founder architecture; 100/250 preliminary tests before Nov 26, full 500 test before broad production | **Approved — capacity design and staged release gates only** |
 
 **Current access requirement:** The product's entry flow is **landing page → login page → authenticated web app**. Fellowship evaluators receive credentials privately and use the normal application. A public guest sandbox or judge-only demo page is **not** required.
 
 ## Technical Designs In Review, Active Register, and Design Hold
 
-**Draft** implementation designs are not yet authoritative; they contain missing provider/schema/client decisions. **ON HOLD** means do not finalize visual styling before founder-provided colors and design-system instructions. The active decision register is a governance record, not blanket approval of every open ADR. A GitHub commit alone never means approval.
+**Draft** implementation designs still require final schema, model or selected infrastructure evidence. **ON HOLD** means the Edviro-derived design is waiting for the founder's additional design-system file (the ten-value color palette is already approved). **Scoped approval** of MCP, source policies and capacity design does not certify their provider integration or tested performance. The active decision register is a governance record, not blanket approval of open ADRs.
 
 | Document | Purpose | Status |
 |---|---|---|
 | [`07-DATABASE-DESIGN.md`](07-DATABASE-DESIGN.md) | Data model, workspace-scoped relationships, migrations and evidence versioning | **Draft — in review** |
 | [`08-API-CONTRACTS.md`](08-API-CONTRACTS.md) | REST endpoints, job lifecycle, authentication, typed requests and errors | **Draft — in review** |
 | [`09-AI-ENGINE.md`](09-AI-ENGINE.md) | Source-based scoring, AI extraction, verdicts and counterfactual simulations | **Draft — in review** |
-| [`10-MCP-INTEGRATION.md`](10-MCP-INTEGRATION.md) | MCP tool schemas, scope permissions, transport and external-client tests | **Draft — in review** |
-| [`11-DATA-SOURCES.md`](11-DATA-SOURCES.md) | Permitted source registry, safe public URL fetching, provenance, coverage and limitations | **Draft — in review** |
 | [`13-DESIGN.md`](13-DESIGN.md) | Edviro-clone layout, typography and animations; **founder palette approved for whole website/app**; additional design-system input pending | **ON HOLD — full design not approved** |
 | [`15-DEPLOYMENT-RUNBOOK.md`](15-DEPLOYMENT-RUNBOOK.md) | Hosting verification, migrations, secrets, smoke tests and rollback | **Draft — in review** |
-| [`18-SCALABILITY.md`](18-SCALABILITY.md) | Owner-requested 500-founder concurrent capacity model, queue/pooling design and load-test criteria | **Draft — requires capacity test and review** |
 | [`DECISIONS.md`](DECISIONS.md) | Active decision register with approved decisions and unresolved vendor/architecture records | **ACTIVE register — not blanket approval of open ADRs** |
 
-**Review blockers:** Database design needs final DDL/RLS/migrations; API contracts need complete frozen schemas; AI engine has approved provider routing but still needs provider privacy/quota verification, model evaluation and calibrated thresholds; MCP OAuth 2.1 strategy is approved, but authorization-server selection, consent/write approvals and actual client handshake remain unverified; broad source strategy is approved but each adapter (especially Reddit) still needs specific authorized access, terms, quota and live-result proof; deployment runbook needs actual hosting/worker choice. Design palette is approved; full design awaits the founder's additional Markdown file. Scaling awaits measured capacity. **None of these drafts proves implementation or provider availability.**
+**Outstanding review blockers:** `07-DATABASE-DESIGN.md` requires final DDL, RLS and migrations; `08-API-CONTRACTS.md` needs frozen DTOs/OpenAPI and precise errors; `09-AI-ENGINE.md` needs actual Groq/Gemini evaluation, privacy/quota verification and calibrated extraction/decision rules; `15-DEPLOYMENT-RUNBOOK.md` needs selected host plan, working API/worker, backup and OAuth authorization-server deployment evidence. **Approved but not implemented/verified:** MCP's OAuth server/consent/client handshake, each source provider's legal API access (especially Reddit), and actual 100/250/500-user load results. **Design remains ON HOLD** until the founder provides their separate design-system file. No approval asserts working code or provider availability.
 
 ## Architecture Decisions
 
 Record consequential architecture decisions in `docs/decisions/` as numbered, dated decision records (ADRs), with **context, options, decision, consequences, and status**.
 
-**Approved product and architectural direction decisions**, the founder-requested 500-user target, Edviro design reference, and unresolved architecture issues are tracked in [DECISIONS.md](DECISIONS.md). The authentication/database/access architecture choice is approved in ADR-002; other provider-specific ADRs remain pending.
+**The six founder-selected technical decisions**—auth/database, managed hosting, Groq/Gemini routing, broad authorized sources, OAuth MCP clients and staged 500-user production readiness—are individually recorded in [DECISIONS.md](DECISIONS.md). Design source/palette and unresolved provider/configuration work are tracked there separately.
 
-**Approved ADRs:** [002 — Auth/database/FastAPI](decisions/002-authentication-database-and-api-boundary.md); [008 — managed hosting/worker](decisions/008-managed-hosting-and-worker.md); [005 — Groq + conditional Gemini](decisions/005-ai-inference-providers.md); [004 — broad authorized sources](decisions/004-broad-authorized-source-integration.md); [006 — OAuth 2.1 scoped MCP clients](decisions/006-mcp-oauth-and-write-approval.md). These are **strategy approvals**, not proof of functioning services, restricted-platform permissions, deployed MCP OAuth servers, or 500-founder capacity. MCP authorization-server selection, consent/write confirmation, client compatibility, hosting, and provider checks remain open.
+**Approved ADRs (all six interview choices):** [002 — Supabase Auth/Postgres/FastAPI + SQLAlchemy/Alembic](decisions/002-authentication-database-and-api-boundary.md); [008 — managed hosting and dedicated worker](decisions/008-managed-hosting-and-worker.md); [005 — Groq primary, conditional Gemini](decisions/005-ai-inference-providers.md); [004 — broad authorized sources](decisions/004-broad-authorized-source-integration.md); [006 — scoped OAuth 2.1 MCP clients](decisions/006-mcp-oauth-and-write-approval.md); [010 — 100/250 pre-submission tests and 500-founder production gate](decisions/010-staged-500-founder-capacity-release.md). **Strategy approval ≠ deployed/proven technology.** Specific providers, permissions, pricing, consent UX and load measurements require independent evidence.
+
+
+## Six-decision approval boundary
+
+The owner selected all six architectural strategies on 18 November 2026. **Document-level approval** is limited to the functional/technical architecture, protocol and lawful acquisition *policies*, security/testing expectations, staged scaling plan and project roadmap. It does **not** waive the November 26 P0/R0 release requirements, nor certify that 100/250/500 concurrency, live data, an LLM provider or remote OAuth MCP tools work.
+
+**Capacity rule:** Before the November 26 fellowship submission, execute and honestly report preliminary tests for **100 and 250 actively authenticated founders**. The **complete passing 500-founder load benchmark is a strict precondition for broader public production rollout**, not a fellowship-submission gate; the fellowship still requires its independently approved P0 functional/security gates. See [ADR-010](decisions/010-staged-500-founder-capacity-release.md) and [18-SCALABILITY.md](18-SCALABILITY.md).
 
 ## Superseded Documents
 
@@ -88,7 +95,7 @@ When replacing a previously approved specification:
 
 - **Approved:** Explicitly accepted by the project owner (or reviewed under the owner's delegated approval); authoritative only within its stated scope. Candidate technologies remain candidates.
 - **Draft / In review:** Material implementation choices or evidence unresolved; not implementation authority.
-- **On hold:** Visual/design direction awaiting the founder's additional design-system file and palette; do not finalize.
+- **On hold:** Final visual direction awaiting the founder's additional design-system Markdown file; the specified Axiom palette is already approved. Do not finalize yet.
 - **Active register:** Tracks individually approved and open decisions; its existence is not blanket approval.
 - **Superseded:** Replaced by a newer approved source; historical reference only.
 
