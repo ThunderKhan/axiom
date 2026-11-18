@@ -16,6 +16,25 @@ The following files live at the repository root and govern engineering work. The
 
 **Important:** Read both files in their actual repository versions before planning or implementing code changes. This index records their existence and intended role; it does not reproduce or override their contents. Respect repository filename casing.
 
+## Repository Quality, Contribution and Review Controls
+
+The following are **engineering governance files**, not new product requirements. They become active after their respective pull requests merge into `main`:
+
+| File | Purpose |
+|---|---|
+| [`.coderabbit.yaml`](../.coderabbit.yaml) | CodeRabbit V2 auto-review with correctness, tenancy, AI-source, database, security and CI path instructions |
+| [`.github/PULL_REQUEST_TEMPLATE.md`](../.github/PULL_REQUEST_TEMPLATE.md) | Structured PR description with traceability, risk and actual test evidence |
+| [`.github/ISSUE_TEMPLATE/`](../.github/ISSUE_TEMPLATE/config.yml) | Bug, feature and engineering-task forms; private security reporting |
+| [`.github/labels.json`](../.github/labels.json) | Shared issue/PR label catalog (type, area, priority, status and risk) |
+| [`.github/workflows/sync-labels.yml`](../.github/workflows/sync-labels.yml) | **Manual main-only** workflow to provision/update labels after governance merge; never runs on PRs |
+| [`.github/CODEOWNERS`](../.github/CODEOWNERS) | Initial governance reviewer ownership; not a substitute for independent review |
+| [`CONTRIBUTING.md`](../CONTRIBUTING.md) | Contribution, PR and issue lifecycle, acceptance criteria and CI expectations |
+| [`SECURITY.md`](../SECURITY.md) | Private vulnerability reporting and sensitive security surfaces |
+| [`.github/dependabot.yml`](../.github/dependabot.yml) | Weekly bounded GitHub Actions dependency update PRs |
+| [`.editorconfig`](../.editorconfig) | Portable whitespace and encoding defaults |
+
+**CI is tracked in a separate pull request** adding `.github/workflows/quality.yml`. The repo has no executable application implementation yet; an automatic code review or documentation-only check is **not** proof that the web/API tests/build passed. GitHub labels are **not created simply by committing a catalog or issue form**. After merging this governance PR, intentionally run the manual label sync from the default branch to make the names available. New quality and governance changes must receive review according to the root engineering rules.
+
 ## Approved Documents
 
 Only documents explicitly approved by the project owner belong in this section. These are authoritative for product behavior and implementation decisions within their scope.
