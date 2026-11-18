@@ -1,15 +1,15 @@
 # Axiom — Design Reference and Landing Experience
 
 **Status:** ON HOLD — design reference draft; **not approved**  
-**Version:** 0.1 · **Prepared:** 18 November 2026  
+**Version:** 0.2 (palette approved; design draft on hold) · **Updated:** 18 November 2026  
 **File:** `docs/13-DESIGN.md`  
 **Reference implementation:** [ThunderKhan/edviro-clone](https://github.com/ThunderKhan/edviro-clone), specifically [DESIGN.md](https://github.com/ThunderKhan/edviro-clone/blob/main/DESIGN.md), [visual-specification.md](https://github.com/ThunderKhan/edviro-clone/blob/main/docs/visual-specification.md), [motion-forensics.md](https://github.com/ThunderKhan/edviro-clone/blob/main/docs/motion-forensics.md), [interaction-state-machines.md](https://github.com/ThunderKhan/edviro-clone/blob/main/docs/interaction-state-machines.md), [Home.tsx](https://github.com/ThunderKhan/edviro-clone/blob/main/src/components/sites/edviro/Home.tsx), and [globals.css](https://github.com/ThunderKhan/edviro-clone/blob/main/src/app/globals.css).
 
-**Design ownership:** Founder will supply an additional, authoritative design-system Markdown file and final colors. **Do not lock brand colors or mark this document approved until that material is supplied, reconciled, and explicitly approved.** This draft records measurable structural and motion references already available in the Edviro clone.
+**Design ownership:** Founder approved the ten-value Axiom brand palette in Section 3 for **both public pages and authenticated application** on 18 November 2026. The founder will still supply an additional design-system Markdown file; the **complete design document remains ON HOLD** pending reconciliation and explicit approval. This draft records structural and motion references from the Edviro clone.
 
 ## 1. Design objective and reuse boundary
 
-Axiom's **landing page** should adopt the Edviro clone's **layout grammar, geometry, typography, spacing, navigation behaviors, interaction choreography, scroll-linked sections and responsive structure**, replacing all Edviro facilities content with original Axiom product content. The final color palette will be founder-provided; current Edviro greens are **not** Axiom's approved palette.
+Axiom's **landing page** should adopt the Edviro clone's **layout grammar, geometry, typography, spacing, navigation behaviors, interaction choreography, scroll-linked sections and responsive structure**, replacing all Edviro facilities content with original Axiom product content. The founder-provided Axiom palette in Section 3 is **approved for all pages**; current Edviro forest greens are **not** Axiom's palette.
 
 Axiom is **not Edviro**: all headings, navigation destinations, screenshots, illustrations, logos, public-source badges, metrics, testimonial claims and dashboard content must be Axiom-specific. Adapt the reusable implementation patterns; do not mechanically ship Edviro brand identity. The clone's README says its app code is MIT-licensed and Geist font uses SIL OFL, but it also includes Edviro-origin logos, photographs and imagery on the basis of an earlier user permission statement for the clone. **That does not independently establish permission to redistribute those assets in the Axiom product.** Default to newly made/licensed Axiom visuals and keep third-party assets out until permitted use for this product is confirmed. Attribute borrowed licensed code as required.
 
@@ -53,33 +53,63 @@ Other reference spacing steps include 6, 8, 10, 12, 14, 16, 20, 24, 28, 32, 36, 
 - Actual Axiom copy differs; test for overflow and odd single-word breaks, particularly 390px mobile.
 - All numerical score/date/evidence presentation in the app should use tabular figures where needed for data readability.
 
-## 3. Color system — intentionally unselected
+## 3. Founder-approved color palette — landing page and full authenticated app
 
-**Axiom's colors are awaiting founder input.** The clone's paper/forest/dark palette documents the original visual behavior, but its hex values **must not be copied as the final Axiom color contract**.
+**Decision:** The founder supplied and selected the following exact Axiom palette on 18 November 2026. **These are the approved brand colors across the entire Axiom website:** public landing, login, workspace onboarding, Opportunity Radar, evidence graph/report, competitor intelligence, Counterfactual Lab, CRM, dialogs, exports when styled, and all shared controls. The old Edviro forest-green palette is **not** the product palette, and the previous draft's arbitrary colors are superseded.
 
-Define semantic tokens now, set values only after the founder supplies them:
+### Canonical CSS variables (preserve names and hex values)
 
 ```css
 :root {
-  --color-canvas: unset;        /* founder palette pending */
-  --color-surface: unset;
-  --color-ink: unset;
-  --color-body: unset;
-  --color-muted: unset;
-  --color-primary: unset;
-  --color-primary-contrast: unset;
-  --color-dark-band: unset;
-  --color-accent: unset;
-  --color-border: unset;
-  --color-error: unset;
-  --color-warning: unset;
-  --color-source: unset;
-  --color-hypothesis: unset;
-  --color-focus: unset;
+  --bg: #FAF7F1;
+  --band: #F1EAE2;
+  --ink: #302B32;
+  --text: #655B61;
+  --muted: #766B70;
+  --line: #302B3221;
+  --green: #AC4E30;
+  --deep: #271F28;
+  --leaf: #F2A487;
+  --tint: #F6E2D7;
 }
 ```
 
-These placeholders describe required roles, **not executable production CSS to merge as-is**. Verify contrast ratios on selected colors, including source/citation labels and graph/decision states; do not convey evidence reliability by color alone.
+**Important naming detail:** `--green` is a legacy variable name from the reference design. Its **value is terracotta #AC4E30**, not green; **do not change its value based on its name**.
+
+### Semantic role mapping
+
+| Usage | CSS variable | Intent |
+|---|---|---|
+| Landing/login/application main background | `--bg` | Warm off-white paper |
+| Alternating sections, card surfaces, subtle bands | `--band` | Warm secondary canvas |
+| Primary headers, app navigation, titles | `--ink` | Dark charcoal-plum |
+| Paragraphs, field labels, descriptions | `--text` | Readable secondary ink |
+| Meta-labels, source dates, quiet text | `--muted` | Muted ink, not disabled by itself |
+| Separators, understated inputs and outlines | `--line` | Semi-transparent line; use on light surfaces |
+| Main CTAs, primary actions, links and selection accents | `--green` | Terracotta brand accent |
+| Dark narrative sections, alternate app panels | `--deep` | Deep charcoal-plum |
+| Accent on dark backgrounds, highlight details | `--leaf` | Apricot/salmon accent |
+| Warm highlight cards, selected states, soft badges | `--tint` | Pale blush-tinted surface |
+
+**CTA behavior:** Capsule buttons use `--green` with `--bg` text, or `--deep` with `--bg` text. Secondary button: `--bg` or `--band` surface with `--ink` content and a visible border. Dark section: `--deep` surface with `--bg` text and `--leaf` highlights. Preserve the Edviro clone's 46px primary, 40px header and 54px final-CTA sizing, but **replace its colors with these variables everywhere**.
+
+**Application components:** Apply the exact same CSS tokens across all authenticated layouts, CRM tables, source chips, citations, graph nodes/edges and scenario comparison controls. Distinguish `Pursue`, `Research further`, `Skip`, `Insufficient evidence`, verified, inferred, and hypothetical with **explicit text, icons, patterns and borders**, not arbitrary green/yellow/red colors. Additional functional state colors require documented accessible derivatives or separate approval; do not overwrite these ten brand variables. Graph/source overlays must remain legible on `--bg`, `--band`, `--tint`, and `--deep`.
+
+### Preliminary contrast check (not a full accessibility audit)
+
+Computed WCAG contrast ratios for solid background/text pairs:
+- `--ink` on `--bg`: **12.94:1**
+- `--text` on `--bg`: **6.09:1**
+- `--muted` on `--bg`: **4.78:1**
+- `--green` on `--bg`: **5.05:1**
+- `--bg` text on `--green`: **5.05:1**
+- `--bg` on `--deep`: **14.96:1**
+- `--leaf` on `--deep`: **7.95:1**
+- **Caution:** `--green` on `--tint` is only **4.32:1**, below the 4.5:1 normal-text threshold; avoid this pairing for normal text or use `--ink`. Verify actual component states, semi-transparent borders, disabled text, hover, focus, and graph edges during visual QA.
+
+### Approval boundary
+
+**Palette is founder-approved.** The complete **`13-DESIGN.md` remains ON HOLD** until the founder supplies their additional design-system Markdown file, any overriding rules are reconciled, asset rights and responsive examples are reviewed, and the founder approves the finished visual specification. This partial approval does **not** make the full design document approved.
 
 ## 4. Edviro homepage section choreography mapped to Axiom
 
@@ -159,7 +189,7 @@ Implementation policy: **reference the clone's source but do not import Edviro c
 ## 9. Visual QA and acceptance gate
 
 - Capture matched 1440×900 and 390×844 screenshots with fonts loaded and the same scroll positions.
-- Compare Axiom geometry to the clone **as a reference**, with deliberate deviations for Axiom's original content and palette. Do not set "pixel-perfect Edviro copy" as product identity requirement.
+- Compare Axiom geometry to the clone **as a reference**, with deliberate deviations for Axiom's original content and the approved palette. Do not set "pixel-perfect Edviro copy" as product identity requirement.
 - Test header scroll down/up, mobile menu, dropdown focus/Escape, CTA navigation, initial hero entrance, first-entry reveal, four stacked card reversals, FAQ, reduced motion and footer.
 - Confirm visible data is actual or explicitly labeled synthetic; "connected" integrations actually exist; no broken menu link.
 - Confirm all buttons have correct semantic actions, source links and keyboard access. Page speed and 500-founder API capacity are **separate system quality properties**, not proof from marketing visuals.
@@ -167,8 +197,8 @@ Implementation policy: **reference the clone's source but do not import Edviro c
 
 ## 10. Approval hold and next inputs
 
-**Not approved:** palette values, any imagery/background asset, final Axiom logo, any user-supplied design-system file not yet provided, and resulting final visual specifications. This document remains **ON HOLD** until:
-1. Founder provides final palette and their own design-system Markdown file.
+**Approved component:** All ten founder-provided color values in Section 3 for landing, login and authenticated app. **Still not approved:** imagery/background assets, final Axiom logo, the founder's forthcoming design-system Markdown file, and resulting full visual specification. This document remains **ON HOLD** until:
+1. Founder supplies their additional design-system Markdown file (palette already received).
 2. Resolve conflicts between that design system and the Edviro-derived structural reference (founder decides).
 3. Select permitted assets and confirm licensing.
 4. Review sample Axiom desktop/mobile compositions and focus/reduced-motion behavior.
