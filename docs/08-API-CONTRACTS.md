@@ -121,3 +121,7 @@ Save lead: request contains `signal_id`, optional `assessment_id`, title, stage;
 - MCP tool schemas reference shared use cases and enforce the same decisions as HTTP.
 
 **Open:** final auth transport, pagination style, async cancellation, exact validation caps, post-v1 compatibility and rate limits; these must be resolved before implementation is called contract-complete.
+
+## 9. Broad-source discovery contract — decision 4 of 6
+
+[ADR-004](decisions/004-broad-authorized-source-integration.md) approves source selection across HN, allowed RSS/Atom, Bluesky, Reddit **only where specifically authorized**, manual public URLs and further approved platform adapters. `source_families[]` in discovery input must be validated against a server-owned provider registry with statuses `available`, `permission_pending`, `disabled`, `rate_limited`, and `unavailable` (proposed enums, finalize in schema). An unauthorized/unsupported provider must produce an **explicit per-source rejection or partial warning**, never a fabricated search or unapproved scraping. Responses include `requested_sources`, `accepted_sources`, `source_statuses`, actual origin/provenance and warnings. Multiple RSS feeds must not be counted as distinct external platform families. Rate limits, pagination, quotas and honest empty/error states apply per provider. Broad strategic approval alone does not mean any endpoint is integrated.
