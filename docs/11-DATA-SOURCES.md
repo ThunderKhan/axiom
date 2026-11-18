@@ -3,11 +3,13 @@
 **Status:** DRAFT — in review · **Version:** 0.1 · **Date:** 18 November 2026  
 **Authority:** [PRD](02-PRD.md), [MVP](03-MVP.md), [System Architecture](05-SYSTEM-ARCHITECTURE.md), [AI Engine](09-AI-ENGINE.md)
 
+**Founder-approved acquisition strategy:** [ADR-004](decisions/004-broad-authorized-source-integration.md) — Option C (broad multi-platform sources), not a source-permission or live-integration approval.
+
 ## 1. Goals and non-negotiable policy
 
 Opportunity Radar discovers relevant **publicly accessible expressions of demand** through permitted integrations. It never implies that a public author consented to unsolicited private contact. The source adapter must respect service terms, robots/access controls where applicable, quotas, and data minimization; **working API access is not automatically permission for every use or retention pattern**.
 
-P0 verification floor: **two independently functioning permitted source families plus a safe user-supplied public URL pathway**. R0 November 26 objective: **three or more permitted source families** and as much broad coverage as actually feasible. An RSS feed count is not the same as an independent platform family; never count seeded fixtures as a live integration.
+P0 verification floor: **two independently functioning permitted source families plus a safe user-supplied public URL pathway**. R0 November 26 objective: **three or more permitted source families plus broader authorized platform coverage** (not merely stopping at three). The founder specifically selected a broad-source strategy: Hacker News, permitted RSS/Atom, Bluesky, **Reddit if specifically authorized**, and additional legitimate providers. Source-target approval does **not** mean access is legally granted, a connector is ready, or an API is free. An RSS feed count is not the same as an independent platform family; never count seeded fixtures as a live integration.
 
 ## 2. Adapter registry — proposed, unverified
 
@@ -17,8 +19,8 @@ P0 verification floor: **two independently functioning permitted source families
 | **Public RSS/Atom** | Allowed publisher/community feeds with source attribution | Broader topical discussions | **Candidate — inspect individual feed terms, quality and retention** |
 | **Bluesky** | Official documented public endpoints subject to rate limits and policy | Additional public discussion family | **Candidate R0 — verify permitted endpoints and accuracy** |
 | **User-entered public URLs** | Secure bounded fetch of permitted URL | Research beyond built-in platforms | **Required capability, fetch/SSRF test outstanding** |
-| **Reddit** | Official/API-authorized use only after terms and credential check | Potential buying-intent communities | **Not approved / not assumed available** |
-| **Other platforms** | Only legitimate approved APIs/feeds | Future coverage | **Not approved** |
+| **Reddit** | **Only an officially permitted API/integration for this intended SaaS use**, after terms, licensing, credentials and payment/usage review | Problem-rich community discussion | **Approved target under ADR-004; API permission, cost and integration NOT approved/verified** |
+| **Additional platforms** | Individually vetted legitimate APIs/feeds; GitHub Discussions, Stack Exchange, and others are evaluation candidates, **not access approvals** | Broader industry and developer demand | **Approved expansion strategy; each adapter disabled pending explicit terms/rights/quota and live proof** |
 
 **Important:** Official Hacker News item API provides item/story access, not arbitrary full-text search. If full-text query is required, verify a separate authorized search method or build an honest bounded item-scan pipeline; avoid promising complete HN search. HN Search by Algolia is a separate service/data access route with its own terms/limits. Never assume a query can find *all* matching discussions.
 
@@ -100,4 +102,23 @@ Discovery may return **zero** results. This must be a meaningful product outcome
 
 ## 9. Open decisions and operational checklist
 
-Choose each initial feed with owner-approved data-use evidence; verify HN acquisition strategy; test Bluesky API access; verify actual free quotas; agree on excerpt retention and deletion rules; document per-source discovery accuracy. Record adapter decisions in [DECISIONS.md](DECISIONS.md). Do not call integration "live" until a real request succeeded and results can be inspected.
+Apply the **owner-approved broad acquisition strategy** ([ADR-004](decisions/004-broad-authorized-source-integration.md)) and maintain a source-by-source *candidate/permission-pending/blocked/verified-live/disabled* registry. Verify HN retrieval strategy; test Bluesky; **obtain specific, appropriate Reddit access before enabling it**; evaluate additional authorized platforms. Review actual free quotas, source data rights, retention/deletion, relevance and search coverage. Do not silently reduce scope to only HN/RSS/Bluesky if broader targets are blocked; report blockers and request owner direction. Record adapter decisions in [DECISIONS.md](DECISIONS.md). Do not call integration "live" until a real request succeeded and results can be inspected.
+
+## 10. Approved breadth strategy, provider gates, and coverage status (decision 4 of 6)
+
+The founder chose **Option C** in [ADR-004](decisions/004-broad-authorized-source-integration.md): implement a **broad, compliant, extensible source-adapter program** including Hacker News, RSS/Atom, Bluesky, Reddit **only if separately authorized**, manual public URLs, and additional authorized platforms. This is **approved target scope**, not authorization to obtain data from each provider. Restricted sites may require prior API approval, paid access or prohibit the planned use; the ₹0 external paid research API rule still applies, so these integrations must remain **disabled/blocked** rather than bypass policy when unavailable.
+
+**Provider readiness register (initial, not implementation claims):**
+
+| Source | Strategy status | Integration proof / policy gate |
+|---|---|---|
+| Hacker News | Target selected; not verified live | Actual permitted item/search retrieval; legitimate attribution and query-coverage limits |
+| RSS/Atom | Target selected; not verified live | Specific publisher feed terms and live fetched/attributed results |
+| Bluesky | Target selected; not verified live | Current supported public endpoints, rate limits, usage permission, live sample |
+| Reddit | Target selected; **permission pending** | Affirmative terms/API access rights for Axiom's SaaS use; approved quotas/cost; live sample |
+| Manual public URLs | Target selected; SSRF proof outstanding | Bounded public fetch with per-hop DNS/IP revalidation, safe HTML extraction |
+| Further providers | Discovery/evaluation candidates | Distinct platform family; explicit provider permit/terms/cost; evidence of permitted live use |
+
+Track *enabled*, *failed*, *blocked by policy*, *permission pending*, *seeded/cached*, and *live verified* independently. Count only real, separate permitted source families toward P0/R0 gates; do not count several RSS feeds as several source **families** or manual URL entry as a distinct platform integration. All newly enabled families must use the same normalized source schema, canonical dedupe, validation, quota, attribution and data-retention review.
+
+**Risks and escalation:** Broad integration scope increases time/quality/privacy risk before November 26. Implement reusable adapter contracts and genuine sources in a deliberate order **without quietly cancelling Reddit/additional-platform targets**. When platform access cannot be established lawfully within the ₹0 external research API constraint, record the exact blocker and seek founder scope guidance rather than scrape or fabricate availability.
