@@ -1,6 +1,6 @@
 # Axiom — UI/UX Specification
 
-**Status:** DRAFT — in review · **Version:** 0.1 · **Date:** 18 November 2026  
+**Status:** APPROVED — functional UX requirements; visual styling/design source remains ON HOLD · **Version:** 1.0 · **Approved:** 18 November 2026  
 **Authority:** [PRD](02-PRD.md), [MVP](03-MVP.md), [Approved User Flows](04-USER-FLOWS.md), [Architecture](05-SYSTEM-ARCHITECTURE.md)
 
 ## 1. Experience principles
@@ -9,7 +9,7 @@
 
 The user begins at **public landing → normal login → authenticated application**. Evaluators use ordinary pre-provisioned accounts; no public sandbox, judge page or permission bypass. Authenticated first destination is **Opportunities**, unless a product workspace/profile must be created or resumed.
 
-Design is content-first, accessible, information-dense where needed but breathable. Use purpose-driven motion for transitions, evidence focus and job progress; no decorative particle backgrounds or misleading simulated activity.
+The **landing-page structural and motion reference** is the founder's [edviro-clone](https://github.com/ThunderKhan/edviro-clone), documented in [13-DESIGN.md](13-DESIGN.md). Preserve its general hero/navigation/section rhythm and measured typography/spacing; **do not approve Axiom colors, logos, images, proprietary assets, or final design tokens** until the founder provides their design system. The authenticated research app uses shared visual grammar but prioritizes functional workflows. Design is content-first, accessible, information-dense where needed but breathable. Use purpose-driven motion for transitions, evidence focus and job progress; no decorative particle backgrounds or misleading simulated activity.
 
 ## 2. Proposed application routes
 
@@ -32,7 +32,7 @@ These are **proposed UI URLs**, not final API contracts. Route authorization and
 
 ## 3. Landing and login
 
-**Landing:** editorial headline (*Find demand. Prove your edge.* as a working option), restrained hero, concise workflow demonstration, screenshots only if accurate, source/evidence credibility section, genuine feature highlights, open-source/GitHub links and honest YARC attribution. One primary CTA goes to login. Show meaningful product proof rather than imaginary conversion metrics or fabricated user logos.
+**Landing:** use the Edviro-clone homepage section composition (hero+real dashboard preview → grounded proof/steps → scroll-linked four panels → adapted use-case cards → statement → evidence-backed examples → real integrations → FAQ → CTA → footer), with entirely original Axiom content and no invented results. Source-like navigation dropdowns, capsule CTAs, responsive geometry and motion must be mapped to real anchors/actions as specified in [13-DESIGN.md](13-DESIGN.md). The visual details remain ON HOLD. Editorial headline (*Find demand. Prove your edge.* as a working option), restrained hero, concise workflow demonstration, screenshots only if accurate, source/evidence credibility section, genuine feature highlights, open-source/GitHub links and honest YARC attribution. One primary CTA goes to login. Show meaningful product proof rather than imaginary conversion metrics or fabricated user logos.
 
 **Login:** simple accessible email/password or reviewed provider-supported mechanism, show/hide password, error messages without revealing whether an account exists, loading/disabled submit, session expiration/return-to route handling. There is **no need for evaluators to sign up**: provide credentials privately. If self-service signup exists for normal users, keep it separate from evaluation requirement.
 
@@ -88,4 +88,4 @@ Accessibility: consistent focus, keyboard form fields, sufficient contrast, redu
 
 **User testing:** 1) evaluator login → workspace → discovery → evidence → scenario → CRM save/reopen; 2) idea-stage onboarding + unknown capability; 3) negative verdict and unavailable source; 4) graph on keyboard/mobile; 5) mis-scoped workspace denied; 6) editable unsent draft.
 
-**Open design decisions:** exact wireframes, breakpoints, typography/colors in [Design System](13-DESIGN-SYSTEM.md), graph component, command shortcuts, advanced multi-panel behavior and motion thresholds. Do not treat this draft as approved component implementation.
+**Open design decisions:** exact Axiom wireframes, founder-provided colors and design system, image rights, font packaging, graph component and detailed motion. [13-DESIGN.md](13-DESIGN.md) is an **unapproved reference**, not a final visual specification. This approved document governs **functional UX behavior only**; it is not proof that pages exist.
