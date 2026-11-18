@@ -8,6 +8,7 @@ import hashlib
 import json
 import os
 import pathlib
+import posixpath
 import re
 import subprocess
 import sys
@@ -206,8 +207,10 @@ def check_workflow(root: pathlib.Path) -> None:
         job = jobs[job_name]
         allowed = {f"python ci/quality_gate.py {mode}",
                    f"python3 ci/quality_gate.py {mode}"}
-        workflow_shell = (workflow.get("defaults") or {}).get("run", {}).get("shell")
-        job_shell = (job.get("defaults") or {}).get("run", {}).get("shell")
+        workflow_defaults = (workflow.get("defaults") or {}).get("run", {})
+        job_defaults = (job.get("defaults") or {}).get("run", {})
+        workflow_shell = workflow_defaults.get("shell")
+        job_shell = job_defaults.get("shell")
         matching = []
         for step in job["steps"]:
             if not isinstance(step, dict) or not isinstance(step.get("run"), str):
@@ -222,6 +225,21 @@ def check_workflow(root: pathlib.Path) -> None:
             # shell values, not merely a safe-looking executable basename.
             if shell.strip() not in {"bash", "sh", "pwsh", "powershell"}:
                 fail(f"Required {job_name}/{mode} must run in a supported command shell, not {shell}")
+            # GitHub's precedence is step > job defaults.run > workflow
+            # defaults.run. Required commands use repo-relative script paths,
+            # so they must execute from the checkout root.
+            if "working-directory" in step:
+                working_dir = step["working-directory"]
+            elif "working-directory" in job_defaults:
+                working_dir = job_defaults["working-directory"]
+            elif "working-directory" in workflow_defaults:
+                working_dir = workflow_defaults["working-directory"]
+            else:
+                working_dir = "."
+            if (not isinstance(working_dir, str) or not working_dir.strip()
+                    or posixpath.isabs(working_dir.replace("\\", "/"))
+                    or posixpath.normpath(working_dir.replace("\\", "/")) != "."):
+                fail(f"Required {job_name}/{mode} must run from checkout root, not {working_dir}")
             matching.append(step)
         if not matching:
             fail(f"Required {job_name} job does not invoke ci/quality_gate.py {mode}")
