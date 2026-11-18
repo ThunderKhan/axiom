@@ -305,3 +305,7 @@ No silently waived requirements. A failed experiment is information, not evidenc
 ---
 
 **Approval record:** Founder approved this MVP scope on 18 November 2026. The **P0 verification floor**, all **R0 objectives**, and the requirement for explicit owner approval before reducing scope remain in force. This approval does **not** waive or change any requirement in [02-PRD.md](02-PRD.md).
+
+## Capacity release clarification — founder decision 6 of 6 (18 November 2026)
+
+[ADR-010](decisions/010-staged-500-founder-capacity-release.md) selects **Option B**: Axiom is architected for 500 concurrently active founders now, with preliminary **100- and 250-active-user** load tests to be attempted and reported before the **November 26 fellowship submission**. The **full successful 500-founder benchmark is mandatory before broader public production rollout**, not a substitute for, or added hard blocker to, the pre-existing **P0 fellowship functional and security gates**. Any limited-capacity fellowship deployment must be accurately described; do not claim 500-user scalability without real load evidence. No previously approved P0/R0 product commitment is waived by this clarification.
