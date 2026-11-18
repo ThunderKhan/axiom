@@ -138,7 +138,7 @@ Targets below are **proposals until benchmarked**; do not advertise them as achi
 
 **TRD-CAP-03:** No service may open one DB connection per founder; stateless API, pooled connections, indexed workspace queries, bounded worker concurrency and jittered/backoff job polling are required. Denial-of-service and cross-tenant correctness tests remain release blockers.
 
-**TRD-CAP-04:** This capacity objective cannot be marketed as **achieved** until the selected deployment passes the reproducible load/soak/failure test in [18-SCALABILITY.md](18-SCALABILITY.md). Whether 500 verified users is a hard November 26 gate or a later capacity milestone remains a founder decision; it is **not silently a waived objective**.
+**TRD-CAP-04:** This capacity objective cannot be marketed as **achieved** until the selected deployment passes the reproducible load/soak/failure test in [18-SCALABILITY.md](18-SCALABILITY.md). **[ADR-010](decisions/010-staged-500-founder-capacity-release.md) approves staging:** preliminary tests with 100 and 250 active users **before November 26**; the **full successful 500-user benchmark is mandatory before broader production rollout**, not a fellowship-submission gate. The target is not waived.
 
 **Approval boundary:** Owner-approved TRD requirements and architecture direction are authoritative; every technology labeled candidate/proposed stays contingent on real provider, cost, license, and deployability evidence. Approval does not claim a built backend or 500-user capacity.
 
@@ -165,3 +165,10 @@ Targets below are **proposals until benchmarked**; do not advertise them as achi
 - **TRD-MCP-07:** Select a compatible OAuth authorization server/broker integrating **Supabase Auth user identity**; a browser Supabase JWT must not automatically be accepted as a token for Axiom MCP resource. Confirm consent and client registration/discovery support.
 - **TRD-MCP-08:** Each tool call checks granted scopes **and** user/workspace/object authorization; enforce revocation, idempotent low-risk consented CRM writes, separate confirmation for sensitive changes, and complete audit.
 - **TRD-MCP-09:** Initial remote MCP mode excludes personal API tokens and hybrid auth. [ADR-006](decisions/006-mcp-oauth-and-write-approval.md) is strategy approval, **not** verified AS or tool compatibility.
+
+## 16. Approved capacity staged release policy (technical decision 6 of 6)
+
+- **TRD-CAP-05:** Implement 500-founder-compatible stateless API, database connection pooling, workspace isolation, durable job leasing, fair per-user/provider quotas and backoff polling **immediately**. This is an architectural design obligation, not proof of a running system.
+- **TRD-CAP-06:** **Before the November 26 fellowship submission**, attempt and document realistic **100- and 250-concurrently-active-user** load tests. Capture environment/commit, p95 latency, achieved RPS, internal 5xx/429, DB pool, worker/job behavior, privacy and cross-tenant/idempotency results. Disclose failures honestly; existing P0 security and functional release gates still apply.
+- **TRD-CAP-07:** **Before broad public production rollout**, pass a realistic **500-active-founder** mixed-workload, burst, soak and restart benchmark against the intended managed tier (or defensible production-equivalent), with documented and accepted thresholds. No demonstrated 500-user capacity → no broad launch or unsupported claim.
+- **TRD-CAP-08:** External source and inference APIs are separately rate-limited; 500 active user sessions do not imply 500 simultaneous model/source calls or permission to pay for those APIs. Any larger managed hosting cost needs explicit plan/cost approval under ADR-008. The staged plan is approved by [ADR-010](decisions/010-staged-500-founder-capacity-release.md); actual performance is **not** verified.
