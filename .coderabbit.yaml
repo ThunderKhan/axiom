@@ -1,0 +1,85 @@
+# yaml-language-server: $schema=https://coderabbit.ai/integrations/schema.v2.json
+# CodeRabbit V2. GitHub Actions and human review remain authoritative merge gates.
+language: en-US
+early_access: false
+tone_instructions: >
+  Be concise, rigorous and actionable. Prioritize reproducible correctness
+  or security defects over cosmetic suggestions; cite files and failure cases.
+reviews:
+  profile: chill
+  high_level_summary: true
+  review_status: true
+  review_progress: true
+  poem: false
+  suggested_labels: true
+  auto_apply_labels: false
+  auto_assign_reviewers: false
+  auto_approvals:
+    enabled: false
+  auto_review:
+    enabled: true
+    drafts: false
+    auto_incremental_review: true
+  merge_risk_instructions: >
+    Axiom is a multi-tenant AI research product. Changes to authentication,
+    workspace ownership, RLS, privileged credentials, migrations, durable
+    workers/retries, MCP OAuth and scoped writes, evidence provenance, AI
+    data handling, CI quality gates and deployment are high risk. A passing
+    test suite must not substitute for reviewing these invariants.
+  labeling_instructions:
+    - label: "area:frontend"
+      instructions: "Changes to Next.js, React components, CSS, accessibility or landing UI."
+    - label: "area:backend"
+      instructions: "Changes to FastAPI routes, Python domain services or background jobs."
+    - label: "area:database"
+      instructions: "Changes to PostgreSQL models, RLS, migrations, indexes or transactions."
+    - label: "area:ai"
+      instructions: "Changes to model routing, prompts, scoring or structured inference."
+    - label: "area:data-sources"
+      instructions: "Changes to source adapters, extraction, safe fetching or provenance."
+    - label: "area:mcp"
+      instructions: "Changes to MCP transport, tools, scopes or OAuth integration."
+    - label: "area:infra"
+      instructions: "Changes to GitHub Actions, deployment, environment or infrastructure."
+    - label: "type:docs"
+      instructions: "Documentation-only changes with no source or executable behavior changes."
+    - label: "type:test"
+      instructions: "New or changed tests and test harnesses, with no product behavior change."
+    - label: "risk:high"
+      instructions: "Changes impacting auth, tenant isolation, secrets, destructive data, MCP permissions, or the CI trust boundary."
+  path_instructions:
+    - path: "AGENTS.md"
+      instructions: |
+        Flag any weakening or contradiction of the root engineering policy.
+        Changes to repository governance require independent human review.
+    - path: "ENGINEERING.md"
+      instructions: |
+        Verify correctness, security and evidence requirements are not relaxed
+        without an explicitly recorded reviewed decision.
+    - path: ".github/**"
+      instructions: |
+        Check least-privilege GitHub token permissions, safe PR triggers, pinned
+        actions, branch protection implications and template/label validity.
+        Never allow untrusted PR code to gain write tokens or production secrets.
+    - path: "ci/**"
+      instructions: |
+        Reject silently skipped tests, placeholder commands, ignored failures,
+        broadened test exclusions and fake success. Check that verification
+        applies to the exact changed revision.
+    - path: "**/*.{py,ts,tsx,js,jsx}"
+      instructions: |
+        Review input validation, correct error handling, typing, state changes
+        and real test coverage. For protected operations require explicit
+        workspace authorization and safe retry/idempotency behavior. Avoid
+        unsupported assumptions about provider APIs.
+    - path: "**/*.{sql,ddl}"
+      instructions: |
+        Check migration safety, workspace-scoped foreign keys, isolation/RLS,
+        query indexes, transaction boundaries, rollback/forward recovery and
+        privileged-role bypass. Never trust frontend authorization alone.
+    - path: "docs/**"
+      instructions: |
+        Check that new claims match approved PRD/ADR decisions; distinguish
+        design approval from deployed evidence. Update docs/01-INDEX.md when
+        document authority, name or status changes. Avoid false "verified"
+        claims, particularly for provider access and 500-founder capacity.
