@@ -44,22 +44,22 @@ Entries marked **Draft — in review** exist but are **not approved implementati
 | [`11-DATA-SOURCES.md`](11-DATA-SOURCES.md) | Permitted source registry, safe public URL fetching, provenance, coverage and limitations | **Draft — in review** |
 | [`12-UI-UX-SPEC.md`](12-UI-UX-SPEC.md) | Screen requirements, adaptive onboarding and investigation user experience | **Draft — in review** |
 | [`13-DESIGN-SYSTEM.md`](13-DESIGN-SYSTEM.md) | Editorial visual language, components, accessibility, motion and responsive tokens | **Draft — in review** |
-| `14-TESTING-STRATEGY.md` | Acceptance tests, security, E2E, CI and release gates | Planned |
-| `15-DEPLOYMENT-RUNBOOK.md` | Infrastructure verification, migrations, secrets, smoke and rollback | Planned |
-| `16-IMPLEMENTATION-ROADMAP.md` | Milestones, dependencies, verification, deployment, submission | Planned |
-| `17-SECURITY.md` | Threat model, permission and incident policy | Planned |
-| `DECISIONS.md` | Decision register and unresolved ADR candidates | Planned |
-| `T-shirt.md` | Effort sizing, scope dependencies and delivery risk | Planned |
+| [`14-TESTING-STRATEGY.md`](14-TESTING-STRATEGY.md) | Release gates, test matrix, security, AI evaluation and E2E | **Draft — in review** |
+| [`15-DEPLOYMENT-RUNBOOK.md`](15-DEPLOYMENT-RUNBOOK.md) | Hosting verification, migrations, secrets, smoke tests and rollback | **Draft — in review** |
+| [`16-IMPLEMENTATION-ROADMAP.md`](16-IMPLEMENTATION-ROADMAP.md) | Work packages, dependencies, feasibility gates and submission plan | **Draft — in review** |
+| [`17-SECURITY.md`](17-SECURITY.md) | Threat model, tenant isolation, SSRF, prompt injection and incident controls | **Draft — in review** |
+| [`DECISIONS.md`](DECISIONS.md) | Founder decisions, open technology ADRs and evidence requirements | **Draft — in review** |
+| [`T-shirt.md`](T-shirt.md) | Effort sizing, feasibility uncertainty and risk checkpoints | **Draft — in review** |
 
-Additional operational documentation (such as a testing strategy, deployment runbook, or decision records) may be added as actual needs arise. Add entries here when created.
+These draft specifications are complete as documents but **not yet approved**. They do not establish implementation completion or prove that named external services are available. Add further documents only when a real requirement warrants them.
 
 ## Architecture Decisions
 
 Record consequential architecture decisions in `docs/decisions/` as numbered, dated decision records (ADRs), with **context, options, decision, consequences, and status**.
 
-**Approved decisions recorded:** None yet.
+**Approved product and architectural direction decisions** are summarized in [DECISIONS.md](DECISIONS.md). No provider-specific ADRs are approved yet.
 
-Potential future decisions include authentication provider, persistence model, model/provider choices, data ingestion strategy, background jobs, and hosting. **These are undecided here; do not infer approval from examples.**
+Pending provider-specific decisions include authentication, persistence/migrations, model/provider choices, data ingestion, job execution and hosting. **Approval of the system architecture does not select a hosting vendor or validate a free tier.**
 
 ## Superseded Documents
 
