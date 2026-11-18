@@ -1,0 +1,51 @@
+name: "Engineering task"
+description: "Track implementation, refactoring, tests or technical debt"
+title: "[Task] "
+labels: ["type:task", "status:needs-triage"]
+body:
+  - type: textarea
+    id: objective
+    attributes:
+      label: Objective and current state
+      description: What concrete problem needs to be solved? What is already implemented?
+    validations:
+      required: true
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: Acceptance criteria
+      description: Define correct behavior, failures, and evidence required.
+      placeholder: "- [ ] ...\n- [ ] ..."
+    validations:
+      required: true
+  - type: textarea
+    id: verification
+    attributes:
+      label: Verification plan
+      description: Specific build/lint/type/test/security checks, commands and expected results.
+    validations:
+      required: true
+  - type: input
+    id: links
+    attributes:
+      label: Governing requirement or ADR
+      placeholder: "docs/02-PRD.md / FR-xx / ADR-xx"
+    validations:
+      required: false
+  - type: dropdown
+    id: risk
+    attributes:
+      label: Expected change risk
+      options:
+        - Low - documentation or local nonfunctional change
+        - Medium - behavior, APIs, routine data changes
+        - High - auth, tenancy, security, migrations or production operations
+    validations:
+      required: true
+  - type: textarea
+    id: dependencies
+    attributes:
+      label: Blockers and dependencies
+      description: Describe missing access, approval, dependencies or schema changes. Never include credentials, tokens, keys or other secret values.
+    validations:
+      required: false

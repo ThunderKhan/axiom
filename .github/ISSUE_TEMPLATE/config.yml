@@ -1,0 +1,4 @@
+blank_issues_enabled: false
+# GitHub Private Vulnerability Reporting is currently disabled. Do not offer
+# a broken "Report privately" link. Enable and verify it in repository settings
+# before advertising an external confidential reporting destination.

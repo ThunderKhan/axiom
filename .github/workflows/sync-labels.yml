@@ -1,0 +1,34 @@
+name: Sync repository labels
+
+# Provision labels automatically on the first trusted merge to main, then
+# on catalog changes or deliberate manual dispatch. Never from PR code.
+on:
+  push:
+    branches: [main]
+    paths: ['.github/labels.json']
+  workflow_dispatch:
+
+concurrency:
+  group: axiom-main-label-sync
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  sync-labels:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Checkout default branch without persisted token
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+      - name: Create/update labels from versioned catalog
+        run: python3 ci/sync_labels.py
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+          GITHUB_REF: ${{ github.ref }}
