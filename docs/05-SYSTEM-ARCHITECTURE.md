@@ -33,7 +33,7 @@ This document proposes the technical **how** for the already approved product **
 | A-04 | **Supabase Auth** for authentication and session issuance | **Approved — ADR-002; configuration unverified** |
 | A-05 | Long-running research executed by an independent process from the same Python codebase, with a durable PostgreSQL job queue | Proposed |
 | A-06 | Typed, evidence-first relational records/edges; no graph database initially | Proposed |
-| A-07 | Provider-agnostic structured LLM adapter with deterministic fallbacks, zero planned paid API use | Proposed |
+| A-07 | **Groq primary, Gemini privacy/consent-gated fallback**, shared structured model adapter and honest deterministic fallback ([ADR-005](decisions/005-ai-inference-providers.md)) | **Approved strategy — provider calls and terms unverified** |
 | A-08 | HTTP REST plus authenticated MCP using shared application/use-case layer | Proposed |
 | A-09 | Server-owned external URL ingestion with SSRF and prompt-injection boundaries | Proposed |
 | A-10 | **Managed web/API hosting with separately executable research worker; modest hosting spend permitted** ([ADR-008](decisions/008-managed-hosting-and-worker.md)) | **Approved strategy; exact vendor/tier and deployment tests pending** |
@@ -113,7 +113,7 @@ flowchart TD
 | Async work | PostgreSQL-backed jobs with leased worker | No Redis/Kafka requirement; durable state and retries | If free worker infeasible, run bounded tasks with explicit timeout/status |
 | Public-source adapters | HN public API, selected RSS/Atom, Bluesky if independently validated; public URL input | Permitted acquisition and observable data provenance | HN official API is item-oriented, not a general full-text search engine; adapter needs an honest indexing/query strategy |
 | Competitor extraction | Safe HTTP HTML fetch + constrained text extraction; selective crawl tooling only if needed | Bound network and content risk | JS-heavy and blocked pages may remain unknown |
-| LLM inference | Swappable free-access model provider(s), output-schema validation | Model flexibility and failure fallback | **No provider or free quota assumed available yet**; without real inference do not claim AI analysis worked |
+| LLM inference | **Groq primary, Gemini conditional fallback** ([ADR-005](decisions/005-ai-inference-providers.md)) | Schema/citation validation, data classification, permitted routing and deterministic degradation | Verify exact legitimate free quotas, policies and working models before release |
 | Graph visualization | Client graph library with typed node/edge DTOs | Evidence graph can be interactive without graph DB | Accessible report/list is mandatory |
 | MCP transport | Python MCP SDK / current compatible Streamable HTTP | Real external integration; shared domain logic | Confirm client compatibility/auth against supported protocol revision before committing |
 | Tests | pytest, Playwright, type/lint/build quality gates | Contract, isolation and deployed E2E evidence | Actual commands and CI workflow follow engineering standards |
@@ -608,3 +608,7 @@ Do **not** create approved ADR claims merely from this draft. Record selected al
 The founder additionally requests architecture capable of serving **500 simultaneously active, authenticated founders**. This is an explicit **capacity design objective**, not tested throughput. Keep FastAPI stateless, PostgreSQL connections pooled, source and AI tasks in bounded durable research jobs, cache workspace-scoped reads safely and use jittered/backoff polling to avoid synchronized request storms. See [18-SCALABILITY.md](18-SCALABILITY.md) for workload assumptions, initial 25–50 requests/s test envelope, queue fairness, load/soak testing and the required evidence before capacity can be claimed. Whether verified 500-user capacity is a hard November 26 launch gate remains an explicit founder decision. **No load benchmark has been run.**
 
 **Hosting decision (approved 18 November 2026):** [ADR-008](decisions/008-managed-hosting-and-worker.md) selects managed deployment with a separately runnable FastAPI research worker, permits reasonable **infrastructure** charges, and retains the **₹0 external AI/research API spend constraint**. Vercel and Railway remain *candidates*, not actual purchased or proven services. The 500-founder target still requires load testing.
+
+## 22. Approved AI provider routing (decision 3 of 6)
+
+[ADR-005](decisions/005-ai-inference-providers.md) selects **Groq first**, and **Gemini as fallback only for inputs allowed by current provider terms and any required user consent**. Founder-private, CRM and mixed/unknown inputs are **not eligible for silent Gemini free-tier failover**. If no eligible provider can process the request, return a transparent rules-only/manual or unavailable state; no fabricated AI completion. Shared adapter records redacted provider/model, prompt-schema version, source citations, rate/quota and fallback outcome, keeping external paid AI/research API spending at **₹0**. Neither provider has yet been validated by a real API call under this decision.
