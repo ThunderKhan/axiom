@@ -1,0 +1,14 @@
+version = 1
+
+[packages.web]
+directory = "apps/web"
+manifest = "package.json"
+lockfile = "package-lock.json"
+test_files = ["src/**/*.test.ts", "tests/**/*.smoke.spec.ts"]
+test_report = "test-results/junit.xml"
+install = ["npm", "ci", "--no-audit", "--no-fund"]
+lint = ["npm", "run", "check:style"]
+typecheck = ["npm", "run", "typecheck"]
+test = ["npm", "run", "test:ci"]
+build = ["npm", "run", "build"]
+security = ["npm", "run", "audit"]
