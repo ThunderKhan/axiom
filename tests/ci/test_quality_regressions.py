@@ -62,8 +62,61 @@ class QualityRegressionTests(unittest.TestCase):
         ]
         for step in gate.CHECKS:
             config.append(f'{step} = ["tool", "{step}"]')
+        if manifest != "go.mod":
+            config.append('test_report = "build/junit.xml"')
         self.write("ci/quality.toml", "\n".join(config) + "\n")
         return root
+
+    def make_runnable_python_package(self, test_method):
+        self.make_package(
+            manifest="pyproject.toml",
+            lockfile="uv.lock",
+            test_file="tests/test_sample.py",
+        )
+        source = self.write("apps/web/src/module.py", "def f(): return 1\\n")
+        self.write(
+            "apps/web/tests/test_sample.py",
+            "import unittest\\n"
+            "class SampleTest(unittest.TestCase):\\n"
+            f"    def test_regression(self): {test_method}\\n",
+        )
+        runner = '''
+import pathlib
+import sys
+import unittest
+import xml.etree.ElementTree as ET
+suite = unittest.defaultTestLoader.discover("tests", pattern="test_*.py")
+result = unittest.TextTestRunner(verbosity=1).run(suite)
+root = ET.Element("testsuite", tests=str(result.testsRun))
+case = ET.SubElement(root, "testcase", name="test_regression")
+if result.skipped:
+    ET.SubElement(case, "skipped")
+if result.failures:
+    ET.SubElement(case, "failure").text = result.failures[0][1]
+if result.errors:
+    ET.SubElement(case, "error").text = result.errors[0][1]
+pathlib.Path("build").mkdir(exist_ok=True)
+ET.ElementTree(root).write("build/junit.xml", encoding="utf-8")
+pathlib.Path("test-ran.marker").write_text(str(result.wasSuccessful()))
+sys.exit(0 if result.wasSuccessful() else 1)
+'''
+        self.write("apps/web/run-tests.py", runner)
+        config_file = self.root / "ci/quality.toml"
+        config = config_file.read_text(encoding="utf-8")
+        for step in gate.CHECKS:
+            actual = (f'{step} = ["{sys.executable}", "-m", "compileall", "-q", "."]'
+                      if step != "test"
+                      else f'{step} = ["{sys.executable}", "run-tests.py"]')
+            config = config.replace(f'{step} = ["tool", "{step}"]', actual)
+        config_file.write_text(config, encoding="utf-8")
+        return source
+
+    def run_python_fixture_through_main(self, source):
+        with patch.object(gate, "ROOT", self.root), patch.object(
+            gate, "tracked", return_value=[source]
+        ), patch.object(sys, "argv", ["ci/quality_gate.py", "application"]):
+            with contextlib.redirect_stderr(io.StringIO()):
+                return gate.main()
 
     def test_default_workflow_is_valid(self):
         gate.check_workflow(self.root)
@@ -236,33 +289,51 @@ class QualityRegressionTests(unittest.TestCase):
         with patch.object(gate.subprocess, "run", return_value=fake):
             gate.run_application(self.root, [source])
 
-    def test_full_application_mode_returns_nonzero_when_real_test_fails(self):
-        self.make_package(
-            manifest="pyproject.toml",
-            lockfile="uv.lock",
-            test_file="tests/test_sample.py",
-        )
-        source = self.write("apps/web/src/module.py", "def f(): return 1\n")
+    def test_full_application_mode_checks_exact_failing_and_passing_test(self):
+        source = self.make_runnable_python_package("self.fail('expected')")
+        self.assertEqual(1, self.run_python_fixture_through_main(source))
+        marker = self.root / "apps/web/test-ran.marker"
+        self.assertEqual("False", marker.read_text(encoding="utf-8"))
+        # A harmless install failure cannot satisfy this regression: the
+        # marker proves the actual unittest suite ran and failed.
+        report = self.root / "apps/web/build/junit.xml"
+        self.assertTrue(report.is_file())
         self.write(
             "apps/web/tests/test_sample.py",
-            "import unittest\n"
-            "class BrokenTest(unittest.TestCase):\n"
-            "    def test_regression(self): self.fail('expected')\n",
+            "import unittest\\n"
+            "class SampleTest(unittest.TestCase):\\n"
+            "    def test_regression(self): self.assertEqual(2, 2)\\n",
         )
-        config_file = self.root / "ci/quality.toml"
-        config = config_file.read_text(encoding="utf-8")
-        for step in gate.CHECKS:
-            actual = (f'{step} = ["{sys.executable}", "-m", "compileall", "-q", "."]'
-                      if step != "test"
-                      else f'{step} = ["{sys.executable}", "-m", "unittest", '
-                           '"discover", "-s", "tests", "-p", "test_*.py"]')
-            config = config.replace(f'{step} = ["tool", "{step}"]', actual)
-        config_file.write_text(config, encoding="utf-8")
-        with patch.object(gate, "ROOT", self.root), patch.object(
-            gate, "tracked", return_value=[source]
-        ), patch.object(sys, "argv", ["ci/quality_gate.py", "application"]):
-            with contextlib.redirect_stderr(io.StringIO()):
-                self.assertEqual(1, gate.main())
+        marker.unlink()
+        self.assertEqual(0, self.run_python_fixture_through_main(source))
+        self.assertEqual("True", marker.read_text(encoding="utf-8"))
+
+    def test_non_go_all_skipped_suite_fails_even_with_zero_exit(self):
+        source = self.make_runnable_python_package("self.skipTest('not executed')")
+        self.assertEqual(1, self.run_python_fixture_through_main(source))
+        report = self.root / "apps/web/build/junit.xml"
+        self.assertTrue(report.is_file())
+        with self.assertRaisesRegex(gate.QualityError, "zero successfully executed"):
+            gate.check_junit_test_evidence(report, "web")
+
+    def test_report_from_previous_run_cannot_satisfy_new_run(self):
+        source = self.make_runnable_python_package("self.assertTrue(True)")
+        report = self.root / "apps/web/build/junit.xml"
+        report.parent.mkdir(exist_ok=True)
+        report.write_text('<testsuite><testcase name="stale"/></testsuite>')
+        # All checks appear to return successfully, but no current test
+        # command has created a report; stale evidence must be removed.
+        with patch.object(gate.subprocess, "run", return_value=subprocess.CompletedProcess([], 0)):
+            with self.assertRaisesRegex(gate.QualityError, "missing or oversized"):
+                gate.run_application(self.root, [source])
+
+    def test_junit_rejects_malformed_xml_and_empty_reports(self):
+        report = self.write("apps/web/build/junit.xml", "<testsuite>broken")
+        with self.assertRaisesRegex(gate.QualityError, "invalid JUnit"):
+            gate.check_junit_test_evidence(report, "web")
+        report.write_text('<testsuite tests="0"></testsuite>')
+        with self.assertRaisesRegex(gate.QualityError, "zero successfully executed"):
+            gate.check_junit_test_evidence(report, "web")
 
 
 if __name__ == "__main__":
