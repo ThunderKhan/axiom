@@ -5,7 +5,7 @@
 
 ## 1. Design intent
 
-Recommend **PostgreSQL** as the sole durable record system. Use normalized relational rows for identity, research, source provenance, evidence and CRM; typed nodes/edges represent the evidence graph. No separate graph/vector database is necessary for initial scale. These are **proposed schema contracts**, not migrations already applied.
+**Approved stack:** Supabase-hosted **PostgreSQL**, with Python **SQLAlchemy 2.x** and **Alembic** migrations, per [ADR-002](decisions/002-authentication-database-and-api-boundary.md). Use normalized relational rows for identity, research, source provenance, evidence and CRM; typed nodes/edges represent the evidence graph. No separate graph/vector database is necessary for initial scale. These are **proposed schema contracts**, not migrations already applied.
 
 Invariants:
 1. All private records are scoped to a workspace owned by an authenticated principal.
@@ -113,7 +113,7 @@ For each private table enable RLS and add ownership policies using valid members
 
 Suggested indices: workspaces(owner_user_id); runs(workspace_id,created_at DESC); signals(workspace_id,run_id); sources(workspace_id,provider,canonical_url); assessments(workspace_id,signal_id); graph nodes/edges(workspace_id,assessment_id); leads(workspace_id,stage,updated_at); followups(workspace_id,status,due_at); jobs(status,next_attempt_at,lease_until); audit(workspace_id,created_at). Validate with EXPLAIN instead of indexing every field.
 
-Pick **Alembic or coherent SQL migrations**, not both as conflicting sources. Requirements: clean install, upgrade migration, schema-drift check, downgrade or forward-fix recovery, backups before destructive changes, and dry run with realistic data. Never commit evaluator passwords.
+Use **Alembic migrations** as the authoritative schema migration source alongside SQLAlchemy 2.x; avoid a competing ad hoc SQL migration source. Requirements: clean install, upgrade migration, schema-drift check, downgrade or forward-fix recovery, backups before destructive changes, and dry run with realistic data. Never commit evaluator passwords.
 
 Retention and deletion windows are not invented in this document; define after source terms, privacy and operational review. Prefer bounded excerpts and hashes. Encrypt transit, secure provider credentials, redact audits.
 
@@ -126,4 +126,4 @@ Retention and deletion windows are not invented in this document; define after s
 - Live vs cached vs seeded records are differentiated in data and UI.
 - Clean/upgrade migrations pass in CI; backup+restore works on selected host.
 
-**Open:** Supabase project/provider selection, actual auth/user table linkage, SQLAlchemy vs SQL migration workflow, exact JSONB boundaries, RLS role strategy, retention policy, and deletion semantics. See [Deployment Runbook](15-DEPLOYMENT-RUNBOOK.md).
+**Open:** Supabase project provisioning and actual quotas, auth-to-application user mapping, exact JSONB boundaries, RLS role strategy, tenancy tests, retention/deletion rules. **Technology and migration framework are approved by ADR-002**; their implementation remains unverified. See [Deployment Runbook](15-DEPLOYMENT-RUNBOOK.md).
