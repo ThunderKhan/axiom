@@ -1,6 +1,6 @@
 # Axiom — Security, Privacy and Threat Model
 
-**Status:** DRAFT — in review · **Version:** 0.1 · **Date:** 18 November 2026  
+**Status:** APPROVED — security requirements baseline; implementation and provider choices unverified · **Version:** 1.0 · **Approved:** 18 November 2026  
 **Authority:** [PRD](02-PRD.md), [Architecture](05-SYSTEM-ARCHITECTURE.md), [TRD](06-TRD.md), [Database](07-DATABASE-DESIGN.md)
 
 ## 1. Scope and security boundaries
@@ -87,3 +87,12 @@ Evaluator account credentials are shared privately and rotated/revoked after jud
 - [ ] Rate limits, worker retries and audit events verified.
 
 **Open decisions:** exact identity/MCP OAuth implementation, data retention period, RLS roles, source storage/licensing, CSP/session strategy, backup capabilities, abuse thresholds and incident operator. This is a technical draft, not a certification.
+
+## 8. Additional controls for 500 active founders
+
+- Enforce per-principal, per-workspace and provider-wide quotas with safe responses under overload; do not let one founder monopolize workers or free source/API quotas.
+- Central authorization and scope checks apply under pooled database connections and across API replicas. Cache keys must be workspace- and identity-aware to avoid leaking private research between founders.
+- Burst/retry load must not multiply tool writes; enforce idempotency, short transactions and bounded worker leases. Avoid PII in load-generator accounts.
+- Run concurrent tenant-isolation tests alongside the [scalability benchmark](18-SCALABILITY.md). Passing a throughput test without isolation is **not** a release acceptance.
+
+**Approval boundary:** These are mandatory security **controls and tests**, not a claim that any authentication scheme, RLS policy, MCP server or deployed instance is already secure.
