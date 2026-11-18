@@ -12,7 +12,7 @@ Use **tested vertical slices**, not separate weeks of frontend then backend then
 
 ### Workstream dependency graph
 
-§§§mermaid
+```mermaid
 flowchart TD
   Decisions[Host/Auth/DB and source feasibility] --> Core[Workspace + migrations + identity]
   Core --> Profile[Profile versioning + onboarding]
@@ -27,7 +27,7 @@ flowchart TD
   Scenarios --> End
   CRM --> End
   MCP --> End
-§§§
+```
 
 ## 2. Milestone calendar (targets, not completion claims)
 
@@ -72,7 +72,7 @@ These dates are **targets**, not completion statuses. Do not overpromise which b
 ## 5. Engineering workflow and review
 
 - Implement small PRs by vertical feature; update docs/index only when approved decisions change.
-- Read actual repository §agents.md§ and §engineering.md§ before coding; this roadmap does not supersede their quality rules.
+- Read actual repository `agents.md` and `engineering.md` before coding; this roadmap does not supersede their quality rules.
 - PR description includes requirement IDs (FR, MVP, UF, TRD), design decisions, changed contracts/schema, security impact, test evidence and known limitations.
 - Never merge fake live research or fixture-only acceptance as complete.
 - Enforce CI build/lint/type tests, API/security/migration tests; run real integration and browser smoke before deploying.
