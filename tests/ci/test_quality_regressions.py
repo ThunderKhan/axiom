@@ -201,8 +201,8 @@ class QualityRegressionTests(unittest.TestCase):
         fake = subprocess.CompletedProcess(
             args=["go", "test", "-json", "./..."],
             returncode=0,
-            stdout='{"Action":"run","Package":"example","Test":"TestSkipped"}\\n'
-                   '{"Action":"skip","Package":"example","Test":"TestSkipped"}\\n',
+            stdout='{"Action":"run","Package":"example","Test":"TestSkipped"}\n'
+                   '{"Action":"skip","Package":"example","Test":"TestSkipped"}\n',
             stderr="",
         )
         with patch.object(gate.subprocess, "run", return_value=fake):
