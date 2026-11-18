@@ -587,6 +587,9 @@ sys.exit(0 if result.wasSuccessful() else 1)
                             if "quality_gate.py application" in step.get("run", ""))
                 if level == "workflow":
                     data["defaults"] = {"run": {"shell": "python"}}
+                    # Isolate the application's inherited shell from the
+                    # repository commands, which are also mandatory.
+                    data["jobs"]["repository"]["defaults"] = {"run": {"shell": "bash"}}
                 elif level == "job":
                     job["defaults"] = {"run": {"shell": "python"}}
                 else:
@@ -597,6 +600,7 @@ sys.exit(0 if result.wasSuccessful() else 1)
                 )
         data = self.parsed_workflow()
         data["defaults"] = {"run": {"shell": "python"}}
+        data["jobs"]["repository"]["defaults"] = {"run": {"shell": "bash"}}
         data["jobs"]["application"]["defaults"] = {"run": {"shell": "bash"}}
         self.write(".github/workflows/quality.yml", yaml.safe_dump(data, sort_keys=False))
         gate.check_workflow(self.root)
