@@ -36,7 +36,7 @@
 
 ## 4. ADR template and procedure
 
-When a consequential decision is resolved, create §docs/decisions/NNN-topic.md§ containing:
+When a consequential decision is resolved, create `docs/decisions/NNN-topic.md` containing:
 - **Date/status/decision owner**
 - **Context and driving requirement IDs**
 - **Options compared, tradeoffs and cost/security constraints**
