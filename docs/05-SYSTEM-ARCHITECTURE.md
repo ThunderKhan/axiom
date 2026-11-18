@@ -3,9 +3,9 @@
 **Document path:** `docs/05-SYSTEM-ARCHITECTURE.md`  
 **Project:** Axiom — AI-native market and competitive intelligence  
 **Program:** YARC Builder Fellowship 2027, Track 04 (Acquire + Differentiate)  
-**Version:** 0.1 — architecture proposal  
+**Version:** 1.0 — approved  
 **Prepared:** 18 November 2026  
-**Status:** DRAFT — requires founder approval  
+**Status:** APPROVED — founder approval 18 November 2026  
 **Release target:** 26 November 2026, 11:59 PM IST  
 **Normative product references:** [Approved PRD](02-PRD.md), [Approved MVP](03-MVP.md), [Approved User Flows](04-USER-FLOWS.md)  
 **Documentation navigation:** [01-INDEX.md](01-INDEX.md)
@@ -14,7 +14,7 @@
 
 ## 0. Authority, status, and decision boundaries
 
-This document proposes the technical **how** for the already approved product **what**. It is not yet an approved architecture decision record, nor a claim that any code, connector, provider, or deployment exists.
+This document proposes the technical **how** for the already approved product **what**. The founder approved the architecture on 18 November 2026. It is not a claim that any code, connector, provider, or deployment exists; unresolved vendor and free-tier feasibility decisions remain open.
 
 - The approved PRD and MVP take precedence over this draft for product requirements.
 - References to technologies, services, costs, source APIs, limits, and route names in this draft are **proposals** unless explicitly labeled an approved product requirement.
@@ -601,4 +601,4 @@ Do **not** create approved ADR claims merely from this draft. Record selected al
 
 ---
 
-**Approval request:** Review the **modular backend + independently runnable worker**, **PostgreSQL evidence model and job strategy**, **API-first authorization**, **LLM fallback behavior**, and **hosting feasibility gates**. Approval will promote this proposal to version `1.0` in [01-INDEX.md](01-INDEX.md); until then it is **not** implementation authority.
+**Approval request:** Review the **modular backend + independently runnable worker**, **PostgreSQL evidence model and job strategy**, **API-first authorization**, **LLM fallback behavior**, and **hosting feasibility gates**. Approval record: approved as an architectural direction on 18 November 2026; individual vendor, hosting and protocol choices require their separate verification gates and ADRs.
