@@ -23,7 +23,9 @@ jobs:
       - name: Resolve public npm dependencies to a committed lockfile
         working-directory: apps/web
         run: |
-          npm install --package-lock-only --ignore-scripts --no-audit --no-fund
+          npm install --global npm@10.9.2
+          npm --version
+          npm install --package-lock-only --ignore-scripts --no-audit --no-fund || { cat "$(ls -t "$HOME"/.npm/_logs/*debug*.log | head -n 1)"; exit 1; }
           echo "__AXIOM_LOCK_BEGIN__"
           base64 -w0 package-lock.json
           echo
