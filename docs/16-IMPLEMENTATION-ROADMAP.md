@@ -39,8 +39,8 @@ flowchart TD
 | **21 Nov** | Discovery normalization, dedupe, ranking and competitor report | Real records + clear evidence timestamps + Unknown price failure case |
 | **22 Nov** | End-to-end saved opportunity, evidence model, evaluate full R0 breadth | Browser journey works and owner sees R0 source/CRM/scenario/MCP status |
 | **23 Nov** | Interactive graph/report, two+ saved counterfactuals, HTTP and five MCP tools | Scenario snapshot replay, external MCP client and safe CRM write |
-| **24 Nov** | Advanced R0 expansion where viable, UX polish, source coverage; freeze nonessential work | Defect/security priority; no speculative new dependencies |
-| **25 Nov** | CI/E2E, server/worker outage tests, final deployment, evaluator credentials, source disclosures | Release gate report with passing traces and limitations |
+| **24 Nov** | Advanced R0 expansion, UX polish, source coverage; freeze nonessential work; stage first **100-active-user** capacity smoke | Log achieved throughput, auth/tenant safety and infrastructure constraints |
+| **25 Nov** | CI/E2E, server/worker outage tests, **250-active-user** preliminary load test, deployment/evaluator rehearsal | Report authentic load results/limitations alongside P0 release gates |
 | **26 Nov** | Final URLs, private credentials, README, final smoke and submission before cutoff | Evidence submitted; no hidden fake functionality |
 
 These dates are **targets**, not completion statuses. Do not overpromise which broad source and AI integrations are feasible without actual calls.
@@ -96,7 +96,7 @@ Landing/login/app URL and evaluator account test; live source evidence; 10 label
 
 ## 8. Capacity, effort sizing and delivery risk
 
-**Founder requirement:** plan to support **500 concurrently active founders**, defined and testable in [18-SCALABILITY.md](18-SCALABILITY.md). In the November 26 window, implement stateless API behavior, workspace-indexed database queries, bounded worker concurrency, quota transparency and scalable contracts. Run a meaningful initial load test; any hard 500-user release guarantee requires actual deployed load evidence and a founder-approved gate decision.
+**Founder requirement:** plan to support **500 concurrently active founders**, defined and testable in [18-SCALABILITY.md](18-SCALABILITY.md). In the November 26 window, implement stateless API behavior, workspace-indexed database queries, bounded worker concurrency, quota transparency and scalable contracts. **[ADR-010](decisions/010-staged-500-founder-capacity-release.md) selects staged verification:** run and report **100 and 250 active-user** preliminary tests before November 26; a passing **500-user** benchmark is mandatory **before broader production rollout**, not a fellowship-submission blocker. Preliminary tests cannot be represented as 500-user proof.
 
 The mistakenly introduced separate `T-shirt.md` is not needed. Retain these coarse **relative effort estimates here** without presenting them as guaranteed durations:
 
@@ -129,3 +129,7 @@ Implement [ADR-005](decisions/005-ai-inference-providers.md) as a **shared Groq-
 ## 12. OAuth MCP integration workstream (technical decision 5 of 6)
 
 [ADR-006](decisions/006-mcp-oauth-and-write-approval.md) selects **OAuth 2.1** for regular third-party MCP users, with Authorization Code + PKCE, resource metadata/discovery, scoped/audience-bound tokens, user consent and revocation. Select an authorization server compatible with Supabase user identity, implement external client registration/handshake, enforce permissions per tool/workspace, and prove read-only denial and consented idempotent writes. **No initial personal API tokens.** This is a major security/integration dependency before November 26; don't treat a mocked OAuth flow as release proof.
+
+## 13. Selected Option B — November 26 and production capacity milestones
+
+Under [ADR-010](decisions/010-staged-500-founder-capacity-release.md), the team must build stateless API/database pooling, fair async job handling, isolated caches and quotas **now**. Before the November 26 fellowship submission, execute **100- and 250-concurrent-active-founder** representative load tests with real authenticated operations and mocked external calls (avoid abuse/fees), record latency, RPS, failures, queue/DB pool and authorization results. Treat test failures as defects and report openly; all independently approved P0 security/function gates must still pass for fellowship. **After the submission, no broader production opening** until a separately run **500-active-founder** mixed-load/soak/restart test passes on the intended hosting tier with accepted metrics. Never equate untested architecture with certified production capacity; track exact hosting upgrades/cost separately from ₹0 paid AI/research APIs.
