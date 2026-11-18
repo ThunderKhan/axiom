@@ -48,6 +48,7 @@ class LabelSyncTests(unittest.TestCase):
 
     def test_missing_labels_are_created_without_delete(self):
         labels = sync_labels.load_catalog()
+        base = "/repos/ThunderKhan/axiom/labels"
         env = {
             "GH_TOKEN": "dummy-test-token",
             "GITHUB_REPOSITORY": "ThunderKhan/axiom",
@@ -56,15 +57,62 @@ class LabelSyncTests(unittest.TestCase):
         seen = []
 
         def fake_request(method, path, token, payload=None):
-            seen.append((method, path))
+            seen.append((method, path, payload))
             return [] if method == "GET" else payload
 
         with patch.dict(os.environ, env, clear=True), patch.object(
             sync_labels, "request_json", side_effect=fake_request
         ):
             sync_labels.sync()
-        self.assertEqual(sum(m == "POST" for m, _ in seen), len(labels))
-        self.assertEqual(sum(m == "DELETE" for m, _ in seen), 0)
+        self.assertEqual(seen[0], ("GET", base + "?per_page=100&page=1", None))
+        self.assertEqual(
+            seen[1:],
+            [("POST", base, spec) for spec in labels],
+        )
+        self.assertFalse(any(method == "DELETE" for method, _, _ in seen))
+
+    def test_existing_case_variant_is_updated_without_creation_or_rename(self):
+        labels = sync_labels.load_catalog()
+        desired = labels[0]
+        other = {"name": "unrelated:preserve", "color": "cccccc", "description": "Unrelated"}
+        existing = [dict(desired, name=desired["name"].upper(), color="ffffff"), other]
+        env = {
+            "GH_TOKEN": "dummy-test-token",
+            "GITHUB_REPOSITORY": "ThunderKhan/axiom",
+            "GITHUB_REF": "refs/heads/main",
+        }
+        seen = []
+
+        def fake_request(method, path, token, payload=None):
+            seen.append((method, path, payload))
+            return existing if method == "GET" else payload
+
+        with patch.dict(os.environ, env, clear=True), patch.object(
+            sync_labels, "request_json", side_effect=fake_request
+        ):
+            sync_labels.sync()
+        updated = [x for x in seen if x[0] == "PATCH"]
+        self.assertEqual(updated, [
+            ("PATCH", "/repos/ThunderKhan/axiom/labels/" + desired["name"].upper().replace(":", "%3A"),
+             {"color": desired["color"], "description": desired["description"]})
+        ])
+        self.assertNotIn("name", updated[0][2])
+        self.assertFalse(any(
+            method == "POST" and payload["name"] == desired["name"]
+            for method, _, payload in seen
+        ))
+        self.assertFalse(any("unrelated:preserve" in path and method != "GET"
+                             for method, path, _ in seen))
+
+    def test_catalog_rejects_casefold_duplicate_names(self):
+        labels = sync_labels.load_catalog()
+        with patch.object(sync_labels, "LABELS_FILE") as fake_file:
+            import json
+            fake_file.read_text.return_value = json.dumps(
+                labels + [dict(labels[0], name=labels[0]["name"].upper())]
+            )
+            with self.assertRaisesRegex(ValueError, "duplicate label"):
+                sync_labels.load_catalog()
 
 
 if __name__ == "__main__":
