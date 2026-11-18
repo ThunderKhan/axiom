@@ -11,14 +11,14 @@ Expose Axiom opportunity research, competitor teardown, evidence assessment and 
 
 ## 2. Trust boundary
 
-§§§mermaid
+```mermaid
 flowchart LR
   C[External MCP client] -->|HTTPS scoped token| M[MCP auth + transport]
   M --> P[Scope + workspace policy]
   P --> D[Shared domain services]
   D --> J[Bounded research jobs]
   D --> DB[(Scoped PostgreSQL)]
-§§§
+```
 
 - Every tool call independently validates authenticated principal, workspace membership, tool capability and bounded input.
 - Caller-supplied IDs are selection only; tokens cannot grant another workspace.
@@ -31,23 +31,23 @@ flowchart LR
 
 **Undecided:** compliant OAuth 2.1/resource-server authorization (including protected resource metadata where required) versus a carefully designed user-authorized, revocable scoped integration token. A browser auth JWT is **not automatically suitable** as an MCP third-party access token; verify intended audience and token purpose. Reject expired, wrong-issuer, wrong-audience and unauthorized tokens. Do not expose Supabase service-role keys.
 
-Proposed scopes: §research:read§, §research:run§, §evidence:read§, §scenarios:read§, §scenarios:write§, §crm:read§, §crm:write§, §workspaces:list§.
+Proposed scopes: `research:read`, `research:run`, `evidence:read`, `scenarios:read`, `scenarios:write`, `crm:read`, `crm:write`, `workspaces:list`.
 
-A user must explicitly authorize the client and workspace. Low-risk §save_lead§ can operate with a narrowly granted §crm:write§ scope if the user consented to that action class, permissions can be revoked and actions are audited. More sensitive changes require a reviewed approval mechanism (client-confirmed or server-side pending approval). **Do not assume every MCP client provides an approval UI**.
+A user must explicitly authorize the client and workspace. Low-risk `save_lead` can operate with a narrowly granted `crm:write` scope if the user consented to that action class, permissions can be revoked and actions are audited. More sensitive changes require a reviewed approval mechanism (client-confirmed or server-side pending approval). **Do not assume every MCP client provides an approval UI**.
 
 ## 4. P0 tools
 
 | Tool | Important input | Output | Required scope |
 |---|---|---|---|
-| §discover_opportunities§ | workspace_id, profile_version_id, query, source_families?, max_records?, idempotency_key | run_id, queued/running/completed status, warnings, source coverage | research:run |
-| §research_competitor§ | workspace_id, confirmed URL, fields?, idempotency_key | job/report ID, source warnings, status | research:run |
-| §assess_opportunity§ | workspace_id, signal_id, profile_version_id, snapshot? | assessment ID, verdict, graph/report references, uncertainty | research:run + evidence:read |
-| §list_saved_leads§ | workspace_id, stage?, limit?, cursor? | scoped leads, cursor | crm:read |
-| §save_lead§ | workspace_id, signal_id, assessment_id?, title?, idempotency_key | lead ID, stage, already_exists, audit ID | crm:write + user authorization |
+| `discover_opportunities` | workspace_id, profile_version_id, query, source_families?, max_records?, idempotency_key | run_id, queued/running/completed status, warnings, source coverage | research:run |
+| `research_competitor` | workspace_id, confirmed URL, fields?, idempotency_key | job/report ID, source warnings, status | research:run |
+| `assess_opportunity` | workspace_id, signal_id, profile_version_id, snapshot? | assessment ID, verdict, graph/report references, uncertainty | research:run + evidence:read |
+| `list_saved_leads` | workspace_id, stage?, limit?, cursor? | scoped leads, cursor | crm:read |
+| `save_lead` | workspace_id, signal_id, assessment_id?, title?, idempotency_key | lead ID, stage, already_exists, audit ID | crm:write + user authorization |
 
 **Illustrative save_lead input schema:**
 
-§§§json
+```json
 {
   "type":"object","additionalProperties":false,
   "required":["workspace_id","signal_id","idempotency_key"],
@@ -59,7 +59,7 @@ A user must explicitly authorize the client and workspace. Low-risk §save_lead�
     "idempotency_key":{"type":"string","minLength":8,"maxLength":120}
   }
 }
-§§§
+```
 
 A long-running tool may return a **run ID and queued status**; it cannot claim the work is complete. Expose a scoped status resource/tool or documented polling workflow if necessary.
 
@@ -67,19 +67,19 @@ A long-running tool may return a **run ID and queued status**; it cannot claim t
 
 | Tool | Behavior | Guardrail |
 |---|---|---|
-| §update_lead_stage§ | Advance/edit lead stage | Version check, crm:write, approval policy |
-| §create_followup§ | Create user-owned reminder | No external messages |
-| §inspect_evidence§ | Get source-linked graph details | evidence:read |
-| §compare_scenarios§ | Compare saved hypothesis variants | scenarios:read; immutable baseline |
-| §generate_outreach_draft§ | Create **unsent** personalized draft | crm:write; user review; no send tool |
-| §list_workspaces§ | List only owned workspaces | workspaces:list |
+| `update_lead_stage` | Advance/edit lead stage | Version check, crm:write, approval policy |
+| `create_followup` | Create user-owned reminder | No external messages |
+| `inspect_evidence` | Get source-linked graph details | evidence:read |
+| `compare_scenarios` | Compare saved hypothesis variants | scenarios:read; immutable baseline |
+| `generate_outreach_draft` | Create **unsent** personalized draft | crm:write; user review; no send tool |
+| `list_workspaces` | List only owned workspaces | workspaces:list |
 | Monitoring controls (if separately approved) | Manage scheduled permitted source research | Explicit schedule, quotas, no autonomous outreach |
 
 All R0 objectives remain tracked even if the first five P0 tools work. **Do not report "extensive MCP complete" merely because a basic endpoint responds.**
 
 ## 6. Standard tool result and errors
 
-Return §status§ (queued/running/partial/completed/failed), §data§ or job ID, §sources§ with actual URL+timestamps, §warnings§/§uncertainty§, §request_id§ and workspace context when appropriate. Errors: §AUTH_REQUIRED§, §WORKSPACE_FORBIDDEN§, §TOOL_SCOPE_DENIED§, §VALIDATION_FAILED§, §RATE_LIMITED§, §SOURCE_UPSTREAM_FAILED§, §JOB_NOT_COMPLETE§. Never put stack traces or secrets in model-readable text.
+Return `status` (queued/running/partial/completed/failed), `data` or job ID, `sources` with actual URL+timestamps, `warnings`/`uncertainty`, `request_id` and workspace context when appropriate. Errors: `AUTH_REQUIRED`, `WORKSPACE_FORBIDDEN`, `TOOL_SCOPE_DENIED`, `VALIDATION_FAILED`, `RATE_LIMITED`, `SOURCE_UPSTREAM_FAILED`, `JOB_NOT_COMPLETE`. Never put stack traces or secrets in model-readable text.
 
 Handle client connection interruption and retries without duplicate write; audit includes caller, tool, workspace, target object, result and redacted metadata.
 
