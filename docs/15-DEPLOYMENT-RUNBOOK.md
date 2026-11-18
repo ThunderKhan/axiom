@@ -24,7 +24,7 @@ No separate evaluator-only page, public guest sandbox, bulk sending service or u
 ## 2. Pre-deployment decisions (blockers)
 
 1. Select frontend/API/worker hosts with persistent runtime, outbound HTTPS, service-to-DB connectivity, TLS and transparent free quotas; document actual billing/usage risk.
-2. Confirm secure identity provider and privileged credential handling. Pre-provision a low-privilege evaluator account; distribute password **privately** through submission channel.
+2. Use **Supabase Auth + Supabase-hosted PostgreSQL** per [ADR-002](decisions/002-authentication-database-and-api-boundary.md) and confirm privileged credential handling. Pre-provision a low-privilege evaluator account; distribute password **privately** through submission channel.
 3. Verify database migrations, backups, schema isolation and connection limits with chosen PostgreSQL environment.
 4. Prove a worker can claim a queued job, survive restart and resume; if free worker is impossible, stop and obtain approved architecture adjustment.
 5. Confirm at least one permitted live public source fetch, competitor website extraction and model call if marketing AI as working.
@@ -54,7 +54,7 @@ Keep `.env.example` with names/placeholders, not tokens. Use hosting secrets man
 1. Record current commit SHA/tag and host configuration; back up database if migrations change persistent data.
 2. Install from lockfile; ensure frontend build, Python imports/type/lint/tests, migration check and API schema generation pass.
 3. Provision database/auth resources with least-privilege secrets; enable and verify RLS where appropriate, while enforcing app-layer workspace checks.
-4. Apply versioned migrations transactionally/with a forward-fix plan; verify schema version, essential indices and constraints.
+4. Apply **Alembic** versioned migrations (SQLAlchemy 2.x models), transactionally/with a forward-fix plan; verify schema version, essential indices and constraints.
 5. Deploy API and separate worker (same Python source, different start command). Validate `/health` and readiness DB probe.
 6. Deploy frontend with **public** API/Auth configuration; check HTTPS, redirect to login, CORS and cookies/tokens.
 7. Run real bounded source retrieval and competitor teardown through API; confirm worker actually processes queued jobs.
