@@ -335,9 +335,7 @@ def test_real_db_readiness_and_safe_unreachable_failure(database: Database) -> N
         assert ready.status_code == 200
         assert ready.json()["dependencies"] == "database_verified"
     with TestClient(
-        create_app(
-            RuntimeSettings(database_url="***127.0.0.1:55433/axiom_test")
-        )
+        create_app(RuntimeSettings(database_url="***127.0.0.1:55433/axiom_test"))
     ) as client:
         ready = client.get("/api/v1/health/ready")
         assert ready.status_code == 503
@@ -347,6 +345,7 @@ def test_real_db_readiness_and_safe_unreachable_failure(database: Database) -> N
         create_app(RuntimeSettings(database_url=os.environ["AXIOM_MIGRATION_DATABASE_URL"]))
     ) as client:
         assert client.get("/api/v1/health/ready").status_code == 503
+
 
 def test_readiness_fails_on_revoked_runtime_schema_and_function_grants(
     database: Database, privileged_engine

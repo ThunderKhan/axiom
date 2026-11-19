@@ -129,8 +129,7 @@ class WorkspaceStore:
             self._active(session, principal)
             session.execute(text("SELECT pg_advisory_xact_lock(:key)"), {"key": advisory_key})
             existing = session.scalar(
-                select(WorkspaceCreateIdempotency)
-                .where(
+                select(WorkspaceCreateIdempotency).where(
                     WorkspaceCreateIdempotency.owner_user_id == principal.user_id,
                     WorkspaceCreateIdempotency.operation == _OPERATION,
                     WorkspaceCreateIdempotency.key == key,
