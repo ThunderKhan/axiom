@@ -54,7 +54,7 @@ def create_app(settings: RuntimeSettings | None = None) -> FastAPI:
             if database is not None:
                 database.close()
 
-    application = FastAPI(title="Axiom API (foundation only)", version="0.2.0", lifespan=lifespan)
+    application = FastAPI(title="Axiom API", version="0.2.0", lifespan=lifespan)
     application.state.jwt_verifier = JwtVerifier(resolved) if resolved.auth_configured else None
     application.state.database = database
     application.add_middleware(

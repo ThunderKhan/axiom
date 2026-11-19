@@ -17,6 +17,7 @@ from fastapi.testclient import TestClient
 from jwt.algorithms import RSAAlgorithm
 from sqlalchemy import create_engine, select, text
 from sqlalchemy.exc import DBAPIError
+from pydantic import SecretStr
 
 from app.auth import JwtVerifier, VerifiedPrincipal
 from app.database import Database, _pg_url
@@ -151,12 +152,15 @@ def test_bootstrap_read_only_me_multiowner_crud_and_foreign_idor(api, privileged
             headers=bb, json={"name": "Stolen", "expected_version": 1},
         ), 404, "NOT_FOUND"
     )
-    assert_error(create(client, aa, "Forged", "keywith-foreigntest").__class__ if False else
-                 client.post(
-                     "/api/v1/workspaces",
-                     json={"name": "Forgery", "owner_user_id": str(b)},
-                     headers={**aa, "Idempotency-Key": "ownerSpoofKey88"},
-                 ), 422, "VALIDATION_FAILED")
+    assert_error(
+        client.post(
+            "/api/v1/workspaces",
+            json={"name": "Forgery", "owner_user_id": str(b)},
+            headers={**aa, "Idempotency-Key": "ownerSpoofKey88"},
+        ),
+        422,
+        "VALIDATION_FAILED",
+    )
     assert client.get("/api/v1/workspaces/" + a1["id"], headers=aa).json() == a1
 
     with privileged_engine.begin() as conn:
@@ -370,7 +374,7 @@ def test_privileged_rls_bypass_is_not_app_authorization(api, privileged_engine) 
         assert conn.scalar(text("SELECT current_user")) == "axiom_migrator"
         assert conn.scalar(text("SELECT count(*) FROM axiom.workspaces")) >= 1
     privileged = Database(settings.model_copy(update={
-        "database_url": os.environ["AXIOM_MIGRATION_DATABASE_URL"]
+        "database_url": SecretStr(os.environ["AXIOM_MIGRATION_DATABASE_URL"])
     }))
     try:
         store = WorkspaceStore(privileged)
@@ -426,7 +430,7 @@ def test_safe_database_outage_and_rollbacks(api, privileged_engine) -> None:
     finally:
         runtime.close()
     bad_settings = settings.model_copy(update={
-        "database_url": "postgresql://test_user:doNotRevealMe@127.0.0.1:55433/axiom_test"
+        "database_url": SecretStr("postgresql://test_user:doNotRevealMe@127.0.0.1:55433/axiom_test")
     })
     fail_app = create_app(bad_settings)
     fail_app.state.jwt_verifier = client.app.state.jwt_verifier

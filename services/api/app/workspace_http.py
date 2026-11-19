@@ -134,7 +134,7 @@ def me(principal: Principal, store: Store) -> UserDTO:
 def list_workspaces(
     principal: Principal,
     store: Store,
-    limit: Annotated[int, Query(strict=True, ge=1, le=100)] = 20,
+    limit: Annotated[int, Query(ge=1, le=100)] = 20,
     cursor: Annotated[str | None, Query(max_length=512)] = None,
 ) -> WorkspaceListDTO:
     result = store.page_workspaces(principal, limit=limit, cursor=cursor)
