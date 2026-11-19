@@ -6,10 +6,10 @@ Never repurpose this runner for hosted or existing user databases.
 
 from __future__ import annotations
 
-from collections.abc import Mapping
 import os
 import subprocess
 import sys
+from collections.abc import Mapping
 from pathlib import Path
 
 import psycopg
@@ -23,9 +23,7 @@ ENV_NAMES = (
 )
 
 
-def run(
-    *args: str, env: Mapping[str, str], expect_failure: bool = False
-) -> None:
+def run(*args: str, env: Mapping[str, str], expect_failure: bool = False) -> None:
     print(f"Running isolated database check: {' '.join(args)}", flush=True)
     result = subprocess.run(args, cwd=ROOT, env=dict(env), check=False)  # noqa: S603
     if (result.returncode != 0) != expect_failure:
@@ -106,17 +104,13 @@ def main() -> int:
         expect_failure=True,
     )
     with psycopg.connect(env[ENV_NAMES[0]]) as admin:
-        unchanged = admin.execute(
-            "SELECT version_num FROM public.alembic_version"
-        ).fetchone()
+        unchanged = admin.execute("SELECT version_num FROM public.alembic_version").fetchone()
         if unchanged != ("m1_0002_rls",):
             raise RuntimeError("A refused downgrade unexpectedly changed the schema revision")
     run("uv", "run", "--frozen", "alembic", "check", env=env)
     # Drift detection must reject an unexpected index; remove it only from this
     # explicitly isolated ephemeral database, even if the negative check fails.
-    with psycopg.connect(
-        env["AXIOM_MIGRATION_DATABASE_URL"], autocommit=True
-    ) as migration:
+    with psycopg.connect(env["AXIOM_MIGRATION_DATABASE_URL"], autocommit=True) as migration:
         migration.execute("CREATE INDEX ix_m1_temporary_drift_probe ON axiom.workspaces (name)")
         try:
             run("uv", "run", "--frozen", "alembic", "check", env=env, expect_failure=True)
