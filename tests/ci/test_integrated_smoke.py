@@ -57,6 +57,30 @@ class IntegrationSmokeContracts(unittest.TestCase):
             with self.assertRaisesRegex(RuntimeError, "occupied"):
                 require_port_free(port)
 
+    def test_timed_out_loopback_probe_allows_free_local_bind(self) -> None:
+        with socket.socket() as probe:
+            probe.bind(("127.0.0.1", 0))
+            port = probe.getsockname()[1]
+
+        with patch(
+            "ci.integrated_smoke.socket.create_connection",
+            side_effect=TimeoutError("timed out"),
+        ):
+            require_port_free(port)
+
+    def test_timed_out_loopback_probe_rejects_occupied_local_bind(self) -> None:
+        with socket.socket() as listener:
+            listener.bind(("127.0.0.1", 0))
+            listener.listen(1)
+            port = listener.getsockname()[1]
+
+            with patch(
+                "ci.integrated_smoke.socket.create_connection",
+                side_effect=TimeoutError("timed out"),
+            ):
+                with self.assertRaisesRegex(RuntimeError, f"Port {port} could not be verified free"):
+                    require_port_free(port)
+
     def test_dead_web_process_rejected_without_success(self) -> None:
         class DeadProcess:
             returncode = 7
