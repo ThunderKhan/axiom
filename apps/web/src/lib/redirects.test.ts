@@ -28,7 +28,13 @@ describe("M1 H1 fail-closed redirect allowlist", () => {
     }
   });
   it("never reflects untrusted login notices", () => {
-    assert.equal(loginDestination("session-expired"), "/login?returnTo=%2Fapp&notice=session-expired");
-    assert.equal(loginDestination("https://external.test"), "/login?returnTo=%2Fapp");
+    assert.equal(
+      loginDestination("session-expired"),
+      "/login?returnTo=%2Fapp&notice=session-expired",
+    );
+    assert.equal(
+      loginDestination("https://external.test"),
+      "/login?returnTo=%2Fapp",
+    );
   });
 });

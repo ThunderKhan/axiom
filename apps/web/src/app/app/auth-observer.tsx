@@ -12,20 +12,24 @@ export function AuthObserver({ verifiedSubject }: { verifiedSubject: string }) {
       clearPrivateState(window.localStorage);
       clearPrivateState(window.sessionStorage);
     };
-    const { data: listener } = client.auth.onAuthStateChange((event, session) => {
-      if (event === "SIGNED_OUT") {
-        reset();
-        window.location.replace("/login?notice=session-expired");
-      } else if (
-        (event === "SIGNED_IN" || event === "TOKEN_REFRESHED" || event === "INITIAL_SESSION") &&
-        session?.user.id &&
-        session.user.id !== verifiedSubject
-      ) {
-        reset();
-        // A different principal must be freshly authorized by the server.
-        window.location.replace("/app");
-      }
-    });
+    const { data: listener } = client.auth.onAuthStateChange(
+      (event, session) => {
+        if (event === "SIGNED_OUT") {
+          reset();
+          window.location.replace("/login?notice=session-expired");
+        } else if (
+          (event === "SIGNED_IN" ||
+            event === "TOKEN_REFRESHED" ||
+            event === "INITIAL_SESSION") &&
+          session?.user.id &&
+          session.user.id !== verifiedSubject
+        ) {
+          reset();
+          // A different principal must be freshly authorized by the server.
+          window.location.replace("/app");
+        }
+      },
+    );
     const onPageShow = (event: PageTransitionEvent) => {
       if (event.persisted) window.location.reload();
     };

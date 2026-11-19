@@ -5,7 +5,10 @@ import { LoginForm } from "./login-form";
 export const dynamic = "force-dynamic";
 
 type LoginPageProps = {
-  searchParams: Promise<{ notice?: string | string[]; returnTo?: string | string[] }>;
+  searchParams: Promise<{
+    notice?: string | string[];
+    returnTo?: string | string[];
+  }>;
 };
 
 export default async function LoginPage({ searchParams }: LoginPageProps) {
@@ -19,7 +22,8 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
     "signed-out-local":
       "This browser is signed out. Remote session revocation could not be confirmed.",
   };
-  const notice = typeof params.notice === "string" ? notices[params.notice] : undefined;
+  const notice =
+    typeof params.notice === "string" ? notices[params.notice] : undefined;
   // Do not mirror untrusted returnTo input into the page, form or redirect.
   void params.returnTo;
 
@@ -40,23 +44,30 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
             <div className="eyebrow">PRIVATE WORKSPACE</div>
             <h1>Welcome back.</h1>
             <p className="introduction">
-              Sign in using your provisioned Supabase account. No guest or evaluator bypass.
+              Sign in using your provisioned Supabase account. No guest or
+              evaluator bypass.
             </p>
-            {notice && <p className="auth-notice" role="status">{notice}</p>}
+            {notice && (
+              <p className="auth-notice" role="status">
+                {notice}
+              </p>
+            )}
             {!configured && (
               <p className="auth-error" role="alert">
-                Sign-in is not configured in this environment. Ask the operator to configure
-                the public Supabase URL and publishable key.
+                Sign-in is not configured in this environment. Ask the operator
+                to configure the public Supabase URL and publishable key.
               </p>
             )}
             <LoginForm configured={configured} />
             <p className="auth-help">
-              Account creation and password recovery are not available in this release.
-              Contact your account administrator if you need access.
+              Account creation and password recovery are not available in this
+              release. Contact your account administrator if you need access.
             </p>
           </div>
         </main>
-        <footer className="site-footer">Axiom · Supabase identity · No guest mode</footer>
+        <footer className="site-footer">
+          Axiom · Supabase identity · No guest mode
+        </footer>
       </div>
     </>
   );

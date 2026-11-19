@@ -7,7 +7,11 @@ import { signIn, type LoginState } from "./actions";
 function SubmitButton({ disabled }: { disabled: boolean }) {
   const { pending } = useFormStatus();
   return (
-    <button className="auth-submit" disabled={disabled || pending} type="submit">
+    <button
+      className="auth-submit"
+      disabled={disabled || pending}
+      type="submit"
+    >
       {pending ? "Verifying account…" : "Sign in"}
     </button>
   );

@@ -11,9 +11,15 @@ describe("M1 H3 private-state cleanup contract", () => {
       ["color-scheme", "light"],
     ]);
     const store = {
-      get length() { return data.size; },
-      key(index: number) { return [...data.keys()][index] ?? null; },
-      removeItem(key: string) { data.delete(key); },
+      get length() {
+        return data.size;
+      },
+      key(index: number) {
+        return [...data.keys()][index] ?? null;
+      },
+      removeItem(key: string) {
+        data.delete(key);
+      },
     };
     clearPrivateState(store);
     assert.deepEqual([...data.entries()], [["color-scheme", "light"]]);

@@ -5,9 +5,15 @@ import { createServerAuthClient } from "../../../lib/supabase/server";
 /** PKCE callback only; never honor a caller-supplied redirect or OAuth token. */
 export async function GET(request: NextRequest) {
   const fail = () =>
-    NextResponse.redirect(new URL("/login?notice=auth-unavailable", request.url), {
-      headers: { "Cache-Control": "no-store", "Referrer-Policy": "no-referrer" },
-    });
+    NextResponse.redirect(
+      new URL("/login?notice=auth-unavailable", request.url),
+      {
+        headers: {
+          "Cache-Control": "no-store",
+          "Referrer-Policy": "no-referrer",
+        },
+      },
+    );
   const code = request.nextUrl.searchParams.get("code");
   if (
     !publicAuthConfig() ||
@@ -33,7 +39,10 @@ export async function GET(request: NextRequest) {
       return fail();
     }
     return NextResponse.redirect(new URL("/app", request.url), {
-      headers: { "Cache-Control": "no-store", "Referrer-Policy": "no-referrer" },
+      headers: {
+        "Cache-Control": "no-store",
+        "Referrer-Policy": "no-referrer",
+      },
     });
   } catch {
     return fail();

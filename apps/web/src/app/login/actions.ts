@@ -8,8 +8,10 @@ import { safeReturnPath } from "../../lib/redirects";
 import { createServerAuthClient } from "../../lib/supabase/server";
 
 export type LoginState = Readonly<{ message: string }>;
-const invalidLogin = "We could not sign you in. Check your details and try again.";
-const unavailable = "Sign-in is temporarily unavailable. Please try again later.";
+const invalidLogin =
+  "We could not sign you in. Check your details and try again.";
+const unavailable =
+  "Sign-in is temporarily unavailable. Please try again later.";
 
 export async function signIn(
   _previous: LoginState,
@@ -34,9 +36,15 @@ export async function signIn(
   }
   try {
     const supabase = await createServerAuthClient(true);
-    const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+    const { data, error } = await supabase.auth.signInWithPassword({
+      email,
+      password,
+    });
     if (error || !data.session) {
-      return { message: error?.status && error.status >= 500 ? unavailable : invalidLogin };
+      return {
+        message:
+          error?.status && error.status >= 500 ? unavailable : invalidLogin,
+      };
     }
     // A successful password response is not the final trust decision.
     const result = await supabase.auth.getClaims();
@@ -83,5 +91,7 @@ export async function signOut(): Promise<never> {
     }
   }
   revalidatePath("/app", "page");
-  redirect("/login?notice=" + (remoteUnconfirmed ? "signed-out-local" : "signed-out"));
+  redirect(
+    "/login?notice=" + (remoteUnconfirmed ? "signed-out-local" : "signed-out"),
+  );
 }

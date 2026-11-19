@@ -3,7 +3,9 @@ import { NextResponse, type NextRequest } from "next/server";
 import { publicAuthConfig } from "../auth-config";
 
 /** Next.js 16 proxy: refresh cookies without treating cookie contents as authority. */
-export async function refreshAuthCookies(request: NextRequest): Promise<NextResponse> {
+export async function refreshAuthCookies(
+  request: NextRequest,
+): Promise<NextResponse> {
   const config = publicAuthConfig();
   if (!config) return NextResponse.next({ request });
   let response = NextResponse.next({ request });
@@ -16,8 +18,12 @@ export async function refreshAuthCookies(request: NextRequest): Promise<NextResp
       setAll(toSet, headers) {
         toSet.forEach(({ name, value }) => request.cookies.set(name, value));
         response = NextResponse.next({ request });
-        toSet.forEach(({ name, value, options }) => response.cookies.set(name, value, options));
-        Object.entries(headers ?? {}).forEach(([name, value]) => response.headers.set(name, value));
+        toSet.forEach(({ name, value, options }) =>
+          response.cookies.set(name, value, options),
+        );
+        Object.entries(headers ?? {}).forEach(([name, value]) =>
+          response.headers.set(name, value),
+        );
       },
     },
   });

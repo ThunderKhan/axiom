@@ -81,7 +81,6 @@ ingestion, model inference, and CRM are owned by later issues. The integrated
 web authentication is not a declaration of application-user or workspace
 authorization, or proof of real Supabase provider configuration.
 
-
 ## M1.4 local identity setup and protected-route testing (Windows PowerShell)
 
 From the repository root, use the reviewed Node.js 22.16.0 and npm 10.9.2.
@@ -92,10 +91,10 @@ Run these commands inside apps/web:
     notepad .env.local
     npm run dev
 
-Set NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY
+Set NEXT*PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY
 in the *ignored* .env.local file, from an explicitly authorized **nonproduction**
 Supabase project. NEXT_PUBLIC_API_BASE_URL can remain the public loopback
-API origin. Only the public key prefixed sb_publishable_ is supported; never
+API origin. Only the public key prefixed sb_publishable* is supported; never
 use a sb_secret/service_role key, private signing material, evaluator credentials
 or database URL in NEXT_PUBLIC variables.
 

@@ -10,11 +10,17 @@ describe("M1 C1 public Supabase configuration boundary", () => {
       url: "https://project.supabase.co",
       key,
     });
-    assert.equal(validateAuthConfig("http://127.0.0.1:54321", key)?.url, "http://127.0.0.1:54321");
+    assert.equal(
+      validateAuthConfig("http://127.0.0.1:54321", key)?.url,
+      "http://127.0.0.1:54321",
+    );
   });
   it("treats absent and partially configured providers as unavailable", () => {
     assert.equal(validateAuthConfig(undefined, undefined), null);
-    assert.equal(validateAuthConfig("https://project.supabase.co", undefined), null);
+    assert.equal(
+      validateAuthConfig("https://project.supabase.co", undefined),
+      null,
+    );
     assert.equal(validateAuthConfig(undefined, key), null);
   });
   it("rejects privileged keys, HTTP remote origins and URL injection", () => {
@@ -37,7 +43,10 @@ describe("M1 C1 public Supabase configuration boundary", () => {
       "sb_publishable_too many spaces",
       "eyJhbGciOiJIUzI1NiJ9",
     ]) {
-      assert.equal(validateAuthConfig("https://project.supabase.co", invalidKey), null);
+      assert.equal(
+        validateAuthConfig("https://project.supabase.co", invalidKey),
+        null,
+      );
     }
   });
 });

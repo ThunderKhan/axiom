@@ -10,17 +10,21 @@ export default function HomePage() {
       <div className="page-shell">
         <header className="site-header">
           <span className="wordmark">AXIOM</span>
-          <Link className="header-login" href="/login">Sign in</Link>
+          <Link className="header-login" href="/login">
+            Sign in
+          </Link>
         </header>
         <main id="main-content" tabIndex={-1}>
           <div className="eyebrow">BUILDING WITH EVIDENCE</div>
           <h1>Axiom is taking shape.</h1>
           <p className="introduction">
             An evidence-grounded intelligence workspace for founders is planned.
-            This public page shows the implementation status; private research and
-            workspaces are not yet available.
+            This public page shows the implementation status; private research
+            and workspaces are not yet available.
           </p>
-          <Link className="primary-cta" href="/login">Sign in to Axiom</Link>
+          <Link className="primary-cta" href="/login">
+            Sign in to Axiom
+          </Link>
           <section className="status-panel" aria-labelledby="status-heading">
             <div className="status-heading">
               <h2 id="status-heading">Implementation status</h2>

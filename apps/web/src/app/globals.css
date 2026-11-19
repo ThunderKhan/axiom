@@ -202,19 +202,18 @@ h1 {
   }
 }
 
-
 /* Founder-approved ten-token palette, shared by public and authenticated UI. */
 :root {
-  --bg: #FAF7F1;
-  --band: #F1EAE2;
-  --ink: #302B32;
-  --text: #655B61;
-  --muted: #766B70;
-  --line: #302B3221;
-  --green: #AC4E30;
-  --deep: #271F28;
-  --leaf: #F2A487;
-  --tint: #F6E2D7;
+  --bg: #faf7f1;
+  --band: #f1eae2;
+  --ink: #302b32;
+  --text: #655b61;
+  --muted: #766b70;
+  --line: #302b3221;
+  --green: #ac4e30;
+  --deep: #271f28;
+  --leaf: #f2a487;
+  --tint: #f6e2d7;
   --background: var(--bg);
   --foreground: var(--ink);
   --accent: var(--green);
