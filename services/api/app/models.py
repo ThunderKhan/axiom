@@ -23,7 +23,11 @@ from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 SCHEMA = "axiom"
 HEAD_REVISION = "m1_0002_rls"
 # PostgreSQL's U& literal enumerates Python str.strip() whitespace codepoints.
-_TRIM = r"U&'\0009\000A\000B\000C\000D\001C\001D\001E\001F\0020\0085\00A0\1680\2000\2001\2002\2003\2004\2005\2006\2007\2008\2009\200A\2028\2029\202F\205F\3000'"
+_TRIM = (
+    r"U&'\0009\000A\000B\000C\000D\001C\001D\001E\001F\0020\0085\0"
+    r"0A0\1680\2000\2001\2002\2003\2004\2005\2006\2007\2008\2009\2"
+    r"00A\2028\2029\202F\205F\3000'"
+)
 NAME_CHECK = (
     "char_length(name) BETWEEN 1 AND 120 "
     f"AND name = btrim(name, {_TRIM}) "
