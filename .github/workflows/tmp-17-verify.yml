@@ -1,0 +1,50 @@
+name: Temporary M1.4 branch verification
+on:
+  push:
+    branches: [feat/17-supabase-web-auth]
+permissions:
+  contents: read
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    env:
+      CI: 'true'
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v7
+        with:
+          node-version: '22.16.0'
+      - name: Reproducible install
+        working-directory: apps/web
+        run: npm ci --no-audit --no-fund
+      - name: Format only changed web source and export exact corrected text
+        run: |
+          cd apps/web
+          npm exec -- prettier --write src/lib/auth-config.ts src/lib/redirects.ts src/lib/private-state.ts src/lib/supabase/browser.ts src/lib/supabase/server.ts src/lib/supabase/proxy.ts src/proxy.ts src/app/login/actions.ts src/app/login/login-form.tsx src/app/login/page.tsx src/app/app/auth-observer.tsx src/app/app/sign-out-button.tsx src/app/app/page.tsx src/app/auth/callback/route.ts src/lib/auth-config.test.ts src/lib/redirects.test.ts src/lib/private-state.test.ts tests/auth.smoke.spec.ts src/lib/foundation.ts src/app/page.tsx src/app/layout.tsx src/app/globals.css scripts/run-unit-tests.mjs README.md .env.example
+          python - <<'PY'
+          from pathlib import Path
+          import subprocess
+          paths = subprocess.check_output(['git', 'diff', '--name-only', '--', 'apps/web'], text=True).splitlines()
+          print('AXFMT_COUNT:' + str(len(paths)))
+          for path in paths:
+              body = Path('../' + path).read_bytes().hex()
+              print('AXFMT_BEGIN:' + path)
+              for offset in range(0, len(body), 256):
+                  print('AXFMT_HEX:' + body[offset:offset+256])
+              print('AXFMT_END:' + path)
+          PY
+      - name: Strict TypeScript, lint, unit, and production build
+        working-directory: apps/web
+        run: |
+          npm run lint
+          npm run typecheck
+          npm run test:unit
+          npm run build
+      - name: Browser smoke against real Next.js
+        working-directory: apps/web
+        run: |
+          npx playwright install chromium
+          npm run test:smoke
