@@ -1,4 +1,5 @@
 """API process entrypoint. Use `python -m app.api`."""
+
 from __future__ import annotations
 
 import sys

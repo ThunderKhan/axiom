@@ -1,4 +1,5 @@
 """Versioned HTTP health interface; no business or authentication routes yet."""
+
 from __future__ import annotations
 
 from typing import Literal

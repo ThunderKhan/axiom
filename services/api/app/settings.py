@@ -1,4 +1,5 @@
 """Validated, server-only process configuration."""
+
 from __future__ import annotations
 
 from ipaddress import ip_address

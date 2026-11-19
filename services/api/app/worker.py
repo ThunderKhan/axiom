@@ -1,5 +1,8 @@
 """Independent bounded idle worker; no queue, leases or research jobs at WP-01."""
+
 from __future__ import annotations
+
+from collections.abc import Callable
 
 import signal
 import sys
@@ -14,7 +17,7 @@ from app.settings import RuntimeSettings, load_settings
 
 def run_idle_worker(settings: RuntimeSettings, stop: Event | None = None) -> int:
     stopped = stop if stop is not None else Event()
-    previous: dict[signal.Signals, signal.Handlers] = {}
+    previous: dict[signal.Signals, Callable[[int, FrameType | None], object] | int | None] = {}
 
     def request_stop(_number: int, _frame: FrameType | None) -> None:
         stopped.set()

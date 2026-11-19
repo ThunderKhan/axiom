@@ -1,4 +1,5 @@
 """Run both required Ruff quality checks, failing on either violation."""
+
 from __future__ import annotations
 
 import subprocess
