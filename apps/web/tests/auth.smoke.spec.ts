@@ -88,3 +88,13 @@ test("mobile login has no overflow and the keyboard can reach public navigation"
     page.getByRole("link", { name: "Skip to sign in" }),
   ).toBeFocused();
 });
+
+test("prototype-related notice parameters are ignored, not rendered as objects", async ({
+  page,
+}) => {
+  for (const notice of ["__proto__", "constructor", "toString"]) {
+    const response = await page.goto("/login?notice=" + notice);
+    expect(response?.status()).toBe(200);
+    await expect(page.getByRole("heading", { name: "Welcome back." })).toBeVisible();
+  }
+});
