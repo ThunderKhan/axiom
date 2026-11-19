@@ -60,3 +60,5 @@ jobs:
         run: python ci/quality_gate.py application
       - name: Mandatory Docker build, Compose and API/worker smoke
         run: python ci/docker_smoke.py
+      - name: Mandatory M0 real web, browser, API and worker integration smoke
+        run: python ci/integrated_smoke.py
