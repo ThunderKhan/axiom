@@ -1,0 +1,37 @@
+name: Temporary M1 PostgreSQL locked-resolution probe
+
+on:
+  push:
+    branches:
+      - feat/16-workspace-persistence-rls
+
+permissions:
+  contents: read
+
+jobs:
+  lock:
+    name: Temporary M1 dependency lock validation
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout without persisted credentials
+        uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - name: Python 3.12
+        uses: actions/setup-python@v7
+        with:
+          python-version: '3.12'
+      - name: Install required uv
+        run: python -m pip install --disable-pip-version-check uv==0.10.0
+      - name: Resolve pinned dependencies and export lockfile as nonsecret log lines
+        run: |
+          cd services/api
+          uv lock
+          python - <<'PY'
+          from pathlib import Path
+          print('M1_LOCK_BEGIN')
+          for line in Path('uv.lock').read_text(encoding='utf-8').splitlines():
+              print('M1_LOCK_LINE:' + line)
+          print('M1_LOCK_END')
+          PY
