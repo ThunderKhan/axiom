@@ -88,7 +88,7 @@ class WorkspaceStore:
         with self.database.transaction(principal) as session:
             inserted = session.execute(
                 insert(AppUser)
-                .values(id=principal.user_id, status="active")
+                .values(id=principal.user_id)
                 .on_conflict_do_nothing(index_elements=[AppUser.id])
                 .returning(AppUser.id)
             ).scalar_one_or_none()
@@ -150,7 +150,7 @@ class WorkspaceStore:
                     replayed=True,
                 )
             workspace = Workspace(
-                id=uuid4(), owner_user_id=principal.user_id, name=normalized, version=1
+                id=uuid4(), owner_user_id=principal.user_id, name=normalized
             )
             session.add(workspace)
             session.flush()

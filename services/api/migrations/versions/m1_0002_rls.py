@@ -78,13 +78,19 @@ def upgrade() -> None:
     )
     op.execute("GRANT USAGE ON SCHEMA axiom TO axiom_runtime")
     op.execute("GRANT EXECUTE ON FUNCTION axiom.current_subject() TO axiom_runtime")
-    op.execute("GRANT SELECT, INSERT ON axiom.app_users TO axiom_runtime")
-    op.execute("GRANT SELECT, INSERT ON axiom.workspaces TO axiom_runtime")
+    op.execute("GRANT SELECT ON axiom.app_users TO axiom_runtime")
+    op.execute("GRANT INSERT (id) ON axiom.app_users TO axiom_runtime")
+    op.execute("GRANT SELECT ON axiom.workspaces TO axiom_runtime")
+    op.execute("GRANT INSERT (id, owner_user_id, name) ON axiom.workspaces TO axiom_runtime")
     op.execute(
         "GRANT UPDATE (name, updated_at, version) ON axiom.workspaces TO axiom_runtime"
     )
     op.execute(
-        "GRANT SELECT, INSERT ON axiom.workspace_create_idempotency TO axiom_runtime"
+        "GRANT SELECT ON axiom.workspace_create_idempotency TO axiom_runtime"
+    )
+    op.execute(
+        "GRANT INSERT (owner_user_id, operation, key, fingerprint, response_status, "
+        "response_body, expires_at) ON axiom.workspace_create_idempotency TO axiom_runtime"
     )
     # Read-only schema revision allows an unprivileged API to detect drift honestly.
     op.execute("GRANT SELECT ON public.alembic_version TO axiom_runtime")
