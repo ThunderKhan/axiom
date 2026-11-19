@@ -3,7 +3,9 @@ import { describe, it } from "node:test";
 import {
   AUTH_CHANNEL,
   SIGNED_OUT_MESSAGE,
+  broadcastSignOut,
   isSignOutMessage,
+  subscribeToSignOut,
 } from "./auth-sync.ts";
 
 describe("M1 H3 cross-tab sign-out messages", () => {
@@ -21,4 +23,20 @@ describe("M1 H3 cross-tab sign-out messages", () => {
       assert.equal(isSignOutMessage(invalid), false);
     }
   });
+  it("delivers a cross-tab logout event without any credentials", async () => {
+    await new Promise<void>((resolve, reject) => {
+      let stop = () => {};
+      const timeout = setTimeout(() => {
+        stop();
+        reject(new Error("Cross-tab logout notification was not delivered"));
+      }, 3000);
+      stop = subscribeToSignOut(() => {
+        clearTimeout(timeout);
+        stop();
+        resolve();
+      });
+      broadcastSignOut();
+    });
+  });
+
 });

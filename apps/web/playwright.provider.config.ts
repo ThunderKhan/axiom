@@ -25,6 +25,8 @@ export default defineConfig({
   retries: 0,
   fullyParallel: false,
   reporter: [["list"]],
+  // Prevent failure context snapshots from persisting to disk.
+  preserveOutput: "never",
   use: {
     baseURL,
     ...devices["Desktop Chrome"],
