@@ -50,11 +50,14 @@ def command(*args: str, env: dict[str, str] | None = None, timeout: int = 180) -
 
 
 def require_port_free(port: int) -> None:
-    with socket.socket() as listener:
-        try:
-            listener.bind(("127.0.0.1", port))
-        except OSError as exc:
-            raise RuntimeError(f"Port {port} is occupied; stop the existing service") from exc
+    """Reject an active listener, not harmless TCP TIME_WAIT after Compose cleanup."""
+    try:
+        with socket.create_connection(("127.0.0.1", port), timeout=0.5):
+            raise RuntimeError(f"Port {port} is occupied; stop the existing service")
+    except ConnectionRefusedError:
+        # The previous container can leave TCP TIME_WAIT sockets behind.
+        # No service is listening; the real startup remains the final authority.
+        return
 
 
 def get_json(url: str, *, origin: str | None = None) -> tuple[int, dict[str, str], dict[str, object]]:
