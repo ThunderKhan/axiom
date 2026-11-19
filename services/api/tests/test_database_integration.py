@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import os
 from concurrent.futures import ThreadPoolExecutor
+from contextlib import ExitStack
 from uuid import uuid4
 
 import pytest
@@ -380,3 +381,23 @@ def test_readiness_fails_on_revoked_runtime_schema_and_function_grants(
             with privileged_engine.begin() as conn:
                 conn.execute(text(restore))
         assert database.ready()
+
+
+def test_runtime_pool_exhaustion_marks_readiness_unhealthy_then_recovers() -> None:
+    app = create_app(
+        RuntimeSettings(
+            database_url=os.environ["AXIOM_TEST_RUNTIME_DATABASE_URL"],
+            database_required=True,
+        )
+    )
+    with TestClient(app) as client:
+        assert client.get("/api/v1/health/ready").status_code == 200
+        assert app.state.database is not None
+        with ExitStack() as held:
+            for _ in range(4):
+                held.enter_context(app.state.database.engine.connect())
+            response = client.get("/api/v1/health/ready")
+            assert response.status_code == 503
+            assert response.json()["dependencies"] == "database_not_verified"
+            assert client.get("/api/v1/health/live").status_code == 200
+        assert client.get("/api/v1/health/ready").status_code == 200

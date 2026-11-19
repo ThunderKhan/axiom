@@ -67,6 +67,19 @@ def main() -> int:
     run("uv", "run", "--frozen", "alembic", "upgrade", "head")
     run("uv", "run", "--frozen", "alembic", "upgrade", "head")
     run("uv", "run", "--frozen", "alembic", "check")
+    # Both migrations deliberately prohibit destructive rollback. Verify that
+    # attempted downgrade fails without changing the schema revision.
+    run(
+        "uv", "run", "--frozen", "alembic", "downgrade", "m1_0001_schema",
+        expect_failure=True,
+    )
+    with psycopg.connect(os.environ[ENV_NAMES[0]]) as admin:
+        unchanged = admin.execute(
+            "SELECT version_num FROM public.alembic_version"
+        ).fetchone()
+        if unchanged != ("m1_0002_rls",):
+            raise RuntimeError("A refused downgrade unexpectedly changed the schema revision")
+    run("uv", "run", "--frozen", "alembic", "check")
     # Drift detection must reject an unexpected index; remove it only from this
     # explicitly isolated ephemeral database, even if the negative check fails.
     with psycopg.connect(os.environ["AXIOM_MIGRATION_DATABASE_URL"], autocommit=True) as migration:
