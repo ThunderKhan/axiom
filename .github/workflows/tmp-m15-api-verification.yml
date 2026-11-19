@@ -51,12 +51,11 @@ jobs:
           PY
       - name: Lint, typecheck, unit, and real isolated PostgreSQL integration
         working-directory: services/api
-        env:
-          AXIOM_TEST_ADMIN_DATABASE_URL: postgresql://postgres@127.0.0.1:55432/axiom_test
-          AXIOM_MIGRATION_DATABASE_URL: postgresql://axiom_migrator@127.0.0.1:55432/axiom_test
-          AXIOM_TEST_RUNTIME_DATABASE_URL: postgresql://axiom_runtime@127.0.0.1:55432/axiom_test
         run: |
           uv run --frozen ruff check .
           uv run --frozen mypy app
           uv run --frozen pytest -q --junitxml=test-results/junit.xml
-          uv run --frozen python scripts/run_db_integration.py
+          env AXIOM_TEST_ADMIN_DATABASE_URL=postgresql://postgres@127.0.0.1:55432/axiom_test \
+            AXIOM_MIGRATION_DATABASE_URL=postgresql://axiom_migrator@127.0.0.1:55432/axiom_test \
+            AXIOM_TEST_RUNTIME_DATABASE_URL=postgresql://axiom_runtime@127.0.0.1:55432/axiom_test \
+            uv run --frozen python scripts/run_db_integration.py
