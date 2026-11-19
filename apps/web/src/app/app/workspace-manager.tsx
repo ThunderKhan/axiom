@@ -79,6 +79,7 @@ export function WorkspaceManager({
     message: "Verifying application access…",
   });
   const [name, setName] = useState("");
+  const [switching, setSwitching] = useState<string | null>(null);
   const [creation, setCreation] = useState<CreateState>(emptyForm);
   const generation = useRef(new RequestGeneration());
   const activeRequest = useRef<AbortController | null>(null);
@@ -118,6 +119,7 @@ export function WorkspaceManager({
     pendingCreation.current = null;
     clearBrowserPrivateState();
     setName("");
+    setSwitching(null);
     setCreation(emptyForm);
     setView({
       kind: "blocked",
@@ -163,6 +165,7 @@ export function WorkspaceManager({
       activeRequest.current?.abort();
       const controller = new AbortController();
       activeRequest.current = controller;
+      setSwitching(null);
       setView({ kind: "loading", message: "Checking application account…" });
       try {
         await api.bootstrap(controller.signal);
@@ -236,10 +239,14 @@ export function WorkspaceManager({
     activeRequest.current?.abort();
     const controller = new AbortController();
     activeRequest.current = controller;
-    setView({ kind: "loading", message: "Authorizing selected workspace…" });
+    // Keep the owner-filtered switcher usable while denying access to the old
+    // active context. B may supersede an unresolved A request.
+    setSwitching(id);
+    setView({ ...view, selected: null, notice: "Verifying workspace access…" });
     try {
       const selected = await api.read(id, controller.signal);
       if (!generation.current.current(seq)) return;
+      setSwitching(null);
       saveWorkspacePreference(sessionPreference(), subject, selected.id);
       window.history.replaceState(null, "", "/app?workspace=" + encodeURIComponent(selected.id));
       setView({
@@ -250,6 +257,7 @@ export function WorkspaceManager({
       });
     } catch (error) {
       if (!generation.current.current(seq)) return;
+      setSwitching(null);
       if (error instanceof WorkspaceApiError && error.status === 404) {
         saveWorkspacePreference(sessionPreference(), subject, null);
         window.history.replaceState(null, "", "/app");
@@ -266,6 +274,7 @@ export function WorkspaceManager({
       view.kind !== "ready" ||
       creation.kind === "submitting" ||
       creation.kind === "uncertain" ||
+      switching !== null ||
       pendingCreation.current
     ) return;
     let attempt: CreateAttempt;
@@ -377,7 +386,7 @@ export function WorkspaceManager({
                       onClick={() => void select(item.id)}
                     >
                       <span>{item.name}</span>
-                      <span>{view.selected?.id === item.id ? "Active" : "Select"}</span>
+                      <span>{switching === item.id ? "Checking…" : view.selected?.id === item.id ? "Active" : "Select"}</span>
                     </button>
                   </li>
                 ))}
@@ -385,6 +394,7 @@ export function WorkspaceManager({
             )}
             <div className="workspace-active" aria-live="polite">
               <h3>Active workspace</h3>
+              {switching && <p role="status">Authorizing your selection…</p>}
               {view.selected ? (
                 <>
                   <strong>{view.selected.name}</strong>
@@ -417,7 +427,7 @@ export function WorkspaceManager({
                 maxLength={240}
                 required
                 value={name}
-                disabled={busy || creation.kind === "uncertain"}
+                disabled={busy || switching !== null || creation.kind === "uncertain"}
                 onChange={(event) => setName(event.target.value)}
                 placeholder="e.g. Research notes"
               />
@@ -450,7 +460,7 @@ export function WorkspaceManager({
               <button
                 className="workspace-primary"
                 type="submit"
-                disabled={busy || creation.kind === "uncertain"}
+                disabled={busy || switching !== null || creation.kind === "uncertain"}
               >
                 {busy ? "Creating…" : "Create workspace"}
               </button>
