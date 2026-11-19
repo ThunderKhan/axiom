@@ -135,7 +135,6 @@ class WorkspaceStore:
                     WorkspaceCreateIdempotency.operation == _OPERATION,
                     WorkspaceCreateIdempotency.key == key,
                 )
-                .with_for_update()
             )
             if existing is not None:
                 if existing.fingerprint != fingerprint:
