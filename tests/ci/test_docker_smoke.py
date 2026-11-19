@@ -1,11 +1,14 @@
 """Fail-closed Docker input validation regression tests (Docker-free)."""
 from __future__ import annotations
 
+import sys
 import tempfile
 import unittest
 from pathlib import Path
 
-from ci.docker_smoke import require_inputs
+# quality_gate.py is run as a script; unittest discovery does not add the repo root.
+sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
+from ci.docker_smoke import require_inputs  # noqa: E402
 
 
 class TestDockerContract(unittest.TestCase):
