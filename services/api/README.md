@@ -1,10 +1,12 @@
-# Axiom Python API and worker foundation — issue #9
+# Axiom Python API, worker and M1 database foundation
 
 This package delivers **runtime packaging, operational health and a scoped
 Supabase JWT identity-verification dependency**. The provider integration is not
-yet verified against a real Supabase test project; application-user persistence,
-workspace authorization, database connections, research and worker job recovery
-are not implemented. Both processes use one Python package and Docker image.
+yet verified against a real Supabase test project; database-backed account and
+workspace persistence primitives are available only in the backend, but M1
+application-user/workspace HTTP endpoints, live provider verification, research
+and worker job recovery remain unimplemented. Both processes use one Python
+package and Docker image.
 
 ## Runtime and dependency contract
 
@@ -44,11 +46,17 @@ The API binds `127.0.0.1:8000` by default. Visit:
   `{"status":"ready","scope":"foundation_only","dependencies":"none_configured"}`
 - `http://127.0.0.1:8000/docs` — FastAPI OpenAPI documentation for **health only**
 
-If `AXIOM_DATABASE_URL` is configured, readiness deliberately returns **HTTP
-503**, `{"status":"not_ready","scope":"foundation_only","dependencies":"database_not_verified"}`.
-This is not a database connectivity test. With `AXIOM_DATABASE_REQUIRED=true`
-and no URL, configuration validation **fails startup**. The liveness route reports
-the API process, not external dependency availability.
+When `AXIOM_DATABASE_URL` is configured, readiness checks the **real
+database**: the committed Alembic revision, the non-owner runtime role, RLS
+enabled on all three M1 tables, the required policy names/roles/commands and
+the application column grants. It returns HTTP 200 with
+`database_verified` only if those checks succeed; absent, incompatible,
+unavailable or underprivileged databases return HTTP **503**
+(`database_not_verified`). These catalog checks **do not establish arbitrary
+policy-expression equivalence**, a working hosted Supabase project, or domain
+API authorization. With `AXIOM_DATABASE_REQUIRED=true` and no URL,
+configuration validation **fails startup**. Liveness reports the API process,
+not external dependency availability.
 
 The worker prints `axiom_worker_ready mode=idle_only queue=not_implemented`,
 waits for a bounded `AXIOM_WORKER_RUN_SECONDS` (default 30), then prints
@@ -158,3 +166,119 @@ repository checks as described above and in `ci/README.md`. Provider-backed
 authentication requires a separately authorized nonproduction Supabase project
 with asymmetric Auth signing and a real normal-user access token, supplied
 privately and never pasted into repository, logs, screenshots or PR text.
+
+## M1.3 — approved database foundation (Issue #16)
+
+This package additionally contains **three owner-approved M1 SQLAlchemy models** in
+`app/models.py`, a bounded runtime engine/verified-principal transaction context in
+`app/database.py`, and private backend-only bootstrap/list/create persistence
+primitives in `app/workspace_store.py`. **No `/me` or `/workspaces` REST
+endpoints have been implemented**; those belong to Issue #18. No background job,
+CRM, research schema, browser Supabase table access, or live provider deployment
+is part of this change.
+
+**Versioned migrations:** `m1_0001_schema` creates the private `axiom` schema,
+`app_users`, `workspaces`, `workspace_create_idempotency`, owner foreign keys,
+name/status/version checks and the ordered owner-list index.
+`m1_0002_rls` grants a separate `axiom_runtime` role only required SELECT,
+INSERT-column, and UPDATE-column capabilities, establishes reviewed
+`USING`/`WITH CHECK` RLS, and publishes a SECURITY INVOKER transaction-local
+subject function. The role owning the tables (`axiom_migrator`) is **not**
+a valid API connection: it can bypass RLS by ownership. Explicit server-side
+authorization must always precede operations even if privileged credentials
+are used by a later operator.
+
+- Runtime secret: `AXIOM_DATABASE_URL` (only the least-privileged application role).
+- Migration-only secret: `AXIOM_MIGRATION_DATABASE_URL`. Never expose this to
+  API/worker processes or store it under public Next.js variables.
+- Local disposable-only variables: `AXIOM_TEST_ADMIN_DATABASE_URL` and
+  `AXIOM_TEST_RUNTIME_DATABASE_URL`. These are **not production settings**.
+- Schema is private (`axiom`) rather than Supabase's default Data API exposed
+  `public` schema. Required migrations are **explicit**, never import/startup/request
+  side effects. Runtime SQLAlchemy sessions use transaction-local
+  `set_config('app.current_user_id', <verified UUID>, true)` and are rolled back/
+  closed/returned to the pool. RLS is defense in depth; custom settings do
+  not protect against arbitrary injected SQL.
+- Successful committed workspace-create replay is retained **at least 24 hours**
+  by a DB CHECK. Replay is conservative while the record still exists. After a
+  deliberate operator purge of an expired record, a very late retry may create a
+  second workspace; the pending client retry/deadline contract belongs to #19.
+  There is **no scheduled cleanup** in this scope. A duplicate name with a
+  different key remains a new workspace.
+- Owner suspension/deprovisioning is operator-controlled and is never reset by
+  ordinary bootstrap. No public or runtime DELETE/owner-transfer operation.
+
+### Isolated Windows PowerShell verification
+
+From the repository root in Docker Desktop/PowerShell, start **only** the
+disposable PostgreSQL 17 service. The service binds **127.0.0.1:55432** and
+stores its test data in container tmpfs (no durable named volume). It deliberately
+uses a *trust-authenticated test-only* loopback port: **never point this setup
+at a production, shared-network or customer database**.
+
+```powershell
+docker compose -f infra/compose.db-test.yml up -d --wait
+docker compose -f infra/compose.db-test.yml ps
+cd services/api
+uv sync --locked --all-groups
+$env:AXIOM_TEST_ADMIN_DATABASE_URL = "postgresql://postgres@127.0.0.1:55432/axiom_test"
+$env:AXIOM_MIGRATION_DATABASE_URL = "postgresql://axiom_migrator@127.0.0.1:55432/axiom_test"
+$env:AXIOM_TEST_RUNTIME_DATABASE_URL = "postgresql://axiom_runtime@127.0.0.1:55432/axiom_test"
+uv run --frozen alembic history
+uv run --frozen python scripts/run_db_integration.py
+```
+
+The runner rejects PostgreSQL URL query overrides (including `hostaddr`,
+`service`, `options` and alternate host/port), `PG*` environment overrides,
+non-loopback addresses, incorrect role usernames and database names **before
+running SQL**. It passes the validated configuration to child Alembic/pytest
+commands. This prevents libpq's option-priority rules from silently
+rerouting a nominally local test. Still verify that port 55432 belongs to
+the disposable test container; a port forwarded from an unrelated server
+cannot be proven safe by parsing a URL alone. Never use shared/live data.
+
+The runner refuses any other database, host or port. It verifies the additive
+revision path (clean/upgrade/repeat), Alembic metadata drift (including a
+deliberately injected and safely removed test-only extra index), tests actual
+non-owner PostgreSQL RLS, transaction-local identity reset, concurrent
+bootstrap/create, role privileges, constraints, and safe readiness. Re-running
+it against the *same isolated test database* is supported. Do not interpret
+these tests as verified Supabase-hosted role or pooler behavior.
+
+To exercise the API with this local database from `services/api`, remove
+the migration-only credential from this PowerShell session before starting
+the ordinary API process:
+
+```powershell
+$env:AXIOM_DATABASE_URL = $env:AXIOM_TEST_RUNTIME_DATABASE_URL
+$env:AXIOM_DATABASE_REQUIRED = "true"
+Remove-Item Env:AXIOM_MIGRATION_DATABASE_URL -ErrorAction SilentlyContinue
+uv run --frozen python -m app.api
+```
+
+In another PowerShell terminal, inspect
+`http://127.0.0.1:8000/api/v1/health/live` (public liveness) and
+`http://127.0.0.1:8000/api/v1/health/ready` (real DB revision/role/RLS checks).
+A properly migrated isolated database should return `database_verified`;
+unavailable/incompatible/privileged configurations return HTTP 503 without
+credentials. This **does not prove real Supabase Auth**.
+
+From `services/api`, run the existing Python quality checks:
+`uv run --frozen python scripts/check_style.py`,
+`uv run --frozen mypy app`,
+`uv run --frozen pytest -q`, and
+`uv run --frozen pip-audit --progress-spinner off`.
+From repo root, preserve the existing `python ci/docker_smoke.py` and
+`python ci/integrated_smoke.py` checks. Stop the API with Ctrl+C, then from
+the repository root use `docker compose -f infra/compose.db-test.yml down`
+to stop the isolated test service (its tmpfs contents are intentionally ephemeral).
+
+### Forward recovery and provider evidence
+
+Migrations are transactional PostgreSQL DDL; `downgrade` deliberately refuses
+destructive rollback or disabling RLS. Test the migration on an isolated copy
+and use a **reviewed forward-fix** if a database is incompatible. Before any
+deployment migration, separately approve backup, account/role provisioning,
+connection pool mode, TLS and rollback/recovery operation. Current real
+Supabase issuer, JWKS signing mode, runtime-role/grant feasibility, and shared
+pooler behavior are **not verified** by these local tests.

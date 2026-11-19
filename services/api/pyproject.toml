@@ -5,6 +5,8 @@ description = "Axiom API and worker runtime foundation"
 requires-python = ">=3.12,<3.14"
 dependencies = [
   "fastapi==0.165.0",
+  "SQLAlchemy==2.0.58",
+  "psycopg[binary]==3.3.9",
   "PyJWT[crypto]==2.15.1",
   "starlette==1.10.0",
   "pydantic-settings==2.14.2",
@@ -13,6 +15,7 @@ dependencies = [
 
 [dependency-groups]
 dev = [
+  "alembic==1.20.1",
   "httpx==0.28.1",
   "mypy==1.19.1",
   "pip-audit==2.10.0",
@@ -30,6 +33,7 @@ packages = ["app"]
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 addopts = "-ra"
+markers = ["postgres: isolated real PostgreSQL integration tests"]
  
 [tool.ruff]
 target-version = "py312"
