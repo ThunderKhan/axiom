@@ -4,11 +4,11 @@ from __future__ import annotations
 
 import json
 import re
-from http.client import HTTPException
 import threading
 import time
 from collections.abc import Callable, Mapping
 from dataclasses import dataclass
+from http.client import HTTPException
 from typing import Any
 from urllib.error import HTTPError, URLError
 from urllib.request import HTTPRedirectHandler, Request, build_opener
