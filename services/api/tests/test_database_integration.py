@@ -347,3 +347,37 @@ def test_real_db_readiness_and_safe_unreachable_failure(database: Database) -> N
         create_app(RuntimeSettings(database_url=os.environ["AXIOM_MIGRATION_DATABASE_URL"]))
     ) as client:
         assert client.get("/api/v1/health/ready").status_code == 503
+
+def test_readiness_fails_on_revoked_runtime_schema_and_function_grants(
+    database: Database, privileged_engine
+) -> None:
+    assert database.ready()
+    scenarios = (
+        (
+            "REVOKE USAGE ON SCHEMA axiom FROM axiom_runtime",
+            "GRANT USAGE ON SCHEMA axiom TO axiom_runtime",
+        ),
+        (
+            "REVOKE EXECUTE ON FUNCTION axiom.current_subject() FROM axiom_runtime",
+            "GRANT EXECUTE ON FUNCTION axiom.current_subject() TO axiom_runtime",
+        ),
+    )
+    for revoke, restore in scenarios:
+        with privileged_engine.begin() as conn:
+            conn.execute(text(revoke))
+        try:
+            assert not database.ready()
+            with TestClient(
+                create_app(
+                    RuntimeSettings(
+                        database_url=os.environ["AXIOM_TEST_RUNTIME_DATABASE_URL"],
+                        database_required=True,
+                    )
+                )
+            ) as client:
+                assert client.get("/api/v1/health/ready").status_code == 503
+                assert client.get("/api/v1/health/live").status_code == 200
+        finally:
+            with privileged_engine.begin() as conn:
+                conn.execute(text(restore))
+        assert database.ready()
