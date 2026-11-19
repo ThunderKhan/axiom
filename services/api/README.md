@@ -54,9 +54,18 @@ waits for a bounded `AXIOM_WORKER_RUN_SECONDS` (default 30), then prints
 `Ctrl+C` stops the terminal-run process. No jobs are claimed or processed, and
 no worker listener is opened. It is **not** a production long-lived worker.
 
+The [canonical developer guide](../../README.md#canonical-developer-setup--milestone-0-foundation)
+explains how to run the real integrated browser/API/worker smoke and its cleanup.
+
 ## Configuration
 
 Settings are typed and read from `AXIOM_*` environment variables.
+`AXIOM_CORS_ORIGINS` defaults to the exact development origin
+`http://127.0.0.1:3000` (or may be set explicitly to a comma-separated
+list of exact HTTP(S) origins). Plain HTTP is restricted to loopback;
+credentialed and wildcard CORS are not enabled. A browser from an unapproved
+origin does not receive CORS authorization. For the integrated smoke, the harness
+configures its frontend origin `http://127.0.0.1:3200` explicitly.
 `AXIOM_BIND_HOST` must be a literal IP address (default `127.0.0.1` native,
 `0.0.0.0` in the Docker image). `AXIOM_PORT` must be 1–65535 (default 8000).
 `AXIOM_DATABASE_URL` is optional and secret; configuring it **does not connect**

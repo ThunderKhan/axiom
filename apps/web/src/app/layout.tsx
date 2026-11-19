@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import type { ReactNode } from "react";
 import "./globals.css";
+import { publicApiBaseUrl } from "../lib/public-api";
 
 export const metadata: Metadata = {
   title: "Axiom | Foundation",
@@ -13,6 +14,9 @@ export default function RootLayout({
 }: Readonly<{ children: ReactNode }>) {
   return (
     <html lang="en">
+      <head>
+        <meta name="axiom-api-base-url" content={publicApiBaseUrl} />
+      </head>
       <body>{children}</body>
     </html>
   );

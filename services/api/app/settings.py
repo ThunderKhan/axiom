@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from ipaddress import ip_address
 from typing import Self
+from urllib.parse import urlsplit
 
 from pydantic import Field, SecretStr, field_validator, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
@@ -16,6 +17,7 @@ class RuntimeSettings(BaseSettings):
 
     bind_host: str = "127.0.0.1"
     port: int = Field(default=8000, ge=1, le=65535)
+    cors_origins: str = "http://127.0.0.1:3000"
     database_url: SecretStr | None = None
     database_required: bool = False
     worker_run_seconds: float = Field(default=30.0, ge=0.1, le=300.0)
@@ -27,6 +29,45 @@ class RuntimeSettings(BaseSettings):
         # Only literal interface addresses; never silently resolve a hostname.
         ip_address(value)
         return value
+
+    @field_validator("cors_origins")
+    @classmethod
+    def validate_exact_cors_origins(cls, value: str) -> str:
+        origins = [origin.strip() for origin in value.split(",")]
+        if not origins or any(not origin for origin in origins):
+            raise ValueError("AXIOM_CORS_ORIGINS requires explicit nonempty origins")
+        if len(set(origins)) != len(origins):
+            raise ValueError("Duplicate CORS origins are not allowed")
+        for origin in origins:
+            try:
+                url = urlsplit(origin)
+                port = url.port
+            except ValueError as exc:
+                raise ValueError("Invalid CORS origin or port") from exc
+            # Browser serialization lowercases DNS hosts and removes default ports.
+            # Reject noncanonical strings rather than configure an origin browsers never send.
+            host = url.hostname or ""
+            if not host.isascii():
+                raise ValueError("CORS origins must use ASCII/punycode hosts")
+            canonical_host = f"[{ip_address(host).compressed}]" if ":" in host else host
+            default_port = 80 if url.scheme == "http" else 443
+            canonical_port = f":{port}" if port is not None and port != default_port else ""
+            canonical_origin = f"{url.scheme}://{canonical_host}{canonical_port}"
+            if (
+                url.scheme not in {"http", "https"}
+                or not url.hostname
+                or url.username is not None
+                or url.password is not None
+                or url.query
+                or url.fragment
+                or url.path
+                or origin != canonical_origin
+                or (port is not None and not 1 <= port <= 65535)
+            ):
+                raise ValueError("CORS origins must be exact HTTP(S) origins without credentials")
+            if url.scheme == "http" and url.hostname not in {"127.0.0.1", "localhost", "::1"}:
+                raise ValueError("Plain HTTP CORS origins require a loopback host")
+        return ",".join(origins)
 
     @field_validator("database_url")
     @classmethod

@@ -13,6 +13,7 @@ services:
     environment:
       AXIOM_BIND_HOST: "0.0.0.0"
       AXIOM_PORT: "8000"
+      AXIOM_CORS_ORIGINS: "${AXIOM_CORS_ORIGINS:-http://127.0.0.1:3000}"
     ports:
       - "127.0.0.1:8000:8000"
     healthcheck:
