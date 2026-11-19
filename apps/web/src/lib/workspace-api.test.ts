@@ -157,6 +157,54 @@ describe("FastAPI-only authenticated workspace client", () => {
     );
   });
 
+  it("treats committed-but-malformed POST replies and server failures as uncertain", async () => {
+    const invalidResponse = createWorkspaceApi(
+      "https://api.example.test",
+      a,
+      async () => token,
+      async () => Response.json({ id: "invalid" }, { status: 201 }),
+    );
+    await assert.rejects(
+      invalidResponse.create("First", "originalKey189", controller.signal),
+      (error: unknown) =>
+        error instanceof WorkspaceApiError &&
+        error.code === "NETWORK_UNCERTAIN" &&
+        isUncertainCreateFailure(error),
+    );
+    const emptyResponse = createWorkspaceApi(
+      "https://api.example.test",
+      a,
+      async () => token,
+      async () => new Response("", { status: 201 }),
+    );
+    await assert.rejects(
+      emptyResponse.create("First", "originalKey189", controller.signal),
+      (error: unknown) =>
+        error instanceof WorkspaceApiError &&
+        isUncertainCreateFailure(error),
+    );
+    const brokenServer = createWorkspaceApi(
+      "https://api.example.test",
+      a,
+      async () => token,
+      async () => Response.json({ error: { code: "UNEXPECTED_RESPONSE" } }, { status: 500 }),
+    );
+    await assert.rejects(
+      brokenServer.create("First", "originalKey189", controller.signal),
+      (error: unknown) =>
+        error instanceof WorkspaceApiError &&
+        error.status === 500 &&
+        isUncertainCreateFailure(error),
+    );
+    const mismatchedRead = createWorkspaceApi(
+      "https://api.example.test",
+      a,
+      async () => token,
+      async () => Response.json({ ...workspace, id: a }),
+    );
+    await assert.rejects(mismatchedRead.read(id, controller.signal), InvalidWorkspaceResponse);
+  });
+
   it("refuses to send when the session or public API origin is not usable", async () => {
     const noApi = createWorkspaceApi("", a, async () => token);
     await assert.rejects(noApi.list(controller.signal), WorkspaceApiError);

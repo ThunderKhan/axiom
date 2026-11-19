@@ -22,6 +22,8 @@ const workspace = {
 describe("M1.6 workspace DTO and name boundary", () => {
   it("accepts the approved typed workspace shape", () => {
     assert.deepEqual(parseWorkspace(workspace), workspace);
+    const unicode = { ...workspace, name: "😃".repeat(120) };
+    assert.deepEqual(parseWorkspace(unicode), unicode);
     assert.deepEqual(
       parseWorkspaceList({ items: [workspace], next_cursor: null }),
       {

@@ -48,7 +48,7 @@ export function parseWorkspace(value: unknown): Workspace {
     !isWorkspaceId(value.id) ||
     typeof value.name !== "string" ||
     value.name.length < 1 ||
-    value.name.length > 120 ||
+    [...value.name].length > 120 ||
     !timestamp(value.created_at) ||
     !timestamp(value.updated_at) ||
     !Number.isSafeInteger(value.version) ||

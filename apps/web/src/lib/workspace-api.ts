@@ -37,9 +37,10 @@ export class WorkspaceApiError extends Error {
 export function isUncertainCreateFailure(error: unknown): boolean {
   return (
     error instanceof WorkspaceApiError &&
-    ["NETWORK_UNCERTAIN", "DATABASE_UNAVAILABLE", "AUTH_UNAVAILABLE"].includes(
-      error.code,
-    )
+    (error.status >= 500 ||
+      ["NETWORK_UNCERTAIN", "DATABASE_UNAVAILABLE", "AUTH_UNAVAILABLE"].includes(
+        error.code,
+      ))
   );
 }
 
@@ -147,22 +148,34 @@ export function createWorkspaceApi(
       throw new InvalidWorkspaceResponse();
     },
     async read(id: string, signal: AbortSignal): Promise<Workspace> {
-      return parseWorkspace(
+      const item = parseWorkspace(
         await request(
           "/api/v1/workspaces/" + encodeURIComponent(id),
           "GET",
           signal,
         ),
       );
+      if (item.id !== id) throw new InvalidWorkspaceResponse();
+      return item;
     },
     async create(
       name: string,
       key: string,
       signal: AbortSignal,
     ): Promise<Workspace> {
-      return parseWorkspace(
-        await request("/api/v1/workspaces", "POST", signal, { name }, key),
-      );
+      try {
+        return parseWorkspace(
+          await request("/api/v1/workspaces", "POST", signal, { name }, key),
+        );
+      } catch (error) {
+        // A committed create can still produce a malformed/lost HTTP response.
+        // Preserve the original attempt's uncertain outcome instead of inviting
+        // a fresh idempotency key that could create a second workspace.
+        if (error instanceof InvalidWorkspaceResponse) {
+          throw new WorkspaceApiError("NETWORK_UNCERTAIN", 0);
+        }
+        throw error;
+      }
     },
   };
 }
