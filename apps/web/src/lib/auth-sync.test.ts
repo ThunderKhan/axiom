@@ -38,5 +38,4 @@ describe("M1 H3 cross-tab sign-out messages", () => {
       broadcastSignOut();
     });
   });
-
 });
