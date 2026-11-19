@@ -284,3 +284,155 @@ def test_http_missing_configuration_fails_closed() -> None:
         response = client.get("/__test_only__/protected")
     assert response.status_code == 503
     assert response.json()["error"]["code"] == "AUTH_UNAVAILABLE"
+
+def test_failed_cold_cache_fetch_is_single_flight_then_recovers(rsa_key) -> None:
+    """Concurrent requests share an outage result instead of serializing timeouts."""
+    from threading import Barrier
+
+    clock = [100.0]
+    calls = [0]
+    provider_available = [False]
+
+    def fetch(_url: str) -> Mapping[str, object]:
+        calls[0] += 1
+        if not provider_available[0]:
+            raise AuthFailure(unavailable=True)
+        return {"keys": [jwk(rsa_key)]}
+
+    service = JwtVerifier(settings(), fetcher=fetch, clock=lambda: clock[0])
+    signed = token(rsa_key)
+    together = Barrier(9)
+
+    def attempt() -> bool:
+        together.wait(timeout=10)
+        try:
+            service.verify(signed)
+        except AuthFailure as exc:
+            return exc.unavailable
+        return False
+
+    with ThreadPoolExecutor(max_workers=8) as pool:
+        pending = [pool.submit(attempt) for _ in range(8)]
+        together.wait(timeout=10)
+        assert all(future.result(timeout=10) for future in pending)
+    assert calls == [1]
+
+    clock[0] = 104.9
+    with pytest.raises(AuthFailure) as error:
+        service.verify(signed)
+    assert error.value.unavailable
+    assert calls == [1]
+
+    provider_available[0] = True
+    clock[0] = 105.1
+    assert service.verify(signed).user_id == UUID(SUB)
+    assert calls == [2]
+
+
+def test_failed_expired_cache_denies_stale_signatures_during_backoff(rsa_key) -> None:
+    clock = [100.0]
+    calls = [0]
+    online = [True]
+
+    def fetch(_url: str) -> Mapping[str, object]:
+        calls[0] += 1
+        if not online[0]:
+            raise AuthFailure(unavailable=True)
+        return {"keys": [jwk(rsa_key)]}
+
+    service = JwtVerifier(
+        settings(jwks_cache_max_seconds=60),
+        fetcher=fetch,
+        clock=lambda: clock[0],
+    )
+    signed = token(rsa_key)
+    assert service.verify(signed).user_id == UUID(SUB)
+    online[0] = False
+    clock[0] = 160.0
+    for now in (160.0, 161.0, 164.9):
+        clock[0] = now
+        with pytest.raises(AuthFailure) as error:
+            service.verify(signed)
+        assert error.value.unavailable
+    assert calls == [2]
+    online[0] = True
+    clock[0] = 165.1
+    assert service.verify(signed).user_id == UUID(SUB)
+    assert calls == [3]
+
+
+def test_unknown_kid_misses_do_not_postpone_key_rotation(rsa_key, other_rsa_key) -> None:
+    clock = [100.0]
+    available_keys = [[jwk(rsa_key)]]
+    fetches = [0]
+
+    def fetch(_url: str) -> Mapping[str, object]:
+        fetches[0] += 1
+        return {"keys": available_keys[0]}
+
+    service = JwtVerifier(settings(), fetcher=fetch, clock=lambda: clock[0])
+    assert service.verify(token(rsa_key)).user_id == UUID(SUB)
+    claims = jwt.decode(token(other_rsa_key), options={"verify_signature": False})
+    rotated = jwt.encode(claims, other_rsa_key, algorithm="RS256", headers={"kid": "k2"})
+    clock[0] = 131.0  # First unknown-kid refresh after cold-cache fetch.
+    with pytest.raises(AuthFailure):
+        service.verify(rotated)
+    assert fetches == [2]
+
+    available_keys[0] = [jwk(rsa_key), jwk(other_rsa_key, kid="k2")]
+    for now in (141.0, 151.0, 160.0):
+        clock[0] = now
+        with pytest.raises(AuthFailure):
+            service.verify(rotated)
+    assert fetches == [2]  # Rejected misses never reset the refresh deadline.
+
+    clock[0] = 161.1
+    assert service.verify(rotated).user_id == UUID(SUB)
+    assert fetches == [3]
+
+
+def test_truncated_chunked_jwks_response_is_safe_503(rsa_key, monkeypatch) -> None:
+    from http.client import IncompleteRead
+
+    from app.auth import fetch_jwks
+
+    class BrokenResponse:
+        headers: dict[str, str] = {}
+
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *args: object) -> None:
+            return None
+
+        def read(self, _limit: int) -> bytes:
+            raise IncompleteRead(b"{", 10)
+
+    class BrokenOpener:
+        def open(self, _request, *, timeout: float):
+            assert timeout > 0
+            return BrokenResponse()
+
+    monkeypatch.setattr("app.auth.build_opener", lambda *_: BrokenOpener())
+    with pytest.raises(AuthFailure) as error:
+        fetch_jwks(f"{ISSUER}/.well-known/jwks.json")
+    assert error.value.unavailable
+
+    app = create_app(settings())
+    app.state.jwt_verifier = JwtVerifier(settings())
+
+    @app.get("/__test_only__/protected")
+    def protected(
+        principal: Annotated[VerifiedPrincipal, Depends(get_verified_principal)],
+    ) -> dict[str, str]:
+        return {"user_id": str(principal.user_id)}
+
+    with TestClient(app) as client:
+        response = client.get(
+            "/__test_only__/protected",
+            headers={"Authorization": f"Bearer {token(rsa_key)}"},
+        )
+    assert response.status_code == 503
+    assert response.json()["error"]["code"] == "AUTH_UNAVAILABLE"
+    assert response.json()["error"]["retryable"] is True
+    assert response.json()["request_id"].startswith("req_")
