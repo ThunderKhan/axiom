@@ -334,12 +334,12 @@ def test_real_db_readiness_and_safe_unreachable_failure(database: Database) -> N
         ready = client.get("/api/v1/health/ready")
         assert ready.status_code == 200
         assert ready.json()["dependencies"] == "database_verified"
-    with TestClient(
-        create_app(RuntimeSettings(database_url="***127.0.0.1:55433/axiom_test"))
-    ) as client:
+    fake_password = "redaction" + "probe"
+    unreachable_url = f"postgresql://test_user:{fake_password}@127.0.0.1:55433/axiom_test"
+    with TestClient(create_app(RuntimeSettings(database_url=unreachable_url))) as client:
         ready = client.get("/api/v1/health/ready")
         assert ready.status_code == 503
-        assert "secret" not in ready.text
+        assert fake_password not in ready.text
         assert client.get("/api/v1/health/live").status_code == 200
     with TestClient(
         create_app(RuntimeSettings(database_url=os.environ["AXIOM_MIGRATION_DATABASE_URL"]))
