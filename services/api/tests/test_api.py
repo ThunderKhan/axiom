@@ -15,6 +15,15 @@ def test_fastapi_import_and_versioned_openapi() -> None:
         assert set(schema.json()["paths"]) == {
             "/api/v1/health/live",
             "/api/v1/health/ready",
+            "/api/v1/me/bootstrap",
+            "/api/v1/me",
+            "/api/v1/workspaces",
+            "/api/v1/workspaces/{workspace_id}",
+        }
+        workspace = schema.json()["paths"]["/api/v1/workspaces"]
+        assert set(workspace) == {"get", "post"}
+        assert set(schema.json()["paths"]["/api/v1/workspaces/{workspace_id}"]) == {
+            "get", "patch"
         }
 
 

@@ -119,9 +119,11 @@ def create_app(settings: RuntimeSettings | None = None) -> FastAPI:
     def idempotency_conflict(_request: Request, _exc: IdempotencyConflict) -> JSONResponse:
         return api_error("IDEMPOTENCY_CONFLICT", 409, "Idempotency key conflict.")
 
-    @application.exception_handler((InvalidWorkspaceInput, InvalidCursor))
     def invalid_domain_input(_request: Request, _exc: Exception) -> JSONResponse:
         return api_error("VALIDATION_FAILED", 422, "Invalid workspace input.")
+
+    application.add_exception_handler(InvalidWorkspaceInput, invalid_domain_input)
+    application.add_exception_handler(InvalidCursor, invalid_domain_input)
 
     @application.exception_handler(RequestValidationError)
     def invalid_http_input(_request: Request, _exc: RequestValidationError) -> JSONResponse:

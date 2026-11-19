@@ -126,6 +126,7 @@ def main() -> int:
         "-m",
         "postgres",
         "tests/test_database_integration.py",
+        "tests/test_workspace_api_integration.py",
         env=env,
     )
     return 0
