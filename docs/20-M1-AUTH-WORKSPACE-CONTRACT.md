@@ -107,7 +107,7 @@ FastAPI MUST use a mature JWT verification library and independently verify **ev
 
 - Cryptographically valid signature under **project-approved asymmetric** algorithm(s) and a trusted current public key from the project's canonical HTTPS JWKS. Verify header key ID/algorithm/key type coherence; never allow `none`, arbitrary algorithms, attacker-provided JWK/JWKS URLs, or unverified decoding.
 - Expected, exact Supabase Auth issuer `iss`; applicable fixed audience `aud`; unexpired `exp`; valid `iat` and `nbf` where present; UUID `sub`; ordinary `authenticated` user role and non-anonymous identity. Reject provider `anon`, `service_role`, malformed/non-user or foreign-project tokens as ordinary founders. Treat provider session metadata (e.g. `session_id`) appropriately, but a correctly signed session claim is **not** proof the session has not since been revoked.
-- Server-owned §app_users.status=active` and workspace ownership **after** cryptographic verification. No app role/owner identity may be inferred from untrusted token metadata or client input.
+- Server-owned `app_users.status=active` and workspace ownership **after** cryptographic verification. No app role/owner identity may be inferred from untrusted token metadata or client input.
 - Actual Supabase project signing mode and supported key algorithms are **not yet verified**. The selected design requires asymmetric signing; existing legacy/symmetric HS256 credentials are not an approved production fallback. Confirm or separately authorize/configure migration in the real nonproduction Supabase test project.
 
 ### 6.1 Controlled JWKS cache and key rotation
@@ -134,7 +134,7 @@ When Auth/JWKS cannot be contacted, a request can proceed **only if** every requ
 
 **Name normalization:** FastAPI trims leading/trailing whitespace, rejects whitespace-only names, unsafe control characters and any resulting length outside **1–120 Unicode characters**. Use the same canonical representation in persistence and idempotency digest. DB constraints must reject null, empty and oversized names and must not accidentally contradict the application Unicode normalization policy; test Unicode/whitespace boundaries in PostgreSQL. Reject extra or privileged writable JSON fields.
 
-**Future child tables:** §docs/07-DATABASE-DESIGN.md` proposes workspace-owned product/research/CRM records beyond M1. Later implementation must use `workspace_id` on private tables and suitable `UNIQUE(workspace_id,id)` / composite FKs for cross-workspace relationships so a child in A cannot reference a parent in B. That broader DDL is **not frozen** by this contract.
+**Future child tables:** `docs/07-DATABASE-DESIGN.md` proposes workspace-owned product/research/CRM records beyond M1. Later implementation must use `workspace_id` on private tables and suitable `UNIQUE(workspace_id,id)` / composite FKs for cross-workspace relationships so a child in A cannot reference a parent in B. That broader DDL is **not frozen** by this contract.
 
 **Delete and retention:** E3 forbids public M1 destructive account/workspace deletion. The broader draft's child `ON DELETE CASCADE` examples illustrate DB effects of deliberately deleting parent rows, **not authorization** for an end-user delete or provider-deletion cascade. Parent owner FK must be restrictive; privacy-law requests, export/purge and backup retention need a separate approved operator policy. Suspension/deprovisioning retains business records until such policy applies.
 
@@ -157,7 +157,7 @@ RLS is enabled on each M1 private table and checked under the actual API DB logi
 
 ### 8.2 Identity in direct PostgreSQL connections
 
-Supabase §auth.uid()` is naturally populated through supported Supabase API request context; **it is not automatically populated in a raw SQLAlchemy PostgreSQL connection**. After JWT verification, FastAPI establishes its trusted UUID principal **within each protected database transaction before SQL**. One reviewed approach is parameterized transaction-local PostgreSQL configuration (conceptually `set_config('app.current_user_id', verified_uuid, true)`). Policies read a safely parsed UUID from that transaction setting; missing/malformed context denies by default.
+Supabase `auth.uid()` is naturally populated through supported Supabase API request context; **it is not automatically populated in a raw SQLAlchemy PostgreSQL connection**. After JWT verification, FastAPI establishes its trusted UUID principal **within each protected database transaction before SQL**. One reviewed approach is parameterized transaction-local PostgreSQL configuration (conceptually `set_config('app.current_user_id', verified_uuid, true)`). Policies read a safely parsed UUID from that transaction setting; missing/malformed context denies by default.
 
 The transaction-local setting must disappear at COMMIT/ROLLBACK, including on exceptions and connection reuse across users A/B. Do not place per-user identity in persistent connection-level `SET`, global mutable Python state or a shared worker process context. Test actual SQLAlchemy begin/commit/rollback, async/concurrent operations, Supabase direct/session/transaction pooler mode, and connection reuse.
 
@@ -228,4 +228,89 @@ Error JSON must have the same safe shape for every endpoint:
 
 Use typed, non-secret validation details and opaque `request_id`; never log bearer, JWT contents, cookies, evaluator credentials, sensitive request bodies or database URLs. A 401 is not a disabled-account 403. Missing/foreign workspace 404 must agree on response code, message and externally visible details; do not claim constant-time guarantees without tests. A provider-side outage cannot be transformed into an authorized success.
 
-**Draft reconciliation:** §docs/08-API-CONTRACTS.md` proposed `403 WORKSPACE_FORBIDDEN` for foreign workspaces; G2 owner choice **overrides this for M1 workspace read/update only**. The rest of the general API draft remains DRAFT.
+**Draft reconciliation:** `docs/08-API-CONTRACTS.md` proposed `403 WORKSPACE_FORBIDDEN` for foreign workspaces; G2 owner choice **overrides this for M1 workspace read/update only**. The rest of the general API draft remains DRAFT.
+
+## 10. Environment, security configuration and operational dependencies
+
+The M0 code uses `RuntimeSettings` in `services/api/app/settings.py` with `env_prefix="AXIOM_"`. The frontend already uses `NEXT_PUBLIC_API_BASE_URL` in `apps/web/.env.example` and `apps/web/src/lib/public-api.ts`. The [draft deployment runbook](15-DEPLOYMENT-RUNBOOK.md) uses illustrative generic names (`DATABASE_URL`, `CORS_ALLOWED_ORIGINS`, `AUTH_*`), but the **owner-approved M1 contract aligns with existing real runtime names** rather than silently renaming M0 settings.
+
+| Process | Variable name | Exposure and usage |
+|---|---|---|
+| Web (existing) | `NEXT_PUBLIC_API_BASE_URL` | Public exact API origin; only local-loopback HTTP, otherwise HTTPS; no credentials |
+| Web (planned) | `NEXT_PUBLIC_SUPABASE_URL` | Public trusted Supabase Auth URL |
+| Web (planned) | `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` | Public **publishable** client key only, never secret/service-role |
+| API (existing) | `AXIOM_DATABASE_URL` | **Server-only** PostgreSQL connection under normal least-privilege role |
+| API (existing) | `AXIOM_DATABASE_REQUIRED` | True when auth/workspace DB operations are enabled; fail startup/readiness honestly if required DB missing |
+| API (existing) | `AXIOM_CORS_ORIGINS` | Explicit canonical web origins; no permissive wildcard credentialed origin; HTTPS except local loopback |
+| API (planned) | `AXIOM_AUTH_ISSUER`, `AXIOM_AUTH_AUDIENCE` | Exact allowed Supabase Auth JWT claims; deployment-specific and validated |
+| API (planned) | `AXIOM_AUTH_JWKS_URL` | HTTPS, constrained to the configured project's trusted JWKS, not client-controlled |
+| API (planned) | `AXIOM_JWKS_CACHE_MAX_SECONDS` | Bound local trusted-key age to **300 seconds or less** |
+| Migration-only (planned) | `AXIOM_MIGRATION_DATABASE_URL` or strictly equivalent isolated secret | Only in authorized Alembic migration process, **not** ordinary API/worker runtime |
+
+Other existing backend settings such as `AXIOM_BIND_HOST` and `AXIOM_PORT` remain unchanged. There is no authorization to create or edit `.env` secrets or provider configuration through this documentation task. Validate credentials/issuer/JWKS, allowed callback/redirect URLs, role/grant/SSL configuration, database connection mode and free/purchased quotas on an **authorized isolated test project** before using a real provider. Do not commit sample evaluator passwords or fake signing secrets. Origin and cookie/CSRF settings must match the actual deployed HTTPS hosts.
+
+### 10.1 Migration, rollback and recovery (future issue #16)
+
+- Maintain SQLAlchemy 2.x model ownership and **Alembic as the only schema migration history**. Test clean installation and upgrade from the actual baseline; review constraints, indexes, RLS, roles and drift under nonproduction PostgreSQL before any authorized production migration.
+- Only the segregated migration role may create/alter tables and policies. Runtime role cannot disable RLS, alter ownership, obtain `BYPASSRLS` or apply DDL.
+- Prefer additive/compatible schema rollout while Next.js and FastAPI versions may deploy independently. Log exact migration revision, risk, transaction behavior, pre-migration backup/snapshot and verified recovery operation.
+- A database rollback is **not automatically lossless**. Where a destructive downgrade would lose or corrupt data, document and test a forward-only recovery and compatibility plan. Do not execute production migrations or backups as part of this contract.
+- A future worker/job role must implement actual job-origin authorization and bounded leases in its own reviewed implementation issues; this M1 contract does not implement worker business mutations.
+- Keep incident telemetry redacted: request IDs and safe operation/role/tenant identifiers, not JWTs, raw private text, credentials, complete headers or private response bodies.
+
+### 10.2 Operator lifecycle and privacy
+
+The M1 public API contains **no** user-facing workspace/account `DELETE`. This does not waive applicable privacy obligations or operational emergency handling. Before deployment, assign a responsible operator and define: controlled suspension/provider deprovisioning order, out-of-band Auth reconciliation and detection bound, emergency deny/rotation procedures, lawful account/workspace export or deletion intake, eventual retention/purge policy, backup deletion limits and audit minimization. These operational policies remain **open verification/deployment dependencies**, not silently invented durations.
+
+## 11. Requirements-to-test matrix and release evidence
+
+This section is a **test specification**; no test below is claimed executed by this PR. Honor [AUTH-01](14-TESTING-STRATEGY.md), [ADR-002](decisions/002-authentication-database-and-api-boundary.md) and the real-provider gate in [#20](https://github.com/ThunderKhan/axiom/issues/20). A mock may prove deterministic software behavior, **not** provider configuration, signing-key status, session revocation, actual DB role policy or deployment readiness.
+
+| Evidence ID | Required test and failure modes | Traceability / delivery issue |
+|---|---|---|
+| **M1-AUTH-01** | Verified normal Supabase login, real issuer/audience/signature; invalid/malformed/expired/forged/anon/service-role user tokens denied; canonical UUID identity; parallel bootstraps create exactly one active app row and no workspace | FR-01, MVP-01/02, UF-01, TRD-SEC-01; #15/#16/#17/#20 |
+| **M1-AUTH-02** | Existing suspended/deprovisioned app identity denied despite valid unexpired JWT, including repeated bootstrap; disabled route outcome distinct from unauthenticated; provider-side delete/reconciliation gap and logout/refresh JWT lifetime honestly described | A3, C2, D3; #15/#16/#20 |
+| **M1-JWKS-01** | Project actually issues asymmetrically signed user JWT; wrong signing keys, wrong algorithm, invalid `kid`, rotated/revoked key and untrusted key URL rejected; bound cache to max 300s, throttle unknown-`kid` refresh; safe provider outage and recovery | D1–D3, I3, ADR-002; #15/#20 |
+| **M1-DB-01** | Alembic clean/upgrade/schema-drift tests; FK/status/name/version check constraints; foreign-owner injection denied, no Auth-user cascade; committed workspace and idempotency outcome persist after fresh process/DB session | E1–E3, TRD-DB-01/02; #16/#20 |
+| **M1-RLS-01** | Real PostgreSQL RLS SELECT/INSERT/UPDATE denial with owner A vs B using **actual non-owner runtime login**; absent/malformed principal denied; `USING`/`WITH CHECK`; SQLAlchemy pool reuse after commit/rollback/exception/concurrency does not leak A identity to B | F1–F3, TRD-DB-02/03; #16/#20 |
+| **M1-RLS-02** | Show that owner/privileged service credentials may bypass RLS and **independently** prove FastAPI rejects foreign workspace under that condition; future cross-workspace composite FK injection rejected; worker privileges separated | ADR-002, TRD-SEC-02; #16/#18/#20 |
+| **M1-API-01** | Six endpoints in reviewed OpenAPI: successful owner/create/read/update; read-only GET `/me`; missing bootstrap 409; foreign and nonexistent workspaces get same external 404; expired JWT 401, disabled user 403, invalid UUID/name/version 422, outage safe 503 | G1/G2/I1, FR-03, MVP-02; #18/#20 |
+| **M1-API-02** | Double-click, concurrent same key, simulated lost response, restart replay return one original 201/ID for >=24h; changed canonical payload with same key returns 409; same name under different keys allowed; stale PATCH version 409 with no partial update | G3/I2, UF-02, TRD-DB-01; #16/#18/#20 |
+| **M1-WEB-01** | Playwright normal public landing → login → first workspace A1 → second workspace A2 → select/reload; separate user B1, evaluator normal login; protected deep links, unsafe return-path rejection, session expiry/logout/back navigation; accessible mobile/keyboard UI | H1/H2, UF-01/02, MVP-01/02; #17/#19/#20 |
+| **M1-WEB-02** | Delay response from workspace A while switching to B: late A payload never renders in B; identity/workspace partitioned cache; logout and account change clear private content; parallel tabs and stale/foreign stored IDs cannot restore access | H3, TRD-FE-03; #19/#20 |
+| **M1-OPS-01** | Against **authorized real nonproduction Supabase**: signing configuration/JWKS, real Auth refresh/session, ordinary evaluator, real PostgreSQL runtime/migration roles, RLS, selected pooler behavior, DB outage and safe recovery. Distinguish local fixtures from provider evidence and record project environment/commit SHA without secrets | H4, AUTH-01, RG-01; #15–#20 |
+| **M1-CI-01** | Existing protected checks and M0 regression smoke remain active at exact PR/implementation head: `Quality / repository integrity`, `Quality / application readiness`, `Governance / configuration`. Never classify skipped/failed/missing check as passed; review CodeRabbit and security findings | ENGINEERING ``7–12, AGENTS ``3–7; all future PRs |
+
+**Minimum data partition:** two distinct provisioned authenticated principals. Principal **A** creates at least **two** different workspaces, **A1/A2**; principal **B** creates **B1**. Each can list/read/update its own; forged owner/URL IDs, cross-tenant API calls and PostgreSQL role/transaction checks fail. A separate evaluator account demonstrates ordinary low-privilege sign-in. Seeded data is disclosed as synthetic, not live product research.
+
+**Acceptance gate:** #20 must supply evidence of the real browser → Supabase Auth → FastAPI → PostgreSQL/RLS journey. If provider setup, authentication, quota or test credentials are missing, record **BLOCKED / INCOMPLETE VERIFICATION**; green isolated unit tests cannot substitute for this gate. Do not claim the app is deployed, live, secure or benchmarked merely because a design contract or M0 CI passes. Follow staged concurrency requirements in [ADR-010](decisions/010-staged-500-founder-capacity-release.md) independently; a 500-founder load target is not verified by this contract.
+
+## 12. Risk, dependency and discrepancy ledger
+
+| Item | Established boundary and required follow-up | Evidence status |
+|---|---|---|
+| JWT signing mode / actual project issuer and keys | D1 requires asymmetric user JWT + project JWKS. Verify actual Supabase config; no silent HS256 or remote-auth-per-request substitute | **Not verified** |
+| JWKS key and session revocation | Local bound <=300s; Supabase edge may cache ~10min; access JWT persists to expiry after some logout/deletion events. Provide incident procedure and test provider propagation | **Design selected; operational proof pending** |
+| Supabase SSR shared cookies | Standard shared cookies can be read by JavaScript. Configure/test CSP/XSS, secure cookie attributes, safe redirect, CORS/CSRF and private cache protections | **Design selected; real origins/protection pending** |
+| App user deleted/banned out of band | Controlled local status and operator reconciliation needed; no instant provider-state guarantee | **Detection bound/operator procedure open** |
+| Runtime PostgreSQL role / RLS context | Verify ability to create/grant non-owner/non-bypass role, actual policies, direct/session/transaction pooler and SQLAlchemy commit/rollback semantics | **Not verified** |
+| Bootstrap/RLS interaction | Exception for first verified-user insertion must enforce own-subject status policy, not require app row before bootstrap or allow arbitrary user inserts | **Design selected; negative test pending** |
+| Idempotency lifecycle | Same key/payload durable for >=24h; after expiry reuse may be new operation. Atomic reservation/result and expiry cleanup required | **Not implemented/tested** |
+| No public deletion vs draft child cascades | E3 denies M1 DELETE; illustrative draft child `ON DELETE CASCADE` is not permission for provider-side data erasure | **Operator retention/purge policy open** |
+| Broad draft API's foreign 403 | M1 chooses indistinguishable foreign/missing **404** only for M1 workspace route; broader API document stays DRAFT | **Reconciled in this contract** |
+| Runbook environment names | Use M0 actual `AXIOM_` server env convention and existing public API origin; draft generic names are illustrative and do not supersede runtime settings | **Reconciled for M1** |
+| Product navigation versus incomplete features | Opportunities/onboarding is an approved future UX destination; M1 foundation must show truthful working/not-yet-implemented states | **Implementation pending** |
+| Provider, evaluator and backups | Separately authorize and test isolated Supabase provider, legitimate credentials, secure private evaluator access, costs, migrations, backup/restore and contingency | **No live provisioning by this PR** |
+| Separate #14 and downstream issues | #14 remains open/independent; #15–#20 carry implementation; no auto-merge, code/migrations/infra under #21 | **Explicit governance boundary** |
+
+No remaining discrepancy requires changing the 25 approved decisions. Missing provider and operational evidence is tracked as a **blocker to claims of working software**, not as permission to redesign M1 autonomously.
+
+## 13. Delivery boundaries and documentation-only handoff
+
+**Issue #21 deliverable:** this owner-approved M1-specific design contract plus a documentation-index entry, through a dedicated branch and **one documentation-only PR**. A documentation PR may establish that the approved contract is recorded; it does not close Issue #14, implement #15–#20, or certify functional/security acceptance.
+
+**Next authorized phases require separate instructions:** code/SQLAlchemy/Alembic implementation, Supabase provider resources, runtime role creation, external billing, deployment, CI modifications and PR merging are expressly outside the current task. Every future implementation PR must compare actual changes to the 25 owner decisions, prove applicable tests above on its exact commit, and surface conflicts for explicit review instead of rewriting this architecture to match convenient code.
+
+**Status taxonomy:** mark unexecuted real-provider claims **NOT VERIFIED** or **BLOCKED**; failing checks **BLOCKED**; critical security/auth PRs **REQUIRE HUMAN REVIEW** until evidence and approval exist. Retain [AGENTS.md](../AGENTS.md) and [ENGINEERING.md](../ENGINEERING.md) verification and CodeRabbit/required-CI rules without weakening them.
+
+**Owner signoff provenance:** all 25 A1–I3 individual decisions on [#21](https://github.com/ThunderKhan/axiom/issues/21), followed by a separate explicit consolidated owner approval on 19 November 2026. This contract is the written expression of those approved architecture decisions; a subsequent PR review/merge remains a **separate owner decision**. No deployed or live provider integration is asserted.
