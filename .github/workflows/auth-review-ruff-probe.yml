@@ -1,0 +1,30 @@
+name: Temporary auth test formatting probe (unmerged)
+
+on:
+  push:
+    branches:
+      - feat/15-supabase-jwt-principal
+
+permissions:
+  contents: read
+
+jobs:
+  ruff-format-diff:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout without persisted credentials
+        uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - name: Python 3.12
+        uses: actions/setup-python@v7
+        with:
+          python-version: '3.12'
+      - name: Install pinned uv
+        run: python -m pip install --disable-pip-version-check uv==0.10.0
+      - name: Reproduce the exact Ruff formatter diff
+        run: |
+          cd services/api
+          uv sync --locked --all-groups
+          uv run --frozen ruff format --diff tests/test_auth.py
