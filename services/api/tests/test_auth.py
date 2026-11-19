@@ -72,22 +72,25 @@ def test_accepts_signed_supabase_shaped_claims(rsa_key) -> None:
     assert principal == VerifiedPrincipal(user_id=UUID(SUB), session_id=UUID(SESSION))
 
 
-@pytest.mark.parametrize("change", [
-    {"iss": "https://foreign.supabase.co/auth/v1"},
-    {"aud": "other"},
-    {"aud": ["authenticated", "other"]},
-    {"exp": 1},
-    {"iat": 1893456001},
-    {"nbf": 1893456001},
-    {"sub": "not-a-uuid"},
-    {"sub": "00000000-0000-0000-0000-000000000000"},
-    {"role": "anon"},
-    {"role": "service_role"},
-    {"is_anonymous": True},
-    {"session_id": "not-a-uuid"},
-    {"type": "id_token"},
-    {"token_use": "refresh"},
-])
+@pytest.mark.parametrize(
+    "change",
+    [
+        {"iss": "https://foreign.supabase.co/auth/v1"},
+        {"aud": "other"},
+        {"aud": ["authenticated", "other"]},
+        {"exp": 1},
+        {"iat": 1893456001},
+        {"nbf": 1893456001},
+        {"sub": "not-a-uuid"},
+        {"sub": "00000000-0000-0000-0000-000000000000"},
+        {"role": "anon"},
+        {"role": "service_role"},
+        {"is_anonymous": True},
+        {"session_id": "not-a-uuid"},
+        {"type": "id_token"},
+        {"token_use": "refresh"},
+    ],
+)
 def test_disallowed_user_claims(rsa_key, change: dict[str, object]) -> None:
     with pytest.raises(AuthFailure):
         verifier(rsa_key).verify(token(rsa_key, **change))
@@ -108,9 +111,17 @@ def test_unknown_key_denied_and_refresh_throttled(rsa_key, other_rsa_key) -> Non
 
     service = JwtVerifier(settings(), fetcher=fetch, clock=lambda: clock[0])
     missing = jwt.encode(
-        {"iss": ISSUER, "aud": "authenticated", "exp": 1893456000, "iat": 1763500000,
-         "sub": SUB, "role": "authenticated"},
-        other_rsa_key, algorithm="RS256", headers={"kid": "unknown"},
+        {
+            "iss": ISSUER,
+            "aud": "authenticated",
+            "exp": 1893456000,
+            "iat": 1763500000,
+            "sub": SUB,
+            "role": "authenticated",
+        },
+        other_rsa_key,
+        algorithm="RS256",
+        headers={"kid": "unknown"},
     )
     for _ in range(5):
         with pytest.raises(AuthFailure):
@@ -127,7 +138,8 @@ def test_rotation_and_expiry(rsa_key, other_rsa_key) -> None:
     current_keys = [[jwk(rsa_key)]]
     service = JwtVerifier(
         settings(jwks_cache_max_seconds=60),
-        fetcher=lambda _: {"keys": current_keys[0]}, clock=lambda: now[0]
+        fetcher=lambda _: {"keys": current_keys[0]},
+        clock=lambda: now[0],
     )
     assert service.verify(token(rsa_key)).user_id == UUID(SUB)
     current_keys[0] = [jwk(other_rsa_key)]
@@ -180,14 +192,22 @@ def test_concurrent_first_refresh_is_single_flight(rsa_key) -> None:
 
     service = JwtVerifier(settings(), fetcher=fetch)
     with ThreadPoolExecutor(max_workers=8) as pool:
-        assert all(pool.map(lambda _: service.verify(token(rsa_key)).user_id == UUID(SUB), range(32)))
+        assert all(
+            pool.map(lambda _: service.verify(token(rsa_key)).user_id == UUID(SUB), range(32))
+        )
     assert count[0] == 1
 
 
 def test_es256_key_is_accepted_with_matching_algorithm() -> None:
     private = ec.generate_private_key(ec.SECP256R1())
-    claims = {"iss": ISSUER, "aud": "authenticated", "exp": 1893456000,
-              "iat": 1763500000, "sub": SUB, "role": "authenticated"}
+    claims = {
+        "iss": ISSUER,
+        "aud": "authenticated",
+        "exp": 1893456000,
+        "iat": 1763500000,
+        "sub": SUB,
+        "role": "authenticated",
+    }
     signed = jwt.encode(claims, private, algorithm="ES256", headers={"kid": "ecdsa"})
     service = JwtVerifier(settings(), fetcher=lambda _: {"keys": [jwk(private, "ecdsa", "ES256")]})
     assert service.verify(signed).user_id == UUID(SUB)
@@ -195,9 +215,17 @@ def test_es256_key_is_accepted_with_matching_algorithm() -> None:
 
 def test_header_algorithm_confusion_rejected(rsa_key) -> None:
     signed = jwt.encode(
-        {"iss": ISSUER, "aud": "authenticated", "exp": 1893456000,
-         "iat": 1763500000, "sub": SUB, "role": "authenticated"},
-        "not-a-signing-key", algorithm="HS256", headers={"kid": "k1"},
+        {
+            "iss": ISSUER,
+            "aud": "authenticated",
+            "exp": 1893456000,
+            "iat": 1763500000,
+            "sub": SUB,
+            "role": "authenticated",
+        },
+        "not-a-signing-key",
+        algorithm="HS256",
+        headers={"kid": "k1"},
     )
     with pytest.raises(AuthFailure):
         verifier(rsa_key).verify(signed)
@@ -208,25 +236,38 @@ def test_http_dependency_headers_errors_and_health(rsa_key) -> None:
     app.state.jwt_verifier = verifier(rsa_key)
 
     @app.get("/__test_only__/protected")
-    def protected(principal: Annotated[VerifiedPrincipal, Depends(get_verified_principal)]) -> dict[str, str]:
+    def protected(
+        principal: Annotated[VerifiedPrincipal, Depends(get_verified_principal)],
+    ) -> dict[str, str]:
         return {"user_id": str(principal.user_id)}
 
     with TestClient(app) as client:
-        valid = client.get("/__test_only__/protected", headers={"Authorization": f"Bearer {token(rsa_key)}"})
+        valid = client.get(
+            "/__test_only__/protected", headers={"Authorization": f"Bearer {token(rsa_key)}"}
+        )
         assert valid.status_code == 200
         assert valid.json() == {"user_id": SUB}
         assert client.get("/api/v1/health/live").status_code == 200
-        for headers in ({}, {"Authorization": "Basic abc"}, {"Authorization": "Bearer junk"},
-                        {"Authorization": "Bearer  "},
-                        {"Authorization": "Bearer abc.def.ghi"}):
+        for headers in (
+            {},
+            {"Authorization": "Basic abc"},
+            {"Authorization": "Bearer junk"},
+            {"Authorization": "Bearer  "},
+            {"Authorization": "Bearer abc.def.ghi"},
+        ):
             response = client.get("/__test_only__/protected", headers=headers)
             assert response.status_code == 401
             assert response.json()["error"]["code"] == "AUTH_REQUIRED"
             assert response.json()["error"]["details"] == {}
             assert response.json()["request_id"].startswith("req_")
             assert "Bearer" in response.headers["www-authenticate"]
-        response = client.get("/__test_only__/protected", headers=[
-            ("Authorization", f"Bearer {token(rsa_key)}"), ("Authorization", "Bearer invalid")])
+        response = client.get(
+            "/__test_only__/protected",
+            headers=[
+                ("Authorization", f"Bearer {token(rsa_key)}"),
+                ("Authorization", "Bearer invalid"),
+            ],
+        )
         assert response.status_code == 401
 
 
@@ -234,7 +275,9 @@ def test_http_missing_configuration_fails_closed() -> None:
     app = create_app(RuntimeSettings())
 
     @app.get("/__test_only__/protected")
-    def protected(principal: Annotated[VerifiedPrincipal, Depends(get_verified_principal)]) -> dict[str, str]:
+    def protected(
+        principal: Annotated[VerifiedPrincipal, Depends(get_verified_principal)],
+    ) -> dict[str, str]:
         return {"user_id": str(principal.user_id)}
 
     with TestClient(app) as client:
