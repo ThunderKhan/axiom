@@ -119,8 +119,10 @@ no port. CI performs actual Docker smoke tests through
 `python ci/docker_smoke.py`. Docker Desktop with Linux containers and WSL2
 integration enabled is recommended on Windows.
 
-Production hosting, paid services, credentials, database migrations, queue
-durability/recovery and provider integrations are **not implemented or verified**.
+Production hosting, paid provider provisioning, real Supabase Auth configuration,
+queue durability/recovery and deployed provider integrations are **not verified**.
+The M1 Alembic schema migrations are implemented and executed only by explicit
+authorized migration/test commands, never at ordinary API startup.
 
 ## Issue #15 — Supabase JWT principal boundary (M1 D1–D3, I3)
 
