@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from collections.abc import AsyncIterator
+from contextlib import asynccontextmanager
 from typing import Literal
 from uuid import uuid4
 
@@ -11,6 +13,7 @@ from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 
 from app.auth import AuthFailure, JwtVerifier
+from app.database import Database
 from app.settings import RuntimeSettings, load_settings
 
 
@@ -22,13 +25,24 @@ class Liveness(BaseModel):
 class Readiness(BaseModel):
     status: Literal["ready", "not_ready"]
     scope: Literal["foundation_only"] = "foundation_only"
-    dependencies: Literal["none_configured", "database_not_verified", "auth_not_verified"]
+    dependencies: Literal["none_configured", "database_not_verified", "database_verified", "auth_not_verified"]
 
 
 def create_app(settings: RuntimeSettings | None = None) -> FastAPI:
     resolved = settings if settings is not None else load_settings()
-    application = FastAPI(title="Axiom API (foundation only)", version="0.2.0")
+    database = Database(resolved) if resolved.database_url is not None else None
+
+    @asynccontextmanager
+    async def lifespan(_app: FastAPI) -> AsyncIterator[None]:
+        try:
+            yield
+        finally:
+            if database is not None:
+                database.close()
+
+    application = FastAPI(title="Axiom API (foundation only)", version="0.2.0", lifespan=lifespan)
     application.state.jwt_verifier = JwtVerifier(resolved) if resolved.auth_configured else None
+    application.state.database = database
     application.add_middleware(
         CORSMiddleware,
         allow_origins=resolved.cors_origins.split(","),
@@ -69,14 +83,15 @@ def create_app(settings: RuntimeSettings | None = None) -> FastAPI:
         tags=["health"],
     )
     def readiness() -> Readiness | JSONResponse:
-        if resolved.database_required or resolved.database_url is not None:
-            # No DB client or schema exists in WP-01; a configured DB is unverified.
-            return JSONResponse(
-                status_code=503,
-                content=Readiness(
-                    status="not_ready", dependencies="database_not_verified"
-                ).model_dump(),
-            )
+        if resolved.database_required or database is not None:
+            if database is None or not database.ready():
+                return JSONResponse(
+                    status_code=503,
+                    content=Readiness(
+                        status="not_ready", dependencies="database_not_verified"
+                    ).model_dump(),
+                )
+            return Readiness(status="ready", dependencies="database_verified")
         if resolved.auth_configured:
             # JWT/JWKS and account persistence have not been provider-verified at this milestone.
             return JSONResponse(
