@@ -461,10 +461,12 @@ def test_missing_required_column_grants_fail_readiness(
     for table, column, action in scenarios:
         assert database.ready()
         with privileged_engine.begin() as conn:
-            conn.execute(text(f"REVOKE {action} ({column}) ON {table} FROM axiom_runtime"))  # noqa: S608
+            revoke_sql = f"REVOKE {action} ({column}) ON {table} FROM axiom_runtime"
+            conn.execute(text(revoke_sql))  # noqa: S608
         try:
             assert not database.ready()
         finally:
             with privileged_engine.begin() as conn:
-                conn.execute(text(f"GRANT {action} ({column}) ON {table} TO axiom_runtime"))  # noqa: S608
+                grant_sql = f"GRANT {action} ({column}) ON {table} TO axiom_runtime"
+                conn.execute(text(grant_sql))  # noqa: S608
         assert database.ready()
