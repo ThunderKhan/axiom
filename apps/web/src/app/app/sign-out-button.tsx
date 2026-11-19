@@ -1,7 +1,8 @@
 "use client";
 
 import { useFormStatus } from "react-dom";
-import { clearPrivateState } from "../../lib/private-state";
+import { clearBrowserPrivateState } from "../../lib/private-state";
+import { broadcastSignOut } from "../../lib/auth-sync";
 import { signOut } from "../login/actions";
 
 function Button() {
@@ -18,8 +19,8 @@ export function SignOutButton() {
     <form
       action={signOut}
       onSubmit={() => {
-        clearPrivateState(window.localStorage);
-        clearPrivateState(window.sessionStorage);
+        clearBrowserPrivateState();
+        broadcastSignOut();
       }}
     >
       <Button />

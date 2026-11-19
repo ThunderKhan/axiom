@@ -26,6 +26,8 @@ args.push(
   "src/lib/auth-config.test.ts",
   "src/lib/redirects.test.ts",
   "src/lib/private-state.test.ts",
+  "src/lib/auth-sync.test.ts",
+  "src/lib/supabase/cookie-policy.test.ts",
 );
 
 const result = spawnSync(process.execPath, args, {
