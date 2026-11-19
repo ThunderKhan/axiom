@@ -8,7 +8,7 @@ worker recovery. Both processes use one Python package and Docker image.
 
 - Python **3.12** is tested in CI; `pyproject.toml` supports 3.12–3.13.
 - `uv==0.10.0`, pinned direct runtime/development dependencies (including patched Starlette 1.10.0 and pytest 9.0.3) and a
-  committed, hash-bearing `uv.lock`. Only a lockfile-based sync is supported.
+  committed, hash-bearing `uv.lock`. Install and Docker builds use `--locked` to reject a stale lockfile; subsequent `uv run --frozen` commands use the previously validated environment.
 - The Python base image is `python:3.12.12-slim-bookworm` pinned to its reviewed
   OCI multi-platform SHA-256 digest in the Dockerfile.
 - Runtime dependencies: FastAPI 0.165.0 (MIT), Uvicorn 0.48.0 (BSD-3-Clause),
@@ -24,7 +24,7 @@ From the repository root:
 py -3.12 --version
 uv --version
 cd services/api
-uv sync --frozen --all-groups
+uv sync --locked --all-groups
 uv run --frozen python -m app.api
 ```
 
@@ -70,7 +70,7 @@ default; set environment variables in your terminal or your private secret store
 ## Required quality checks (from `services/api`)
 
 ```powershell
-uv sync --frozen --all-groups
+uv sync --locked --all-groups
 uv run --frozen python scripts/check_style.py
 uv run --frozen mypy app
 uv run --frozen pytest -q --junitxml=test-results/junit.xml

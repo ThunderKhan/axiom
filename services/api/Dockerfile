@@ -6,7 +6,7 @@ WORKDIR /app
 RUN python -m pip install --no-cache-dir uv==0.10.0
 COPY pyproject.toml uv.lock ./
 COPY app/ ./app/
-RUN uv sync --frozen --no-dev --no-editable --python /usr/local/bin/python
+RUN uv sync --locked --no-dev --no-editable --python /usr/local/bin/python
 
 FROM ${PYTHON_IMAGE} AS runtime
 RUN groupadd --gid 10001 axiom && \

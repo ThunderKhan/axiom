@@ -19,7 +19,7 @@ manifest = "pyproject.toml"
 lockfile = "uv.lock"
 test_files = ["tests/test_*.py"]
 test_report = "test-results/junit.xml"
-install = ["uv", "sync", "--frozen", "--all-groups"]
+install = ["uv", "sync", "--locked", "--all-groups"]
 lint = ["uv", "run", "--frozen", "python", "scripts/check_style.py"]
 typecheck = ["uv", "run", "--frozen", "mypy", "app"]
 test = ["uv", "run", "--frozen", "pytest", "-q", "--junitxml=test-results/junit.xml"]

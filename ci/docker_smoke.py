@@ -88,6 +88,54 @@ def wait_for_api() -> None:
     raise AssertionError("Containerized API did not become ready on 127.0.0.1:8000")
 
 
+def wait_for_worker_ready(worker_name: str, timeout: float = 15) -> None:
+    """Observe the emitted ready marker before exercising SIGTERM shutdown."""
+    deadline = time.monotonic() + timeout
+    while time.monotonic() < deadline:
+        logs = execute("docker", "logs", worker_name).stdout
+        if "axiom_worker_ready mode=idle_only" in logs:
+            running = execute(
+                "docker", "inspect", "--format", "{{.State.Running}}", worker_name
+            ).stdout.strip()
+            if running != "true":
+                raise AssertionError("Worker emitted readiness but already stopped before SIGTERM")
+            return
+        time.sleep(0.2)
+    raise AssertionError(f"Worker never emitted readiness before timeout: {worker_name}")
+
+
+def cleanup_runtime(compose: tuple[str, ...], worker_name: str) -> None:
+    """Try both cleanups, accepting only a confirmed missing named worker."""
+    problems: list[str] = []
+    for command in (
+        (*compose, "down", "--remove-orphans"),
+        ("docker", "rm", "-f", worker_name),
+    ):
+        try:
+            result = execute(*command, timeout=60, check=False)
+        except (OSError, subprocess.TimeoutExpired) as exc:
+            problems.append(f"{' '.join(command)}: {exc}")
+            continue
+
+        if result.returncode == 0:
+            continue
+        absent_errors = {
+            f"Error response from daemon: No such container: {worker_name}",
+            f"Error: No such container: {worker_name}",
+        }
+        if command[:3] == ("docker", "rm", "-f") and (
+            result.returncode == 1 and result.stderr.strip() in absent_errors
+        ):
+            continue
+        problems.append(
+            f"{' '.join(command)} exited {result.returncode}: "
+            f"{result.stdout.strip()} {result.stderr.strip()}"
+        )
+
+    if problems:
+        raise RuntimeError("Docker smoke cleanup failed:\n" + "\n".join(problems))
+
+
 def main() -> int:
     require_inputs()
     project = f"axiom-ci-{os.getpid()}"
@@ -130,7 +178,7 @@ def main() -> int:
             "docker", "run", "-d", "--name", worker_name,
             "-e", "AXIOM_WORKER_RUN_SECONDS=30", IMAGE, "python", "-m", "app.worker",
         )
-        time.sleep(1)
+        wait_for_worker_ready(worker_name)
         execute("docker", "stop", "--time", "5", worker_name, timeout=15)
         stopped = execute("docker", "logs", worker_name).stdout
         if "axiom_worker_ready" not in stopped or "axiom_worker_stopped" not in stopped:
@@ -138,8 +186,7 @@ def main() -> int:
         print("PASS: Docker API/worker startup, health, non-root, termination, isolation and negative cases")
         return 0
     finally:
-        execute(*compose, "down", "--remove-orphans", timeout=60, check=False)
-        execute("docker", "rm", "-f", worker_name, check=False)
+        cleanup_runtime(compose, worker_name)
 
 
 if __name__ == "__main__":

@@ -2,7 +2,7 @@
 
 **Axiom** is an evidence-grounded intelligence product for startup founders: discover public customer-demand signals, investigate competitors, evaluate founder/product fit, explore scenarios, and keep relevant opportunities organized.
 
-**Project status:** Product and architecture specifications exist. The first status-only Next.js frontend foundation is available in `apps/web` (issue #8); authentication, workspaces, research, CRM and backend services are **not implemented or deployed**. A documented feature is not an implemented feature, and example research is not live-source evidence.
+**Project status:** Product and architecture specifications exist. The first status-only Next.js frontend foundation is available in `apps/web` (issue #8); a limited FastAPI API/idle-worker foundation is available in `services/api` (issue #9). Authentication, workspaces, research, CRM, durable job processing and production deployment remain **unimplemented or unverified**. A documented feature is not an implemented feature, and example research is not live-source evidence.
 
 ## Project documentation
 
@@ -14,7 +14,7 @@ Read [AGENTS.md](AGENTS.md) and [ENGINEERING.md](ENGINEERING.md) before changes,
 
 Axiom's engineering goals include correctness-first CI, reproducible test evidence, safe workspace isolation, lawful and attributed source ingestion, and a transparent distinction between AI-generated interpretation and observed facts.
 
-**Frontend commands:** See [apps/web/README.md](apps/web/README.md) for the actual npm clean-install, development, build, test and audit commands. The web package displays foundation status only. No backend service or live integration command is implemented. No test or deployment is claimed verified without actual execution evidence.
+**Frontend commands:** See [apps/web/README.md](apps/web/README.md) for the actual npm clean-install, development, build, test and audit commands. The web package displays foundation status only. **Backend commands:** See [services/api/README.md](services/api/README.md) for the real FastAPI/worker, locked dependency, test and Docker commands. Live integrations are not implemented and no deployment is claimed verified.
 
 ## Review and release
 
