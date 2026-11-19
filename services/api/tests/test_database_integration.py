@@ -383,7 +383,9 @@ def test_readiness_fails_on_revoked_runtime_schema_and_function_grants(
         assert database.ready()
 
 
-def test_runtime_pool_exhaustion_marks_readiness_unhealthy_then_recovers() -> None:
+def test_runtime_pool_exhaustion_marks_readiness_unhealthy_then_recovers(
+    database: Database,
+) -> None:
     app = create_app(
         RuntimeSettings(
             database_url=os.environ["AXIOM_TEST_RUNTIME_DATABASE_URL"],
@@ -401,3 +403,68 @@ def test_runtime_pool_exhaustion_marks_readiness_unhealthy_then_recovers() -> No
             assert response.json()["dependencies"] == "database_not_verified"
             assert client.get("/api/v1/health/live").status_code == 200
         assert client.get("/api/v1/health/ready").status_code == 200
+
+
+def test_missing_required_rls_policies_fail_readiness(
+    database: Database, privileged_engine
+) -> None:
+    # These policies are needed for bootstrap and owner-scoped workspace writes.
+    scenarios = (
+        (
+            "app_user_own_read",
+            "axiom.app_users",
+            """CREATE POLICY app_user_own_read ON axiom.app_users
+               FOR SELECT TO axiom_runtime
+               USING (id = axiom.current_subject())""",
+        ),
+        (
+            "workspace_create_idempotency_own_insert",
+            "axiom.workspace_create_idempotency",
+            """CREATE POLICY workspace_create_idempotency_own_insert
+               ON axiom.workspace_create_idempotency
+               FOR INSERT TO axiom_runtime
+               WITH CHECK (
+                   owner_user_id = axiom.current_subject()
+                   AND EXISTS (
+                       SELECT 1 FROM axiom.app_users a
+                       WHERE a.id = axiom.current_subject() AND a.status = 'active'
+                   )
+               )""",
+        ),
+    )
+    for policy, table, restore_sql in scenarios:
+        assert database.ready()
+        # Real DROP commits before readiness opens its own unprivileged session.
+        with privileged_engine.begin() as conn:
+            conn.execute(text(f"DROP POLICY {policy} ON {table}"))  # noqa: S608
+        try:
+            assert not database.ready()
+        finally:
+            with privileged_engine.begin() as conn:
+                conn.execute(text(restore_sql))
+        assert database.ready()
+
+
+def test_missing_required_column_grants_fail_readiness(
+    database: Database, privileged_engine
+) -> None:
+    scenarios = (
+        ("axiom.app_users", "id", "INSERT"),
+        ("axiom.workspaces", "id", "INSERT"),
+        ("axiom.workspaces", "owner_user_id", "INSERT"),
+        ("axiom.workspaces", "updated_at", "UPDATE"),
+        ("axiom.workspaces", "version", "UPDATE"),
+        ("axiom.workspace_create_idempotency", "operation", "INSERT"),
+        ("axiom.workspace_create_idempotency", "key", "INSERT"),
+        ("axiom.workspace_create_idempotency", "expires_at", "INSERT"),
+    )
+    for table, column, action in scenarios:
+        assert database.ready()
+        with privileged_engine.begin() as conn:
+            conn.execute(text(f"REVOKE {action} ({column}) ON {table} FROM axiom_runtime"))  # noqa: S608
+        try:
+            assert not database.ready()
+        finally:
+            with privileged_engine.begin() as conn:
+                conn.execute(text(f"GRANT {action} ({column}) ON {table} TO axiom_runtime"))  # noqa: S608
+        assert database.ready()
