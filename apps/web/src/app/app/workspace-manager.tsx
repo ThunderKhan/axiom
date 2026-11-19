@@ -211,7 +211,13 @@ export function WorkspaceManager({
   );
 
   useEffect(() => {
-    void load(requestedWorkspace);
+    // Defer the first state transition until after the effect has subscribed.
+    // Synchronous setState inside an effect is not allowed by the React lint gate.
+    let disposed = false;
+    const currentGeneration = generation.current;
+    queueMicrotask(() => {
+      if (!disposed) void load(requestedWorkspace);
+    });
     const unsubscribe = subscribeToSignOut(invalidate);
     const { data: listener } = auth.auth.onAuthStateChange((event, session) => {
       if (
@@ -223,7 +229,8 @@ export function WorkspaceManager({
       }
     });
     return () => {
-      generation.current.next();
+      disposed = true;
+      currentGeneration.next();
       activeRequest.current?.abort();
       createRequest.current?.abort();
       pendingCreation.current = null;
