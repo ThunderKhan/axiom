@@ -2,10 +2,9 @@
 
 from __future__ import annotations
 
-from collections.abc import Callable
-
 import signal
 import sys
+from collections.abc import Callable
 from threading import Event, current_thread, main_thread
 from time import monotonic
 from types import FrameType
