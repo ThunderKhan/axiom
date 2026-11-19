@@ -85,7 +85,9 @@ class Database:
                         """SELECT count(*) FROM pg_class c JOIN pg_namespace n
                            ON n.oid = c.relnamespace WHERE n.nspname = 'axiom'
                            AND c.relkind = 'r'
-                           AND c.relname IN ('app_users', 'workspaces', 'workspace_create_idempotency')"""
+                           AND c.relname IN (
+                             'app_users', 'workspaces', 'workspace_create_idempotency'
+                           )"""
                     )
                 ).scalar_one()
                 grants = conn.scalar(
