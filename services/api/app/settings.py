@@ -3,8 +3,8 @@
 from __future__ import annotations
 
 from ipaddress import ip_address
-from urllib.parse import urlsplit
 from typing import Self
+from urllib.parse import urlsplit
 
 from pydantic import Field, SecretStr, field_validator, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
