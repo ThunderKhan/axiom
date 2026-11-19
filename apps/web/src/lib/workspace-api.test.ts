@@ -180,14 +180,17 @@ describe("FastAPI-only authenticated workspace client", () => {
     await assert.rejects(
       emptyResponse.create("First", "originalKey189", controller.signal),
       (error: unknown) =>
-        error instanceof WorkspaceApiError &&
-        isUncertainCreateFailure(error),
+        error instanceof WorkspaceApiError && isUncertainCreateFailure(error),
     );
     const brokenServer = createWorkspaceApi(
       "https://api.example.test",
       a,
       async () => token,
-      async () => Response.json({ error: { code: "UNEXPECTED_RESPONSE" } }, { status: 500 }),
+      async () =>
+        Response.json(
+          { error: { code: "UNEXPECTED_RESPONSE" } },
+          { status: 500 },
+        ),
     );
     await assert.rejects(
       brokenServer.create("First", "originalKey189", controller.signal),
@@ -202,7 +205,10 @@ describe("FastAPI-only authenticated workspace client", () => {
       async () => token,
       async () => Response.json({ ...workspace, id: a }),
     );
-    await assert.rejects(mismatchedRead.read(id, controller.signal), InvalidWorkspaceResponse);
+    await assert.rejects(
+      mismatchedRead.read(id, controller.signal),
+      InvalidWorkspaceResponse,
+    );
   });
 
   it("refuses to send when the session or public API origin is not usable", async () => {

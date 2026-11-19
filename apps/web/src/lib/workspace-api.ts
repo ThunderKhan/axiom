@@ -38,9 +38,11 @@ export function isUncertainCreateFailure(error: unknown): boolean {
   return (
     error instanceof WorkspaceApiError &&
     (error.status >= 500 ||
-      ["NETWORK_UNCERTAIN", "DATABASE_UNAVAILABLE", "AUTH_UNAVAILABLE"].includes(
-        error.code,
-      ))
+      [
+        "NETWORK_UNCERTAIN",
+        "DATABASE_UNAVAILABLE",
+        "AUTH_UNAVAILABLE",
+      ].includes(error.code))
   );
 }
 
