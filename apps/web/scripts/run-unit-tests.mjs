@@ -20,7 +20,13 @@ if (junit) {
   );
 }
 
-args.push("src/lib/foundation.test.ts", "src/lib/public-api.test.ts");
+args.push(
+  "src/lib/foundation.test.ts",
+  "src/lib/public-api.test.ts",
+  "src/lib/auth-config.test.ts",
+  "src/lib/redirects.test.ts",
+  "src/lib/private-state.test.ts",
+);
 
 const result = spawnSync(process.execPath, args, {
   cwd: root,

@@ -4,9 +4,9 @@ import "./globals.css";
 import { publicApiBaseUrl } from "../lib/public-api";
 
 export const metadata: Metadata = {
-  title: "Axiom | Foundation",
+  title: "Axiom | Founder workspace",
   description:
-    "Axiom frontend foundation. Product features are not yet available.",
+    "Axiom is developing an evidence-grounded founder intelligence workspace. Live provider and product capabilities are verified separately.",
 };
 
 export default function RootLayout({

@@ -7,7 +7,7 @@ export interface Capability {
   readonly state: CapabilityState;
 }
 
-/** Current, factual capability states. Do not mark unimplemented features as available. */
+/** Status is deployment/provider evidence, not a count of source files committed. */
 export const capabilities: readonly Capability[] = [
   {
     id: "foundation",
@@ -18,14 +18,15 @@ export const capabilities: readonly Capability[] = [
   {
     id: "authentication",
     title: "Authentication",
-    description: "Sign-in and account access are not yet implemented.",
+    description:
+      "Login and server-verified session code is implemented. Live provider operation requires configuration and separate verification.",
     state: "unavailable",
   },
   {
     id: "research",
     title: "Research and workspace features",
     description:
-      "Live intelligence, workspaces, and CRM are not yet implemented.",
+      "Workspace HTTP APIs, onboarding, live research, and CRM are not yet implemented.",
     state: "unavailable",
   },
 ];

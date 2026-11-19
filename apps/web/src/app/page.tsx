@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { capabilities, statusLabel } from "../lib/foundation";
 
 export default function HomePage() {
@@ -9,16 +10,17 @@ export default function HomePage() {
       <div className="page-shell">
         <header className="site-header">
           <span className="wordmark">AXIOM</span>
-          <span className="version-label">Frontend foundation · 0.1</span>
+          <Link className="header-login" href="/login">Sign in</Link>
         </header>
         <main id="main-content" tabIndex={-1}>
           <div className="eyebrow">BUILDING WITH EVIDENCE</div>
           <h1>Axiom is taking shape.</h1>
           <p className="introduction">
             An evidence-grounded intelligence workspace for founders is planned.
-            This page confirms that the web foundation runs; it does not
-            represent a functioning product or sign-in experience.
+            This public page shows the implementation status; private research and
+            workspaces are not yet available.
           </p>
+          <Link className="primary-cta" href="/login">Sign in to Axiom</Link>
           <section className="status-panel" aria-labelledby="status-heading">
             <div className="status-heading">
               <h2 id="status-heading">Implementation status</h2>
@@ -40,7 +42,7 @@ export default function HomePage() {
           </section>
         </main>
         <footer className="site-footer">
-          Axiom · Foundation only · No account access
+          Axiom · Public foundation · Provider verification pending
         </footer>
       </div>
     </>
