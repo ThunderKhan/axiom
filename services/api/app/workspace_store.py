@@ -7,8 +7,7 @@ import json
 import re
 import unicodedata
 from dataclasses import dataclass
-from datetime import datetime
-from datetime import timedelta
+from datetime import datetime, timedelta
 from typing import Any
 from uuid import UUID, uuid4
 
@@ -192,8 +191,7 @@ class WorkspaceStore:
             return {"items": [_response(item) for item in items], "next_cursor": next_cursor}
 
     def update_workspace(
-        self, principal: VerifiedPrincipal, workspace_id: UUID, *, name: str,
-        expected_version: int
+        self, principal: VerifiedPrincipal, workspace_id: UUID, *, name: str, expected_version: int
     ) -> dict[str, object]:
         normalized = canonical_name(name)
         if type(expected_version) is not int or not 1 <= expected_version <= 9223372036854775807:

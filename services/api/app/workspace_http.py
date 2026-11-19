@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from datetime import datetime
-from typing import Annotated, Literal
+from typing import Annotated, Any, Literal
 from uuid import UUID
 
 from fastapi import APIRouter, Body, Depends, Header, Query, Request, Response
@@ -69,9 +69,7 @@ class ErrorDTO(BaseModel):
 class ApiFailure(Exception):
     """Public error classification, with no raw SQL/claims/request contents."""
 
-    def __init__(
-        self, code: str, status: int, message: str, *, retryable: bool = False
-    ) -> None:
+    def __init__(self, code: str, status: int, message: str, *, retryable: bool = False) -> None:
         self.code = code
         self.status = status
         self.message = message
@@ -82,16 +80,14 @@ class ApiFailure(Exception):
 def get_workspace_store(request: Request) -> WorkspaceStore:
     database = getattr(request.app.state, "database", None)
     if database is None:
-        raise ApiFailure(
-            "DATABASE_UNAVAILABLE", 503, "Database unavailable.", retryable=True
-        )
+        raise ApiFailure("DATABASE_UNAVAILABLE", 503, "Database unavailable.", retryable=True)
     return WorkspaceStore(database)
 
 
 Principal = Annotated[VerifiedPrincipal, Depends(get_verified_principal)]
 Store = Annotated[WorkspaceStore, Depends(get_workspace_store)]
 
-_errors = {
+_errors: dict[int | str, dict[str, Any]] = {
     401: {"model": ErrorDTO},
     403: {"model": ErrorDTO},
     404: {"model": ErrorDTO},

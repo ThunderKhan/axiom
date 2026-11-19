@@ -15,9 +15,9 @@ import pytest
 from cryptography.hazmat.primitives.asymmetric import rsa
 from fastapi.testclient import TestClient
 from jwt.algorithms import RSAAlgorithm
+from pydantic import SecretStr
 from sqlalchemy import create_engine, select, text
 from sqlalchemy.exc import DBAPIError
-from pydantic import SecretStr
 
 from app.auth import JwtVerifier, VerifiedPrincipal
 from app.database import Database, _pg_url
@@ -38,11 +38,15 @@ def api():
     private = rsa.generate_private_key(public_exponent=65537, key_size=2048)
     jwk = {
         **json.loads(RSAAlgorithm.to_jwk(private.public_key())),
-        "kid": "m1-workspace-tests", "alg": "RS256", "use": "sig",
+        "kid": "m1-workspace-tests",
+        "alg": "RS256",
+        "use": "sig",
     }
     settings = RuntimeSettings(
-        database_url=url, database_required=True,
-        auth_issuer=ISSUER, auth_audience="authenticated",
+        database_url=url,
+        database_required=True,
+        auth_issuer=ISSUER,
+        auth_audience="authenticated",
         auth_jwks_url=ISSUER + "/.well-known/jwks.json",
     )
     app = create_app(settings)
@@ -64,8 +68,11 @@ def privileged_engine():
 def headers(private, user: UUID | None = None, **changes: object) -> dict[str, str]:
     now = int(time.time())
     claims: dict[str, object] = {
-        "iss": ISSUER, "aud": "authenticated", "iat": now,
-        "exp": now + 3600, "role": "authenticated",
+        "iss": ISSUER,
+        "aud": "authenticated",
+        "iat": now,
+        "exp": now + 3600,
+        "role": "authenticated",
         "sub": str(user if user is not None else uuid4()),
     }
     claims.update(changes)
@@ -75,7 +82,8 @@ def headers(private, user: UUID | None = None, **changes: object) -> dict[str, s
 
 def create(client: TestClient, auth: dict[str, str], name: str, key: str):
     return client.post(
-        "/api/v1/workspaces", json={"name": name},
+        "/api/v1/workspaces",
+        json={"name": name},
         headers={**auth, "Idempotency-Key": key},
     )
 
@@ -116,7 +124,8 @@ def test_bootstrap_read_only_me_multiowner_crud_and_foreign_idor(api, privileged
     assert client.get("/api/v1/me", headers=aa).json() == created.json()["user"]
     assert_error(
         client.post("/api/v1/me/bootstrap", json={"id": str(b)}, headers=aa),
-        422, "VALIDATION_FAILED",
+        422,
+        "VALIDATION_FAILED",
     )
     bootstrap(client, bb)
 
@@ -143,14 +152,20 @@ def test_bootstrap_read_only_me_multiowner_crud_and_foreign_idor(api, privileged
     assert_error(
         client.patch(
             "/api/v1/workspaces/" + a1["id"],
-            headers=bb, json={"name": "Stolen", "expected_version": 1},
-        ), 404, "NOT_FOUND"
+            headers=bb,
+            json={"name": "Stolen", "expected_version": 1},
+        ),
+        404,
+        "NOT_FOUND",
     )
     assert_error(
         client.patch(
             "/api/v1/workspaces/" + str(uuid4()),
-            headers=bb, json={"name": "Stolen", "expected_version": 1},
-        ), 404, "NOT_FOUND"
+            headers=bb,
+            json={"name": "Stolen", "expected_version": 1},
+        ),
+        404,
+        "NOT_FOUND",
     )
     assert_error(
         client.post(
@@ -164,17 +179,17 @@ def test_bootstrap_read_only_me_multiowner_crud_and_foreign_idor(api, privileged
     assert client.get("/api/v1/workspaces/" + a1["id"], headers=aa).json() == a1
 
     with privileged_engine.begin() as conn:
-        conn.execute(
-            text("UPDATE axiom.app_users SET status='suspended' WHERE id=:id"), {"id": b}
-        )
+        conn.execute(text("UPDATE axiom.app_users SET status='suspended' WHERE id=:id"), {"id": b})
     try:
         for method, url in (
-            ("get", "/api/v1/me"), ("get", "/api/v1/workspaces"),
+            ("get", "/api/v1/me"),
+            ("get", "/api/v1/workspaces"),
             ("post", "/api/v1/me/bootstrap"),
         ):
             assert_error(getattr(client, method)(url, headers=bb), 403, "ACCOUNT_DISABLED")
-        assert_error(client.get("/api/v1/workspaces/" + b1["id"], headers=bb),
-                     403, "ACCOUNT_DISABLED")
+        assert_error(
+            client.get("/api/v1/workspaces/" + b1["id"], headers=bb), 403, "ACCOUNT_DISABLED"
+        )
         with privileged_engine.begin() as conn:
             conn.execute(
                 text("UPDATE axiom.app_users SET status='deprovisioned' WHERE id=:id"),
@@ -183,9 +198,7 @@ def test_bootstrap_read_only_me_multiowner_crud_and_foreign_idor(api, privileged
         assert_error(client.post("/api/v1/me/bootstrap", headers=bb), 403, "ACCOUNT_DISABLED")
     finally:
         with privileged_engine.begin() as conn:
-            conn.execute(
-                text("UPDATE axiom.app_users SET status='active' WHERE id=:id"), {"id": b}
-            )
+            conn.execute(text("UPDATE axiom.app_users SET status='active' WHERE id=:id"), {"id": b})
 
 
 def test_create_idempotency_concurrency_replay_restart_and_expiry(api, privileged_engine) -> None:
@@ -197,15 +210,16 @@ def test_create_idempotency_concurrency_replay_restart_and_expiry(api, privilege
     assert first.status_code == 201
     replay = create(client, auth, "The product", "idempotencyKey189")
     assert replay.status_code == 201 and replay.json() == first.json()
-    assert_error(create(client, auth, "Different", "idempotencyKey189"),
-                 409, "IDEMPOTENCY_CONFLICT")
+    assert_error(
+        create(client, auth, "Different", "idempotencyKey189"), 409, "IDEMPOTENCY_CONFLICT"
+    )
     other = create(client, auth, "The product", "secondKey1888")
     assert other.status_code == 201 and other.json()["id"] != first.json()["id"]
 
     with ThreadPoolExecutor(max_workers=4) as pool:
-        parallel = list(pool.map(
-            lambda _: create(client, auth, "Parallel", "parallelUniqueKey189"), range(4)
-        ))
+        parallel = list(
+            pool.map(lambda _: create(client, auth, "Parallel", "parallelUniqueKey189"), range(4))
+        )
     assert {result.status_code for result in parallel} == {201}
     assert len({result.json()["id"] for result in parallel}) == 1
 
@@ -214,8 +228,9 @@ def test_create_idempotency_concurrency_replay_restart_and_expiry(api, privilege
         public = json.loads(RSAAlgorithm.to_jwk(private.public_key()))
         fresh.app.state.jwt_verifier = JwtVerifier(
             settings,
-            fetcher=lambda _: {"keys": [{**public, "kid": "m1-workspace-tests",
-                                         "alg": "RS256", "use": "sig"}]},
+            fetcher=lambda _: {
+                "keys": [{**public, "kid": "m1-workspace-tests", "alg": "RS256", "use": "sig"}]
+            },
         )
         after_restart = create(fresh, auth, "The product", "idempotencyKey189")
         assert after_restart.status_code == 201
@@ -239,11 +254,14 @@ def test_create_idempotency_concurrency_replay_restart_and_expiry(api, privilege
                      WHERE owner_user_id=:owner AND key=:key"""),
             {"owner": actor, "key": "idempotencyKey189"},
         )
-        assert conn.execute(
-            text("""DELETE FROM axiom.workspace_create_idempotency
+        assert (
+            conn.execute(
+                text("""DELETE FROM axiom.workspace_create_idempotency
                      WHERE owner_user_id=:owner AND key=:key AND expires_at < now()"""),
-            {"owner": actor, "key": "idempotencyKey189"},
-        ).rowcount == 1
+                {"owner": actor, "key": "idempotencyKey189"},
+            ).rowcount
+            == 1
+        )
     late_retry = create(client, auth, "The product", "idempotencyKey189")
     assert late_retry.status_code == 201
     assert late_retry.json()["id"] != first.json()["id"]
@@ -277,24 +295,26 @@ def test_keyset_pagination_with_equal_timestamps_and_foreign_cursor(api, privile
     assert isinstance(cursor, str) and cursor
     assert_error(
         client.get("/api/v1/workspaces?limit=2&cursor=" + cursor, headers=bb),
-        422, "VALIDATION_FAILED",
+        422,
+        "VALIDATION_FAILED",
     )
     for bad in ("not-a-cursor", "x" * 513):
         assert_error(
             client.get("/api/v1/workspaces", params={"limit": 2, "cursor": bad}, headers=aa),
-            422, "VALIDATION_FAILED",
+            422,
+            "VALIDATION_FAILED",
         )
     for bad_limit in ("0", "101", "-1", "garbage"):
         assert_error(
             client.get("/api/v1/workspaces", params={"limit": bad_limit}, headers=aa),
-            422, "VALIDATION_FAILED",
+            422,
+            "VALIDATION_FAILED",
         )
     # Newer insert after page 1 must not be repeated on later pages.
     inserted = create(client, aa, "A new one", "pageNewInsert189").json()
     collected = first.json()["items"][:]
     while cursor:
-        page = client.get("/api/v1/workspaces", params={"limit": 2, "cursor": cursor},
-                          headers=aa)
+        page = client.get("/api/v1/workspaces", params={"limit": 2, "cursor": cursor}, headers=aa)
         assert page.status_code == 200
         collected.extend(page.json()["items"])
         cursor = page.json()["next_cursor"]
@@ -307,14 +327,17 @@ def test_keyset_pagination_with_equal_timestamps_and_foreign_cursor(api, privile
     # A cursor with a forged owner but a foreign anchor cannot become a data path.
     b_page = client.get("/api/v1/workspaces?limit=1", headers=bb).json()
     assert b_page["next_cursor"] is None
-    payload = json.loads(base64.urlsafe_b64decode(
-        first.json()["next_cursor"] + "=" * (-len(first.json()["next_cursor"]) % 4)
-    ))
+    payload = json.loads(
+        base64.urlsafe_b64decode(
+            first.json()["next_cursor"] + "=" * (-len(first.json()["next_cursor"]) % 4)
+        )
+    )
     payload["id"] = b_resource["id"]
     forged = base64.urlsafe_b64encode(json.dumps(payload).encode()).decode().rstrip("=")
     assert_error(
         client.get("/api/v1/workspaces", params={"limit": 2, "cursor": forged}, headers=aa),
-        422, "VALIDATION_FAILED",
+        422,
+        "VALIDATION_FAILED",
     )
 
 
@@ -327,25 +350,29 @@ def test_optimistic_patch_atomic_and_owner_immutable(api, privileged_engine) -> 
     first = create(client, aa, "Original", "optimisticKey189").json()
     path = "/api/v1/workspaces/" + first["id"]
     with ThreadPoolExecutor(max_workers=2) as pool:
-        outcomes = list(pool.map(
-            lambda name: client.patch(path, headers=aa,
-                                      json={"name": name, "expected_version": 1}),
-            ["First update", "Second update"],
-        ))
+        outcomes = list(
+            pool.map(
+                lambda name: client.patch(
+                    path, headers=aa, json={"name": name, "expected_version": 1}
+                ),
+                ["First update", "Second update"],
+            )
+        )
     assert sorted(result.status_code for result in outcomes) == [200, 409]
-    assert_error(next(x for x in outcomes if x.status_code == 409),
-                 409, "VERSION_CONFLICT")
+    assert_error(next(x for x in outcomes if x.status_code == 409), 409, "VERSION_CONFLICT")
     current = client.get(path, headers=aa).json()
     assert current["version"] == 2
     assert current["name"] in {"First update", "Second update"}
     assert current["updated_at"] >= first["updated_at"]
     assert_error(
         client.patch(path, headers=aa, json={"name": current["name"], "expected_version": 1}),
-        409, "VERSION_CONFLICT",
+        409,
+        "VERSION_CONFLICT",
     )
     assert_error(
         client.patch(path, headers=bb, json={"name": "Lost", "expected_version": 2}),
-        404, "NOT_FOUND",
+        404,
+        "NOT_FOUND",
     )
     for bad in (
         {"name": "x", "expected_version": 0},
@@ -357,12 +384,12 @@ def test_optimistic_patch_atomic_and_owner_immutable(api, privileged_engine) -> 
         {"name": "x" * 121, "expected_version": 2},
     ):
         assert_error(client.patch(path, headers=aa, json=bad), 422, "VALIDATION_FAILED")
-    assert_error(client.get("/api/v1/workspaces/not-a-uuid", headers=aa),
-                 422, "VALIDATION_FAILED")
+    assert_error(client.get("/api/v1/workspaces/not-a-uuid", headers=aa), 422, "VALIDATION_FAILED")
     assert client.get(path, headers=aa).json() == current
     # No-change success still checks expected version, and increments only once.
-    no_change = client.patch(path, headers=aa,
-                             json={"name": current["name"], "expected_version": 2})
+    no_change = client.patch(
+        path, headers=aa, json={"name": current["name"], "expected_version": 2}
+    )
     assert no_change.status_code == 200 and no_change.json()["version"] == 3
 
 
@@ -376,29 +403,34 @@ def test_privileged_rls_bypass_is_not_app_authorization(api, privileged_engine) 
     with privileged_engine.connect() as conn:
         assert conn.scalar(text("SELECT current_user")) == "axiom_migrator"
         assert conn.scalar(text("SELECT count(*) FROM axiom.workspaces")) >= 1
-    privileged = Database(settings.model_copy(update={
-        "database_url": SecretStr(os.environ["AXIOM_MIGRATION_DATABASE_URL"])
-    }))
+    privileged = Database(
+        settings.model_copy(
+            update={"database_url": SecretStr(os.environ["AXIOM_MIGRATION_DATABASE_URL"])}
+        )
+    )
     try:
         store = WorkspaceStore(privileged)
         with pytest.raises(WorkspaceNotFound):
             store.get_workspace(VerifiedPrincipal(a, None), UUID(private_b["id"]))
         with pytest.raises(WorkspaceNotFound):
             store.update_workspace(
-                VerifiedPrincipal(a, None), UUID(private_b["id"]),
-                name="Hijacked", expected_version=1,
+                VerifiedPrincipal(a, None),
+                UUID(private_b["id"]),
+                name="Hijacked",
+                expected_version=1,
             )
         # HTTP must independently forbid IDOR even if DB role bypasses RLS.
-        privileged_app = create_app(settings.model_copy(update={
-            "database_url": os.environ["AXIOM_MIGRATION_DATABASE_URL"]
-        }))
+        privileged_app = create_app(
+            settings.model_copy(update={"database_url": os.environ["AXIOM_MIGRATION_DATABASE_URL"]})
+        )
         privileged_app.state.database.close()  # dispose the unused engine created by create_app
         privileged_app.state.database = privileged
         privileged_app.state.jwt_verifier = client.app.state.jwt_verifier
         with TestClient(privileged_app) as privileged_client:
             assert_error(
                 privileged_client.get("/api/v1/workspaces/" + private_b["id"], headers=aa),
-                404, "NOT_FOUND",
+                404,
+                "NOT_FOUND",
             )
     finally:
         privileged.close()
@@ -416,25 +448,38 @@ def test_safe_database_outage_and_rollbacks(api, privileged_engine) -> None:
             with runtime.transaction(VerifiedPrincipal(a, None)) as session:
                 session.add(Workspace(id=workspace_id, owner_user_id=a, name="Will rollback"))
                 session.flush()
-                session.add(WorkspaceCreateIdempotency(
-                    owner_user_id=a, operation="workspace.create",
-                    key="rollbackKey189",
-                    fingerprint="not-a-digest", response_status=201,
-                    response_body={"id": str(workspace_id)},
-                    expires_at=session.scalar(select(text("now() + interval '25 hours'"))),
-                ))
+                session.add(
+                    WorkspaceCreateIdempotency(
+                        owner_user_id=a,
+                        operation="workspace.create",
+                        key="rollbackKey189",
+                        fingerprint="not-a-digest",
+                        response_status=201,
+                        response_body={"id": str(workspace_id)},
+                        expires_at=session.scalar(select(text("now() + interval '25 hours'"))),
+                    )
+                )
                 session.flush()
         with runtime.transaction(VerifiedPrincipal(a, None)) as session:
             assert session.scalar(select(Workspace.id).where(Workspace.id == workspace_id)) is None
-            assert session.scalar(select(WorkspaceCreateIdempotency).where(
-                WorkspaceCreateIdempotency.owner_user_id == a,
-                WorkspaceCreateIdempotency.key == "rollbackKey189",
-            )) is None
+            assert (
+                session.scalar(
+                    select(WorkspaceCreateIdempotency).where(
+                        WorkspaceCreateIdempotency.owner_user_id == a,
+                        WorkspaceCreateIdempotency.key == "rollbackKey189",
+                    )
+                )
+                is None
+            )
     finally:
         runtime.close()
-    bad_settings = settings.model_copy(update={
-        "database_url": SecretStr("postgresql://test_user:doNotRevealMe@127.0.0.1:55433/axiom_test")
-    })
+    bad_settings = settings.model_copy(
+        update={
+            "database_url": SecretStr(
+                "postgresql://test_user:doNotRevealMe@127.0.0.1:55433/axiom_test"
+            )
+        }
+    )
     fail_app = create_app(bad_settings)
     fail_app.state.jwt_verifier = client.app.state.jwt_verifier
     with TestClient(fail_app) as failing:

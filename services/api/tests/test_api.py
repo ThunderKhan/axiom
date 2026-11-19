@@ -22,9 +22,7 @@ def test_fastapi_import_and_versioned_openapi() -> None:
         }
         workspace = schema.json()["paths"]["/api/v1/workspaces"]
         assert set(workspace) == {"get", "post"}
-        assert set(schema.json()["paths"]["/api/v1/workspaces/{workspace_id}"]) == {
-            "get", "patch"
-        }
+        assert set(schema.json()["paths"]["/api/v1/workspaces/{workspace_id}"]) == {"get", "patch"}
 
 
 def test_liveness_is_genuine_http_response() -> None:

@@ -12,21 +12,21 @@ from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel
+from sqlalchemy.exc import SQLAlchemyError
 
 from app.auth import AuthFailure, JwtVerifier
 from app.database import Database
 from app.settings import RuntimeSettings, load_settings
+from app.workspace_cursor import InvalidCursor
 from app.workspace_http import ApiFailure, router
 from app.workspace_store import (
     AccountDisabled,
     IdempotencyConflict,
     InvalidWorkspaceInput,
     ProvisioningRequired,
-    WorkspaceNotFound,
     VersionConflict,
+    WorkspaceNotFound,
 )
-from app.workspace_cursor import InvalidCursor
-from sqlalchemy.exc import SQLAlchemyError
 
 
 class Liveness(BaseModel):

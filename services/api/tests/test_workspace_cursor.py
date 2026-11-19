@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import base64
 import json
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from uuid import uuid4
 
 import pytest
@@ -14,7 +14,7 @@ from app.workspace_cursor import InvalidCursor, decode_cursor, encode_cursor
 
 def test_keyset_cursor_roundtrip_is_versioned_and_owner_bound() -> None:
     a, b, workspace = uuid4(), uuid4(), uuid4()
-    at = datetime(2026, 11, 19, 12, 30, 9, 12345, tzinfo=timezone.utc)
+    at = datetime(2026, 11, 19, 12, 30, 9, 12345, tzinfo=UTC)
     cursor = encode_cursor(a, limit=2, created_at=at, workspace_id=workspace)
     assert cursor.isascii() and "/" not in cursor and "=" not in cursor
     decoded = decode_cursor(cursor, owner_id=a, limit=2)
@@ -37,7 +37,7 @@ def test_cursor_rejects_malformed_data(value: str) -> None:
 
 def test_malformed_and_modified_cursors_are_rejected() -> None:
     a, ws = uuid4(), uuid4()
-    at = datetime.now(timezone.utc)
+    at = datetime.now(UTC)
     value = encode_cursor(a, limit=20, created_at=at, workspace_id=ws)
     body = json.loads(base64.urlsafe_b64decode(value + "=" * (-len(value) % 4)))
     for change in (
@@ -50,9 +50,11 @@ def test_malformed_and_modified_cursors_are_rejected() -> None:
         {"extra": "unapproved"},
     ):
         modified = {**body, **change}
-        data = base64.urlsafe_b64encode(
-            json.dumps(modified, separators=(",", ":")).encode()
-        ).decode().rstrip("=")
+        data = (
+            base64.urlsafe_b64encode(json.dumps(modified, separators=(",", ":")).encode())
+            .decode()
+            .rstrip("=")
+        )
         with pytest.raises(InvalidCursor):
             decode_cursor(data, owner_id=a, limit=20)
     with pytest.raises(ValueError):

@@ -23,7 +23,8 @@ def _client() -> tuple[TestClient, rsa.RSAPrivateKey]:
     public = json.loads(RSAAlgorithm.to_jwk(private_key.public_key()))
     jwk = {**public, "kid": "local-test", "alg": "RS256", "use": "sig"}
     settings = RuntimeSettings(
-        auth_issuer=ISSUER, auth_audience="authenticated",
+        auth_issuer=ISSUER,
+        auth_audience="authenticated",
         auth_jwks_url=ISSUER + "/.well-known/jwks.json",
     )
     app = create_app(settings)
@@ -34,8 +35,12 @@ def _client() -> tuple[TestClient, rsa.RSAPrivateKey]:
 def _token(private: rsa.RSAPrivateKey, **changes: object) -> str:
     now = int(time.time())
     claims: dict[str, object] = {
-        "iss": ISSUER, "aud": "authenticated", "iat": now,
-        "exp": now + 300, "sub": str(uuid4()), "role": "authenticated",
+        "iss": ISSUER,
+        "aud": "authenticated",
+        "iat": now,
+        "exp": now + 300,
+        "sub": str(uuid4()),
+        "role": "authenticated",
     }
     claims.update(changes)
     return jwt.encode(claims, private, algorithm="RS256", headers={"kid": "local-test"})
@@ -62,26 +67,41 @@ def test_missing_and_invalid_credentials_fail_before_missing_database() -> None:
             ("post", "/api/v1/me/bootstrap", {}),
             ("get", "/api/v1/me", {}),
             ("get", "/api/v1/workspaces", {}),
-            ("post", "/api/v1/workspaces", {"json": {"name": "Valid"}, "headers": {
-                "Idempotency-Key": "requestKey88",
-            }}),
+            (
+                "post",
+                "/api/v1/workspaces",
+                {
+                    "json": {"name": "Valid"},
+                    "headers": {
+                        "Idempotency-Key": "requestKey88",
+                    },
+                },
+            ),
             ("get", "/api/v1/workspaces/" + str(uuid4()), {}),
-            ("patch", "/api/v1/workspaces/" + str(uuid4()), {"json": {
-                "name": "Updated", "expected_version": 1,
-            }}),
+            (
+                "patch",
+                "/api/v1/workspaces/" + str(uuid4()),
+                {
+                    "json": {
+                        "name": "Updated",
+                        "expected_version": 1,
+                    }
+                },
+            ),
         ):
             _assert_envelope(getattr(client, method)(path, **kwargs), "AUTH_REQUIRED", 401)
         for changes in (
-            {"exp": 1}, {"role": "service_role"}, {"iss": "https://evil.example"},
-            {"aud": "evil"}, {"is_anonymous": True},
+            {"exp": 1},
+            {"role": "service_role"},
+            {"iss": "https://evil.example"},
+            {"aud": "evil"},
+            {"is_anonymous": True},
         ):
             response = client.get(
                 "/api/v1/me", headers={"Authorization": "Bearer " + _token(private, **changes)}
             )
             _assert_envelope(response, "AUTH_REQUIRED", 401)
-        valid = client.get(
-            "/api/v1/me", headers={"Authorization": "Bearer " + _token(private)}
-        )
+        valid = client.get("/api/v1/me", headers={"Authorization": "Bearer " + _token(private)})
         _assert_envelope(valid, "DATABASE_UNAVAILABLE", 503)
         assert valid.json()["error"]["retryable"] is True
 
