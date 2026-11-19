@@ -123,15 +123,11 @@ class WorkspaceStore:
         ).hexdigest()
         # A deterministic, owner-scoped transaction advisory lock serializes competing
         # requests for the same key across process replicas and protects replay atomicity.
-        digest = hashlib.sha256(
-            f"{principal.user_id}:{_OPERATION}:{key}".encode("ascii")
-        ).digest()
+        digest = hashlib.sha256(f"{principal.user_id}:{_OPERATION}:{key}".encode("ascii")).digest()
         advisory_key = int.from_bytes(digest[:8], "big", signed=True)
         with self.database.transaction(principal) as session:
             self._active(session, principal)
-            session.execute(
-                text("SELECT pg_advisory_xact_lock(:key)"), {"key": advisory_key}
-            )
+            session.execute(text("SELECT pg_advisory_xact_lock(:key)"), {"key": advisory_key})
             existing = session.scalar(
                 select(WorkspaceCreateIdempotency)
                 .where(
@@ -149,9 +145,7 @@ class WorkspaceStore:
                     response_body=existing.response_body,
                     replayed=True,
                 )
-            workspace = Workspace(
-                id=uuid4(), owner_user_id=principal.user_id, name=normalized
-            )
+            workspace = Workspace(id=uuid4(), owner_user_id=principal.user_id, name=normalized)
             session.add(workspace)
             session.flush()
             body = _response(workspace)

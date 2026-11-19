@@ -81,12 +81,8 @@ def upgrade() -> None:
     op.execute("GRANT INSERT (id) ON axiom.app_users TO axiom_runtime")
     op.execute("GRANT SELECT ON axiom.workspaces TO axiom_runtime")
     op.execute("GRANT INSERT (id, owner_user_id, name) ON axiom.workspaces TO axiom_runtime")
-    op.execute(
-        "GRANT UPDATE (name, updated_at, version) ON axiom.workspaces TO axiom_runtime"
-    )
-    op.execute(
-        "GRANT SELECT ON axiom.workspace_create_idempotency TO axiom_runtime"
-    )
+    op.execute("GRANT UPDATE (name, updated_at, version) ON axiom.workspaces TO axiom_runtime")
+    op.execute("GRANT SELECT ON axiom.workspace_create_idempotency TO axiom_runtime")
     op.execute(
         "GRANT INSERT (owner_user_id, operation, key, fingerprint, response_status, "
         "response_body, expires_at) ON axiom.workspace_create_idempotency TO axiom_runtime"

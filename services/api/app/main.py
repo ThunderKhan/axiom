@@ -25,7 +25,9 @@ class Liveness(BaseModel):
 class Readiness(BaseModel):
     status: Literal["ready", "not_ready"]
     scope: Literal["foundation_only"] = "foundation_only"
-    dependencies: Literal["none_configured", "database_not_verified", "database_verified", "auth_not_verified"]
+    dependencies: Literal[
+        "none_configured", "database_not_verified", "database_verified", "auth_not_verified"
+    ]
 
 
 def create_app(settings: RuntimeSettings | None = None) -> FastAPI:

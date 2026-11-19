@@ -17,7 +17,8 @@ from sqlalchemy import (
     func,
     text,
 )
-from sqlalchemy.dialects.postgresql import JSONB, UUID as PgUUID
+from sqlalchemy.dialects.postgresql import JSONB
+from sqlalchemy.dialects.postgresql import UUID as PgUUID
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 
 SCHEMA = "axiom"
@@ -29,9 +30,7 @@ _TRIM = (
     r"00A\2028\2029\202F\205F\3000'"
 )
 NAME_CHECK = (
-    "char_length(name) BETWEEN 1 AND 120 "
-    f"AND name = btrim(name, {_TRIM}) "
-    "AND name !~ '[[:cntrl:]]'"
+    f"char_length(name) BETWEEN 1 AND 120 AND name = btrim(name, {_TRIM}) AND name !~ '[[:cntrl:]]'"
 )
 
 
@@ -49,9 +48,7 @@ class AppUser(Base):
     )
 
     id: Mapped[UUID] = mapped_column(PgUUID(as_uuid=True), primary_key=True)
-    status: Mapped[str] = mapped_column(
-        String(20), nullable=False, server_default=text("'active'")
-    )
+    status: Mapped[str] = mapped_column(String(20), nullable=False, server_default=text("'active'"))
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), nullable=False, server_default=func.now()
     )
@@ -80,9 +77,7 @@ class Workspace(Base):
     updated_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), nullable=False, server_default=func.now()
     )
-    version: Mapped[int] = mapped_column(
-        BigInteger, nullable=False, server_default=text("1")
-    )
+    version: Mapped[int] = mapped_column(BigInteger, nullable=False, server_default=text("1"))
 
 
 Index(

@@ -70,16 +70,20 @@ def main() -> int:
     # Drift detection must reject an unexpected index; remove it only from this
     # explicitly isolated ephemeral database, even if the negative check fails.
     with psycopg.connect(os.environ["AXIOM_MIGRATION_DATABASE_URL"], autocommit=True) as migration:
-        migration.execute(
-            "CREATE INDEX ix_m1_temporary_drift_probe ON axiom.workspaces (name)"
-        )
+        migration.execute("CREATE INDEX ix_m1_temporary_drift_probe ON axiom.workspaces (name)")
         try:
             run("uv", "run", "--frozen", "alembic", "check", expect_failure=True)
         finally:
             migration.execute("DROP INDEX IF EXISTS axiom.ix_m1_temporary_drift_probe")
     run("uv", "run", "--frozen", "alembic", "check")
     run(
-        "uv", "run", "--frozen", "pytest", "-q", "-m", "postgres",
+        "uv",
+        "run",
+        "--frozen",
+        "pytest",
+        "-q",
+        "-m",
+        "postgres",
         "tests/test_database_integration.py",
     )
     return 0

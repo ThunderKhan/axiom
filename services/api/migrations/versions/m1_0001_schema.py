@@ -16,8 +16,7 @@ branch_labels = None
 depends_on = None
 
 _NAME_CHECK = (
-    "char_length(name) BETWEEN 1 AND 120 "
-    (
+    "char_length(name) BETWEEN 1 AND 120 "(
         r"AND name = btrim(name, U&'\0009\000A\000B\000C\000D\001C\0"
         r"01D\001E\001F\0020\0085\00A0\1680\2000\2001\2002\2003\2004"
         r"\2005\2006\2007\2008\2009\200A\2028\2029\202F\205F\3000') "
@@ -32,8 +31,12 @@ def upgrade() -> None:
         "app_users",
         sa.Column("id", postgresql.UUID(as_uuid=True), primary_key=True),
         sa.Column("status", sa.String(20), nullable=False, server_default=sa.text("'active'")),
-        sa.Column("created_at", sa.DateTime(timezone=True), nullable=False, server_default=sa.func.now()),
-        sa.Column("updated_at", sa.DateTime(timezone=True), nullable=False, server_default=sa.func.now()),
+        sa.Column(
+            "created_at", sa.DateTime(timezone=True), nullable=False, server_default=sa.func.now()
+        ),
+        sa.Column(
+            "updated_at", sa.DateTime(timezone=True), nullable=False, server_default=sa.func.now()
+        ),
         sa.CheckConstraint(
             "status IN ('active', 'suspended', 'deprovisioned')", name="ck_app_users_status"
         ),
@@ -43,12 +46,18 @@ def upgrade() -> None:
         "workspaces",
         sa.Column("id", postgresql.UUID(as_uuid=True), primary_key=True),
         sa.Column(
-            "owner_user_id", postgresql.UUID(as_uuid=True),
-            sa.ForeignKey("axiom.app_users.id", ondelete="RESTRICT"), nullable=False,
+            "owner_user_id",
+            postgresql.UUID(as_uuid=True),
+            sa.ForeignKey("axiom.app_users.id", ondelete="RESTRICT"),
+            nullable=False,
         ),
         sa.Column("name", sa.Text(), nullable=False),
-        sa.Column("created_at", sa.DateTime(timezone=True), nullable=False, server_default=sa.func.now()),
-        sa.Column("updated_at", sa.DateTime(timezone=True), nullable=False, server_default=sa.func.now()),
+        sa.Column(
+            "created_at", sa.DateTime(timezone=True), nullable=False, server_default=sa.func.now()
+        ),
+        sa.Column(
+            "updated_at", sa.DateTime(timezone=True), nullable=False, server_default=sa.func.now()
+        ),
         sa.Column("version", sa.BigInteger(), nullable=False, server_default=sa.text("1")),
         sa.CheckConstraint(_NAME_CHECK, name="ck_workspaces_name"),
         sa.CheckConstraint("version >= 1", name="ck_workspaces_version"),
@@ -68,11 +77,11 @@ def upgrade() -> None:
         sa.Column("fingerprint", sa.String(64), nullable=False),
         sa.Column("response_status", sa.Integer(), nullable=False),
         sa.Column("response_body", postgresql.JSONB(), nullable=False),
-        sa.Column("created_at", sa.DateTime(timezone=True), nullable=False, server_default=sa.func.now()),
-        sa.Column("expires_at", sa.DateTime(timezone=True), nullable=False),
-        sa.ForeignKeyConstraint(
-            ["owner_user_id"], ["axiom.app_users.id"], ondelete="RESTRICT"
+        sa.Column(
+            "created_at", sa.DateTime(timezone=True), nullable=False, server_default=sa.func.now()
         ),
+        sa.Column("expires_at", sa.DateTime(timezone=True), nullable=False),
+        sa.ForeignKeyConstraint(["owner_user_id"], ["axiom.app_users.id"], ondelete="RESTRICT"),
         sa.PrimaryKeyConstraint("owner_user_id", "operation", "key"),
         sa.CheckConstraint("operation = 'workspace.create'", name="ck_idempotency_operation"),
         sa.CheckConstraint(

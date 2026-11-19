@@ -63,20 +63,23 @@ def test_migration_schema_indexes_rls_and_role_separation(database: Database) ->
             )
         ).all()
         assert {row.relname for row in rows} == {
-            "app_users", "workspaces", "workspace_create_idempotency"
+            "app_users",
+            "workspaces",
+            "workspace_create_idempotency",
         }
         assert all(row.relrowsecurity for row in rows)
         assert conn.scalar(text("SELECT current_user")) == "axiom_runtime"
-        assert conn.scalar(
-            text(
-                """SELECT count(*) FROM pg_indexes WHERE schemaname='axiom'
+        assert (
+            conn.scalar(
+                text(
+                    """SELECT count(*) FROM pg_indexes WHERE schemaname='axiom'
                    AND indexname='ix_workspaces_owner_created_id'"""
+                )
             )
-        ) == 1
-        assert conn.scalar(text("SELECT count(*) FROM pg_policies WHERE schemaname='axiom'")) >= 7
-        assert not conn.scalar(
-            text("SELECT has_schema_privilege(current_user,'axiom','CREATE')")
+            == 1
         )
+        assert conn.scalar(text("SELECT count(*) FROM pg_policies WHERE schemaname='axiom'")) >= 7
+        assert not conn.scalar(text("SELECT has_schema_privilege(current_user,'axiom','CREATE')"))
 
 
 def test_bootstrap_is_idempotent_concurrent_and_creates_no_workspaces(
@@ -91,9 +94,10 @@ def test_bootstrap_is_idempotent_concurrent_and_creates_no_workspaces(
     assert store.list_workspaces(actor) == []
     assert store.bootstrap(actor).created is False
     with database.transaction(actor) as session:
-        assert session.scalar(
-            select(AppUser.created_at).where(AppUser.id == actor.user_id)
-        ) is not None
+        assert (
+            session.scalar(select(AppUser.created_at).where(AppUser.id == actor.user_id))
+            is not None
+        )
 
 
 def test_unprovisioned_subject_denied_and_invalid_names(database: Database) -> None:
@@ -110,9 +114,7 @@ def test_unprovisioned_subject_denied_and_invalid_names(database: Database) -> N
     assert len(canonical_name("a" * 120)) == 120
 
 
-def test_disabled_states_survive_repeated_bootstrap(
-    database: Database, privileged_engine
-) -> None:
+def test_disabled_states_survive_repeated_bootstrap(database: Database, privileged_engine) -> None:
     store = WorkspaceStore(database)
     for state in ("suspended", "deprovisioned"):
         actor = subject()
@@ -127,9 +129,9 @@ def test_disabled_states_survive_repeated_bootstrap(
         with pytest.raises(AccountDisabled):
             store.list_workspaces(actor)
         with database.transaction(actor) as session:
-            assert session.scalar(
-                select(AppUser.status).where(AppUser.id == actor.user_id)
-            ) == state
+            assert (
+                session.scalar(select(AppUser.status).where(AppUser.id == actor.user_id)) == state
+            )
 
 
 def test_two_workspaces_same_name_and_durable_idempotency(
@@ -195,10 +197,13 @@ def test_nonowner_rls_and_runtime_does_not_have_ddl(database: Database) -> None:
     assert store.list_workspaces(a) == []
     with database.transaction(a) as session:
         assert session.scalar(select(Workspace).where(Workspace.id == b_id)) is None
-        assert session.execute(
-            text("UPDATE axiom.workspaces SET name='stolen' WHERE id=:id"),
-            {"id": b_id},
-        ).rowcount == 0
+        assert (
+            session.execute(
+                text("UPDATE axiom.workspaces SET name='stolen' WHERE id=:id"),
+                {"id": b_id},
+            ).rowcount
+            == 0
+        )
     with pytest.raises(DBAPIError):
         with database.transaction(a) as session:
             session.execute(
@@ -224,10 +229,13 @@ def test_owner_mutation_and_database_constraints(database: Database, privileged_
     store.bootstrap(other)
     ws = store.create_workspace(actor, name="Valid", key="validWorkspaceKey88")
     with database.transaction(actor) as session:
-        assert session.execute(
-            text("UPDATE axiom.workspaces SET name='Updated',version=version+1 WHERE id=:id"),
-            {"id": ws.response_body["id"]},
-        ).rowcount == 1
+        assert (
+            session.execute(
+                text("UPDATE axiom.workspaces SET name='Updated',version=version+1 WHERE id=:id"),
+                {"id": ws.response_body["id"]},
+            ).rowcount
+            == 1
+        )
     assert store.list_workspaces(actor)[0]["version"] == 2
     with pytest.raises(DBAPIError):
         with database.transaction(actor) as session:
@@ -265,9 +273,7 @@ def test_owner_mutation_and_database_constraints(database: Database, privileged_
             )
     with pytest.raises(DBAPIError):
         with privileged_engine.begin() as conn:
-            conn.execute(
-                text("DELETE FROM axiom.app_users WHERE id=:id"), {"id": actor.user_id}
-            )
+            conn.execute(text("DELETE FROM axiom.app_users WHERE id=:id"), {"id": actor.user_id})
     assert len(store.list_workspaces(actor)) == 1
 
 
@@ -321,14 +327,16 @@ def test_privileged_table_owner_bypasses_rls(database: Database, privileged_engi
 
 def test_real_db_readiness_and_safe_unreachable_failure(database: Database) -> None:
     url = os.environ["AXIOM_TEST_RUNTIME_DATABASE_URL"]
-    with TestClient(create_app(RuntimeSettings(database_url=url, database_required=True))) as client:
+    with TestClient(
+        create_app(RuntimeSettings(database_url=url, database_required=True))
+    ) as client:
         assert client.get("/api/v1/health/live").status_code == 200
         ready = client.get("/api/v1/health/ready")
         assert ready.status_code == 200
         assert ready.json()["dependencies"] == "database_verified"
     with TestClient(
         create_app(
-            RuntimeSettings(database_url="postgresql://bad:secret@127.0.0.1:55433/axiom_test")
+            RuntimeSettings(database_url="***127.0.0.1:55433/axiom_test")
         )
     ) as client:
         ready = client.get("/api/v1/health/ready")
