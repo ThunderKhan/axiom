@@ -58,6 +58,18 @@ def require_port_free(port: int) -> None:
         # The previous container can leave TCP TIME_WAIT sockets behind.
         # No service is listening; the real startup remains the final authority.
         return
+    except TimeoutError as exc:
+        # A loopback connect can time out on Windows instead of being refused.
+        # A successful local bind confirms the port is available to start a
+        # server; the subsequent HTTP smoke still verifies actual reachability.
+        try:
+            with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as probe:
+                probe.bind(("127.0.0.1", port))
+        except OSError as bind_error:
+            raise RuntimeError(
+                f"Port {port} could not be verified free: TCP probe timed out "
+                f"and local bind failed ({bind_error}); inspect listeners/reservations"
+            ) from exc
 
 
 def get_json(url: str, *, origin: str | None = None) -> tuple[int, dict[str, str], dict[str, object]]:
