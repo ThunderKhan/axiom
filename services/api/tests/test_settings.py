@@ -61,6 +61,10 @@ def test_invalid_worker_bounds_rejected() -> None:
         "http://127.0.0.1:0",
         "http://127.0.0.1:99999",
         "http://127.0.0.1:3000,http://127.0.0.1:3000",
+        "https://web.example:443",
+        "http://127.0.0.1:80",
+        "https://WEB.example",
+        "https://tést.example",
     ],
 )
 def test_invalid_cors_origin_configuration_fails_closed(origin: str) -> None:
@@ -71,3 +75,12 @@ def test_invalid_cors_origin_configuration_fails_closed(origin: str) -> None:
 def test_explicit_cors_origin_list_is_accepted() -> None:
     settings = RuntimeSettings(cors_origins="http://127.0.0.1:3000,https://axiom.example")
     assert settings.cors_origins == "http://127.0.0.1:3000,https://axiom.example"
+
+
+def test_browser_canonical_cors_origins_are_accepted() -> None:
+    settings = RuntimeSettings(
+        cors_origins="https://web.example,http://127.0.0.1:3200,https://web.example:8443"
+    )
+    assert settings.cors_origins == (
+        "https://web.example,http://127.0.0.1:3200,https://web.example:8443"
+    )

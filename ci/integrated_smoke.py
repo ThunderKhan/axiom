@@ -129,21 +129,68 @@ def wait_for_web(process: subprocess.Popen[str], logs: Path, *, timeout: float =
     raise TimeoutError(f"Native Next.js never became ready; see {logs}")
 
 
-def stop_web(process: subprocess.Popen[str]) -> None:
-    if process.poll() is not None:
-        return
-    if os.name == "nt":
-        # npm.cmd starts a process tree; terminate only the tree created here.
-        command("taskkill", "/PID", str(process.pid), "/T", "/F", timeout=15)
-    else:
-        os.killpg(process.pid, signal.SIGTERM)
+def require_invalid_worker_rejected(result: subprocess.CompletedProcess[str]) -> None:
+    """Distinguish a settings-validation exit from a Docker/Compose failure."""
+    expected = "Invalid AXIOM_ configuration; worker startup aborted."
+    if (
+        result.returncode != 2
+        or expected not in result.stderr
+        or "axiom_worker_ready" in result.stdout
+        or "axiom_worker_ready" in result.stderr
+    ):
+        raise AssertionError(
+            "Invalid worker settings were not rejected by the worker itself "
+            f"(exit {result.returncode}); Compose failures are not validation evidence"
+        )
+
+def owned_web_group_exists(group_id: int) -> bool:
+    """Probe only the group created by the smoke's start_new_session process."""
     try:
-        process.wait(timeout=15)
+        os.killpg(group_id, 0)
+    except ProcessLookupError:
+        return False
+    return True
+
+
+def stop_web(process: subprocess.Popen[str]) -> None:
+    if os.name == "nt":
+        # taskkill /T targets the owned Windows process tree, not just npm.cmd.
+        if process.poll() is None:
+            command("taskkill", "/PID", str(process.pid), "/T", "/F", timeout=15)
+        try:
+            process.wait(timeout=15)
+        except subprocess.TimeoutExpired as exc:
+            raise RuntimeError("Native Next.js process failed to stop") from exc
+        return
+
+    # start_new_session=True gave this npm process its own POSIX process group.
+    # The leader may have exited even while its Next.js child remains alive.
+    group_id = process.pid
+    if owned_web_group_exists(group_id):
+        try:
+            os.killpg(group_id, signal.SIGTERM)
+        except ProcessLookupError:
+            pass
+
+        deadline = time.monotonic() + 10
+        while time.monotonic() < deadline and owned_web_group_exists(group_id):
+            time.sleep(0.1)
+
+        if owned_web_group_exists(group_id):
+            try:
+                os.killpg(group_id, signal.SIGKILL)
+            except ProcessLookupError:
+                pass
+            kill_deadline = time.monotonic() + 5
+            while time.monotonic() < kill_deadline and owned_web_group_exists(group_id):
+                time.sleep(0.1)
+            if owned_web_group_exists(group_id):
+                raise RuntimeError("Owned Next.js process group did not stop after SIGKILL")
+
+    try:
+        process.wait(timeout=5)
     except subprocess.TimeoutExpired as exc:
-        if os.name != "nt":
-            os.killpg(process.pid, signal.SIGKILL)
-            process.wait(timeout=5)
-        raise RuntimeError("Native Next.js process failed to stop within deadline") from exc
+        raise RuntimeError("Next.js launcher did not exit after group cleanup") from exc
 
 
 def main() -> int:
@@ -192,8 +239,7 @@ def main() -> int:
                 cwd=ROOT, env=runtime_env, capture_output=True, text=True,
                 timeout=45, check=False,
             )
-            if invalid_worker.returncode == 0 or "axiom_worker_ready" in invalid_worker.stdout:
-                raise AssertionError("Invalid worker runtime configuration was incorrectly accepted")
+            require_invalid_worker_rejected(invalid_worker)
             config = json.loads(command(*compose, "config", "--format", "json", env=runtime_env).stdout)
             if config["services"]["worker"].get("ports"):
                 raise AssertionError("Worker must not publish a network port")

@@ -44,6 +44,15 @@ class RuntimeSettings(BaseSettings):
                 port = url.port
             except ValueError as exc:
                 raise ValueError("Invalid CORS origin or port") from exc
+            # Browser serialization lowercases DNS hosts and removes default ports.
+            # Reject noncanonical strings rather than configure an origin browsers never send.
+            host = url.hostname or ""
+            if not host.isascii():
+                raise ValueError("CORS origins must use ASCII/punycode hosts")
+            canonical_host = f"[{ip_address(host).compressed}]" if ":" in host else host
+            default_port = 80 if url.scheme == "http" else 443
+            canonical_port = f":{port}" if port is not None and port != default_port else ""
+            canonical_origin = f"{url.scheme}://{canonical_host}{canonical_port}"
             if (
                 url.scheme not in {"http", "https"}
                 or not url.hostname
@@ -52,7 +61,7 @@ class RuntimeSettings(BaseSettings):
                 or url.query
                 or url.fragment
                 or url.path
-                or origin != f"{url.scheme}://{url.netloc}"
+                or origin != canonical_origin
                 or (port is not None and not 1 <= port <= 65535)
             ):
                 raise ValueError("CORS origins must be exact HTTP(S) origins without credentials")
