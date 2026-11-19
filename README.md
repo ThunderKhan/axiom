@@ -2,7 +2,7 @@
 
 **Axiom** is an evidence-grounded intelligence product for startup founders: discover public customer-demand signals, investigate competitors, evaluate founder/product fit, explore scenarios, and keep relevant opportunities organized.
 
-**Project status (18 November 2026):** Product, architecture and design specifications exist; the application is **not yet implemented or deployed**. A documented feature is not an implemented feature, and example research is not live-source evidence.
+**Project status:** Product and architecture specifications exist. The first status-only Next.js frontend foundation is available in `apps/web` (issue #8); authentication, workspaces, research, CRM and backend services are **not implemented or deployed**. A documented feature is not an implemented feature, and example research is not live-source evidence.
 
 ## Project documentation
 
@@ -14,7 +14,7 @@ Read [AGENTS.md](AGENTS.md) and [ENGINEERING.md](ENGINEERING.md) before changes,
 
 Axiom's engineering goals include correctness-first CI, reproducible test evidence, safe workspace isolation, lawful and attributed source ingestion, and a transparent distinction between AI-generated interpretation and observed facts.
 
-The repository is intentionally documentation-first. **No install, build, frontend server or backend server command is currently supported on `main`**; commands and lockfiles will be documented as the actual Next.js/FastAPI packages are introduced. Do not use placeholder commands or claim tests that have not run.
+**Frontend commands:** See [apps/web/README.md](apps/web/README.md) for the actual npm clean-install, development, build, test and audit commands. The web package displays foundation status only. No backend service or live integration command is implemented. No test or deployment is claimed verified without actual execution evidence.
 
 ## Review and release
 

@@ -1,0 +1,39 @@
+{
+  "name": "@axiom/web",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Axiom frontend foundation (no product integrations yet)",
+  "packageManager": "npm@10.9.2",
+  "engines": {
+    "node": ">=22.16.0 <23"
+  },
+  "scripts": {
+    "dev": "next dev --hostname 127.0.0.1",
+    "build": "next build",
+    "start": "next start --hostname 127.0.0.1",
+    "lint": "eslint .",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "check:style": "npm run lint && npm run format:check",
+    "typecheck": "tsc --noEmit",
+    "test:unit": "node scripts/run-unit-tests.mjs",
+    "test:ci": "node scripts/run-unit-tests.mjs --junit && playwright install chromium && playwright test --trace=on && node scripts/verify-playwright-report.mjs",
+    "test:smoke": "playwright test",
+    "audit": "npm audit --audit-level=high"
+  },
+  "dependencies": {
+    "next": "16.4.6",
+    "react": "19.3.1",
+    "react-dom": "19.3.1"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.65.1",
+    "@types/node": "^22.0.0",
+    "@types/react": "^19.0.0",
+    "@types/react-dom": "^19.0.0",
+    "eslint": "10.15.0",
+    "eslint-config-next": "16.4.6",
+    "prettier": "3.6.2",
+    "typescript": "5.9.3"
+  }
+}
