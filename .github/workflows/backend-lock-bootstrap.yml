@@ -27,3 +27,17 @@ jobs:
       - name: Inspect Python OCI base digest
         run: |
           docker buildx imagetools inspect python:3.12.12-slim-bookworm | head -n 18
+      - name: Set up Node for existing frontend quality gates
+        uses: actions/setup-node@v7
+        with:
+          node-version: "22"
+      - name: Repository check prerequisites
+        run: python -m pip install --disable-pip-version-check PyYAML==6.0.3 markdown-it-py==4.0.0
+      - name: Repository integrity and CI negative self-tests
+        run: |
+          python ci/quality_gate.py self-test
+          python ci/quality_gate.py repository
+      - name: Full application quality gates
+        run: python ci/quality_gate.py application
+      - name: Real Docker/Compose/worker smoke and negative inputs
+        run: python ci/docker_smoke.py
