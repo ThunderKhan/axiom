@@ -36,7 +36,7 @@ def test_wrong_database_scheme_is_rejected() -> None:
 
 
 def test_secret_not_revealed_in_settings_representation() -> None:
-    credentials = "***127.0.0.1:5432/db"
+    credentials = "postgresql://owner:sensitive-value@127.0.0.1:5432/db"
     settings = RuntimeSettings(database_url=credentials)
     assert "sensitive-value" not in repr(settings)
 
