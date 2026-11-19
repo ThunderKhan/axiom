@@ -264,7 +264,10 @@ def test_keyset_pagination_with_equal_timestamps_and_foreign_cursor(api, privile
     # Tie created_at intentionally to exercise id DESC as a deterministic tie-break.
     with privileged_engine.begin() as conn:
         conn.execute(
-            text("UPDATE axiom.workspaces SET created_at=date_trunc('second',now()) WHERE owner_user_id=:owner"),
+            text(
+                "UPDATE axiom.workspaces SET created_at=date_trunc('second',now()) "
+                "WHERE owner_user_id=:owner"
+            ),
             {"owner": a},
         )
     first = client.get("/api/v1/workspaces?limit=2", headers=aa)

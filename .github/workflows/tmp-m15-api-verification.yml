@@ -35,6 +35,7 @@ jobs:
       - name: Apply pinned Ruff formatter to changed Python only, export diff
         working-directory: services/api
         run: |
+          uv run --frozen ruff check --fix app/workspace_cursor.py app/workspace_http.py app/workspace_store.py app/main.py tests/test_workspace_cursor.py tests/test_workspace_http.py tests/test_workspace_api_integration.py tests/test_api.py scripts/run_db_integration.py
           uv run --frozen ruff format app/workspace_cursor.py app/workspace_http.py app/workspace_store.py app/main.py tests/test_workspace_cursor.py tests/test_workspace_http.py tests/test_workspace_api_integration.py tests/test_api.py scripts/run_db_integration.py
           python - <<'PY'
           from pathlib import Path
