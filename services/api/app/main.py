@@ -8,13 +8,25 @@ from typing import Literal
 from uuid import uuid4
 
 from fastapi import FastAPI, Request
+from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel
+from sqlalchemy.exc import SQLAlchemyError
 
 from app.auth import AuthFailure, JwtVerifier
 from app.database import Database
 from app.settings import RuntimeSettings, load_settings
+from app.workspace_cursor import InvalidCursor
+from app.workspace_http import ApiFailure, router
+from app.workspace_store import (
+    AccountDisabled,
+    IdempotencyConflict,
+    InvalidWorkspaceInput,
+    ProvisioningRequired,
+    VersionConflict,
+    WorkspaceNotFound,
+)
 
 
 class Liveness(BaseModel):
@@ -42,14 +54,14 @@ def create_app(settings: RuntimeSettings | None = None) -> FastAPI:
             if database is not None:
                 database.close()
 
-    application = FastAPI(title="Axiom API (foundation only)", version="0.2.0", lifespan=lifespan)
+    application = FastAPI(title="Axiom API", version="0.2.0", lifespan=lifespan)
     application.state.jwt_verifier = JwtVerifier(resolved) if resolved.auth_configured else None
     application.state.database = database
     application.add_middleware(
         CORSMiddleware,
         allow_origins=resolved.cors_origins.split(","),
-        allow_methods=["GET"],
-        allow_headers=["Authorization"],
+        allow_methods=["GET", "POST", "PATCH"],
+        allow_headers=["Authorization", "Content-Type", "Idempotency-Key"],
         allow_credentials=False,
     )
 
@@ -73,6 +85,56 @@ def create_app(settings: RuntimeSettings | None = None) -> FastAPI:
             },
             headers={} if unavailable else {"WWW-Authenticate": "Bearer"},
         )
+
+    def api_error(code: str, status: int, message: str, *, retryable: bool = False) -> JSONResponse:
+        return JSONResponse(
+            status_code=status,
+            content={
+                "error": {"code": code, "message": message, "retryable": retryable, "details": {}},
+                "request_id": f"req_{uuid4().hex}",
+            },
+        )
+
+    @application.exception_handler(ApiFailure)
+    def workspace_api_error(_request: Request, exc: ApiFailure) -> JSONResponse:
+        return api_error(exc.code, exc.status, exc.message, retryable=exc.retryable)
+
+    @application.exception_handler(AccountDisabled)
+    def disabled_account(_request: Request, _exc: AccountDisabled) -> JSONResponse:
+        return api_error("ACCOUNT_DISABLED", 403, "Account disabled.")
+
+    @application.exception_handler(ProvisioningRequired)
+    def provisioning_required(_request: Request, _exc: ProvisioningRequired) -> JSONResponse:
+        return api_error("PROVISIONING_REQUIRED", 409, "Account provisioning required.")
+
+    @application.exception_handler(WorkspaceNotFound)
+    def workspace_not_found(_request: Request, _exc: WorkspaceNotFound) -> JSONResponse:
+        return api_error("NOT_FOUND", 404, "Workspace not found.")
+
+    @application.exception_handler(VersionConflict)
+    def version_conflict(_request: Request, _exc: VersionConflict) -> JSONResponse:
+        return api_error("VERSION_CONFLICT", 409, "Workspace version conflict.")
+
+    @application.exception_handler(IdempotencyConflict)
+    def idempotency_conflict(_request: Request, _exc: IdempotencyConflict) -> JSONResponse:
+        return api_error("IDEMPOTENCY_CONFLICT", 409, "Idempotency key conflict.")
+
+    def invalid_domain_input(_request: Request, _exc: Exception) -> JSONResponse:
+        return api_error("VALIDATION_FAILED", 422, "Invalid workspace input.")
+
+    application.add_exception_handler(InvalidWorkspaceInput, invalid_domain_input)
+    application.add_exception_handler(InvalidCursor, invalid_domain_input)
+
+    @application.exception_handler(RequestValidationError)
+    def invalid_http_input(_request: Request, _exc: RequestValidationError) -> JSONResponse:
+        # Never serialize untrusted validation inputs or bearer values.
+        return api_error("VALIDATION_FAILED", 422, "Invalid request input.")
+
+    @application.exception_handler(SQLAlchemyError)
+    def database_error(_request: Request, _exc: SQLAlchemyError) -> JSONResponse:
+        return api_error("DATABASE_UNAVAILABLE", 503, "Database unavailable.", retryable=True)
+
+    application.include_router(router)
 
     @application.get("/api/v1/health/live", response_model=Liveness, tags=["health"])
     def liveness() -> Liveness:

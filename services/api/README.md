@@ -1,11 +1,11 @@
-# Axiom Python API, worker and M1 database foundation
+# Axiom Python API, worker and M1 workspace APIs
 
 This package delivers **runtime packaging, operational health and a scoped
 Supabase JWT identity-verification dependency**. The provider integration is not
 yet verified against a real Supabase test project; database-backed account and
-workspace persistence primitives are available only in the backend, but M1
-application-user/workspace HTTP endpoints, live provider verification, research
-and worker job recovery remain unimplemented. Both processes use one Python
+workspace persistence now powers the six M1.5 FastAPI HTTP operations. Live
+provider verification, the browser workspace selector, research and worker job
+recovery remain unimplemented. Both processes use one Python
 package and Docker image.
 
 ## Runtime and dependency contract
@@ -44,7 +44,7 @@ The API binds `127.0.0.1:8000` by default. Visit:
   `{"status":"alive","service":"axiom-api"}`
 - `http://127.0.0.1:8000/api/v1/health/ready` — HTTP 200,
   `{"status":"ready","scope":"foundation_only","dependencies":"none_configured"}`
-- `http://127.0.0.1:8000/docs` — FastAPI OpenAPI documentation for **health only**
+- `http://127.0.0.1:8000/docs` — FastAPI OpenAPI documentation for health and the six M1.5 identity/workspace operations
 
 When `AXIOM_DATABASE_URL` is configured, readiness checks the **real
 database**: the committed Alembic revision, the non-owner runtime role, RLS
@@ -78,8 +78,8 @@ origin does not receive CORS authorization. For the integrated smoke, the harnes
 configures its frontend origin `http://127.0.0.1:3200` explicitly.
 `AXIOM_BIND_HOST` must be a literal IP address (default `127.0.0.1` native,
 `0.0.0.0` in the Docker image). `AXIOM_PORT` must be 1–65535 (default 8000).
-`AXIOM_DATABASE_URL` is optional and secret; configuring it **does not connect**
-to a database at this milestone. `AXIOM_DATABASE_REQUIRED` defaults false.
+`AXIOM_DATABASE_URL` is optional and secret; the six workspace operations **connect to the real PostgreSQL database** and fail
+closed if unavailable. M0 health-only service remains usable without a database. `AXIOM_DATABASE_REQUIRED` defaults false.
 `AXIOM_WORKER_RUN_SECONDS` must be 0.1–300 and idle seconds 0.05–5.
 Invalid values fail startup with a redacted message. No actual secret is needed.
 
@@ -119,8 +119,10 @@ no port. CI performs actual Docker smoke tests through
 `python ci/docker_smoke.py`. Docker Desktop with Linux containers and WSL2
 integration enabled is recommended on Windows.
 
-Production hosting, paid services, credentials, database migrations, queue
-durability/recovery and provider integrations are **not implemented or verified**.
+Production hosting, paid provider provisioning, real Supabase Auth configuration,
+queue durability/recovery and deployed provider integrations are **not verified**.
+The M1 Alembic schema migrations are implemented and executed only by explicit
+authorized migration/test commands, never at ordinary API startup.
 
 ## Issue #15 — Supabase JWT principal boundary (M1 D1–D3, I3)
 
@@ -128,9 +130,9 @@ durability/recovery and provider integrations are **not implemented or verified*
 `VerifiedPrincipal` whose `user_id` is the validated Supabase JWT `sub` UUID.
 This identity is **not** an active application user or workspace owner. It must
 be followed by application-user status and object authorization in later issues.
-No fake `/api/v1/me` or bootstrap response is implemented here: both require
-app-user database state owned by #16/#18. Tests attach a private test-only route
-at runtime to exercise the dependency end-to-end via HTTP.
+M1.5 now exposes real database-backed /api/v1/me and /api/v1/me/bootstrap operations;
+JWT verification alone never grants workspace permission. Existing tests retain
+a test-only route to exercise the underlying verifier.
 
 Configure all three non-secret test-project values in the backend environment:
 `AXIOM_AUTH_ISSUER=https://<project-ref>.supabase.co/auth/v1`,
@@ -172,8 +174,8 @@ privately and never pasted into repository, logs, screenshots or PR text.
 This package additionally contains **three owner-approved M1 SQLAlchemy models** in
 `app/models.py`, a bounded runtime engine/verified-principal transaction context in
 `app/database.py`, and private backend-only bootstrap/list/create persistence
-primitives in `app/workspace_store.py`. **No `/me` or `/workspaces` REST
-endpoints have been implemented**; those belong to Issue #18. No background job,
+primitives in `app/workspace_store.py`. **Issue #18 now adds the approved six real /me and /workspaces REST operations**.
+The underlying database primitives are reused, not duplicated. No background job,
 CRM, research schema, browser Supabase table access, or live provider deployment
 is part of this change.
 
@@ -282,3 +284,112 @@ deployment migration, separately approve backup, account/role provisioning,
 connection pool mode, TLS and rollback/recovery operation. Current real
 Supabase issuer, JWKS signing mode, runtime-role/grant feasibility, and shared
 pooler behavior are **not verified** by these local tests.
+
+
+## M1.5 — authenticated workspace HTTP surface (Issue #18)
+
+Exactly six approved operations under /api/v1 are implemented:
+
+| HTTP operation | Success | Security and semantics |
+|---|---|---|
+| POST /me/bootstrap | 201 new / 200 existing | Verified JWT subject becomes the app-user ID, no automatic workspace, never reactivates disabled users |
+| GET /me | 200 | Read-only app-user identity; unprovisioned returns 409 |
+| GET /workspaces | 200 | Active owner's records, default limit 20/max 100; keyset cursor bound to owner and limit |
+| POST /workspaces | 201 | Strict name and required Idempotency-Key, original committed replay, conflicting request 409 |
+| GET /workspaces/{workspace_id} | 200 | Owner-only; foreign and nonexistent UUID both return identical 404 |
+| PATCH /workspaces/{workspace_id} | 200 | Owner-only, expected_version precondition checked atomically, stale version 409 |
+
+The browser Supabase SDK remains Auth-only. Workspaces are always accessed
+through FastAPI with the existing cryptographically verified JWT, an active
+application-user record, explicit owner predicates and least-privilege
+PostgreSQL RLS. No workspace deletion, sharing, owner transfer, product
+onboarding or selector UI is added. DTOs expose the canonical workspace ID,
+name, UTC timestamps and version only. Request extra fields are rejected.
+The owner-bound opaque cursor is an untrusted paging hint, not a capability.
+
+Workspace creation commits the workspace and its original HTTP 201 replay
+result atomically. Replay for the same owner, key and canonical payload
+survives processes; changed payload returns 409. Stored outcomes are retained
+at least 24 hours. An explicitly purged expired outcome may permit a very
+late retry to create a new workspace. A successful PATCH checks and increments
+the version once, even if the name is unchanged.
+
+Error responses have the approved error/code/message/retryable/details and
+opaque request_id envelope. Supported codes: AUTH_REQUIRED (401),
+ACCOUNT_DISABLED (403), NOT_FOUND (404), PROVISIONING_REQUIRED,
+VERSION_CONFLICT and IDEMPOTENCY_CONFLICT (409), VALIDATION_FAILED (422),
+AUTH_UNAVAILABLE and DATABASE_UNAVAILABLE (503). No raw bearer, SQL error,
+credential or internal ownership/RLS context is serialized.
+
+CORS permits only configured exact AXIOM_CORS_ORIGINS with GET, POST and PATCH
+and explicit Authorization, Content-Type and Idempotency-Key request headers.
+Wildcard credentialed CORS remains disabled.
+
+### Windows PowerShell: isolated database and tests
+
+From repository root, with Docker Desktop / WSL2 running, use ONLY the
+disposable test PostgreSQL 17 service on 127.0.0.1:55432. Its data is
+temporary, trust-authenticated and must never be treated as production.
+Run the following in a dedicated **verification PowerShell terminal**:
+
+    docker compose -f infra/compose.db-test.yml up -d --wait postgres-test
+    cd services/api
+    uv sync --locked --all-groups
+    $env:AXIOM_TEST_ADMIN_DATABASE_URL = "postgresql://postgres@127.0.0.1:55432/axiom_test"
+    $env:AXIOM_MIGRATION_DATABASE_URL = "postgresql://axiom_migrator@127.0.0.1:55432/axiom_test"
+    $env:AXIOM_TEST_RUNTIME_DATABASE_URL = "postgresql://axiom_runtime@127.0.0.1:55432/axiom_test"
+    uv run --frozen python scripts/run_db_integration.py
+
+The runner is intentionally strict about host, port, roles, database name
+and libpq overrides. It explicitly creates the isolated roles, applies two
+Alembic revisions, verifies drift/downgrade protections and runs both the
+existing RLS tests and new signed-JWT HTTP/real PostgreSQL tests. It mutates
+only the isolated test database, NEVER a hosted Supabase project. General
+pytest runs without database configuration and skips marked postgres tests;
+the separate DB runner must actually execute them.
+
+Leave all three isolated database URLs available in the **verification
+terminal** for any subsequent run of `run_db_integration.py`. To launch the
+normal API, open a **separate API PowerShell terminal** and configure only the
+runtime URL; never copy migration/admin credentials into that terminal:
+
+    cd services/api
+    Remove-Item Env:AXIOM_MIGRATION_DATABASE_URL -ErrorAction SilentlyContinue
+    Remove-Item Env:AXIOM_TEST_ADMIN_DATABASE_URL -ErrorAction SilentlyContinue
+    $env:AXIOM_DATABASE_URL = "postgresql://axiom_runtime@127.0.0.1:55432/axiom_test"
+    $env:AXIOM_DATABASE_REQUIRED = "true"
+    uv run --frozen python -m app.api
+
+Liveness and DB readiness can be probed in a second terminal:
+
+    Invoke-RestMethod http://127.0.0.1:8000/api/v1/health/live
+    Invoke-RestMethod http://127.0.0.1:8000/api/v1/health/ready
+
+Real HTTP workspace calls require an ordinary user access JWT from a
+separately authorized **nonproduction** Supabase project, with the exact
+matching AXIOM_AUTH_ISSUER, AXIOM_AUTH_AUDIENCE and AXIOM_AUTH_JWKS_URL
+settings. The signer must use the approved asymmetric RS256/ES256 mode.
+Do not paste any JWT/credentials in chat, commit them or upload logs containing
+them. On local configuration with no real Auth, protected endpoints fail closed.
+
+Quality from services/api. The database runner below must run **only in the
+verification terminal** with all three isolated database URLs still set,
+not in the separate API terminal:
+
+    uv run --frozen python scripts/check_style.py
+    uv run --frozen mypy app
+    uv run --frozen pytest -q --junitxml=test-results/junit.xml
+    uv run --frozen python scripts/run_db_integration.py
+    uv build --wheel --out-dir dist
+    uv run --frozen pip-audit --progress-spinner off
+
+From repository root:
+
+    python ci/docker_smoke.py
+    python ci/integrated_smoke.py
+
+For safe cleanup, stop the API using Ctrl+C and from root run
+docker compose -f infra/compose.db-test.yml down (without -v).
+No Windows-machine or real-provider testing is claimed by the Linux CI runs.
+Workspace selector and full browser-to-provider-to-API acceptance remain
+Issues #19 and #20, and qualified human security acceptance remains required.

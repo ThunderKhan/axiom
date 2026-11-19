@@ -7,16 +7,17 @@ import json
 import re
 import unicodedata
 from dataclasses import dataclass
-from datetime import timedelta
+from datetime import UTC, datetime
 from typing import Any
-from uuid import uuid4
+from uuid import UUID, uuid4
 
-from sqlalchemy import func, select, text
+from sqlalchemy import and_, func, or_, select, text, update
 from sqlalchemy.dialects.postgresql import insert
 
 from app.auth import VerifiedPrincipal
 from app.database import Database
 from app.models import AppUser, Workspace, WorkspaceCreateIdempotency
+from app.workspace_cursor import InvalidCursor, decode_cursor, encode_cursor
 
 _KEY_PATTERN = re.compile(r"^[A-Za-z0-9][A-Za-z0-9_-]{7,127}$")
 _OPERATION = "workspace.create"
@@ -38,10 +39,19 @@ class InvalidWorkspaceInput(ValueError):
     """A malformed name or key must never enter the database."""
 
 
+class WorkspaceNotFound(Exception):
+    """Both foreign and absent IDs must use the identical public 404."""
+
+
+class VersionConflict(Exception):
+    """The caller owns a workspace but supplied a stale version."""
+
+
 @dataclass(frozen=True, slots=True)
 class BootstrapResult:
     created: bool
     status: str
+    created_at: datetime
 
 
 @dataclass(frozen=True, slots=True)
@@ -95,7 +105,127 @@ class WorkspaceStore:
             status = session.scalar(select(AppUser.status).where(AppUser.id == principal.user_id))
             if status != "active":
                 raise AccountDisabled()
-            return BootstrapResult(created=inserted is not None, status=status)
+            created_at = session.scalar(
+                select(AppUser.created_at).where(AppUser.id == principal.user_id)
+            )
+            assert created_at is not None
+            return BootstrapResult(
+                created=inserted is not None, status=status, created_at=created_at
+            )
+
+    def get_user(self, principal: VerifiedPrincipal) -> dict[str, object]:
+        """Strictly read-only identity lookup; never auto-bootstrap a missing row."""
+        with self.database.transaction(principal) as session:
+            user = session.scalar(select(AppUser).where(AppUser.id == principal.user_id))
+            if user is None:
+                raise ProvisioningRequired()
+            if user.status != "active":
+                raise AccountDisabled()
+            return {
+                "id": str(user.id),
+                "status": user.status,
+                "created_at": user.created_at.isoformat(),
+            }
+
+    def get_workspace(self, principal: VerifiedPrincipal, workspace_id: UUID) -> dict[str, object]:
+        """Explicit owner predicate even if a privileged DB login could bypass RLS."""
+        with self.database.transaction(principal) as session:
+            self._active(session, principal)
+            workspace = session.scalar(
+                select(Workspace).where(
+                    Workspace.id == workspace_id, Workspace.owner_user_id == principal.user_id
+                )
+            )
+            if workspace is None:
+                raise WorkspaceNotFound()
+            return _response(workspace)
+
+    def page_workspaces(
+        self, principal: VerifiedPrincipal, *, limit: int = 20, cursor: str | None = None
+    ) -> dict[str, object]:
+        if type(limit) is not int or not 1 <= limit <= 100:
+            raise InvalidWorkspaceInput("Invalid workspace limit")
+        bookmark = (
+            decode_cursor(cursor, owner_id=principal.user_id, limit=limit)
+            if cursor is not None
+            else None
+        )
+        with self.database.transaction(principal) as session:
+            self._active(session, principal)
+            if bookmark is not None:
+                # An encoded value is only a hint. Validate its *real* anchor
+                # belongs to the verified user and matches the issued ordering key.
+                anchor_at = session.scalar(
+                    select(Workspace.created_at).where(
+                        Workspace.id == bookmark.workspace_id,
+                        Workspace.owner_user_id == principal.user_id,
+                    )
+                )
+                if anchor_at is None or anchor_at.astimezone(UTC) != bookmark.created_at:
+                    raise InvalidCursor()
+            query = select(Workspace).where(Workspace.owner_user_id == principal.user_id)
+            if bookmark is not None:
+                query = query.where(
+                    or_(
+                        Workspace.created_at < bookmark.created_at,
+                        and_(
+                            Workspace.created_at == bookmark.created_at,
+                            Workspace.id < bookmark.workspace_id,
+                        ),
+                    )
+                )
+            rows = session.scalars(
+                query.order_by(Workspace.created_at.desc(), Workspace.id.desc()).limit(limit + 1)
+            ).all()
+            items = rows[:limit]
+            next_cursor = (
+                encode_cursor(
+                    principal.user_id,
+                    limit=limit,
+                    created_at=items[-1].created_at,
+                    workspace_id=items[-1].id,
+                )
+                if len(rows) > limit
+                else None
+            )
+            return {"items": [_response(item) for item in items], "next_cursor": next_cursor}
+
+    def update_workspace(
+        self, principal: VerifiedPrincipal, workspace_id: UUID, *, name: str, expected_version: int
+    ) -> dict[str, object]:
+        normalized = canonical_name(name)
+        if type(expected_version) is not int or not 1 <= expected_version <= 9223372036854775807:
+            raise InvalidWorkspaceInput("Invalid expected workspace version")
+        with self.database.transaction(principal) as session:
+            self._active(session, principal)
+            # Foreign and nonexistent objects must be indistinguishable, even
+            # if the connection is unexpectedly privileged and bypasses RLS.
+            owned = session.scalar(
+                select(Workspace.id).where(
+                    Workspace.id == workspace_id, Workspace.owner_user_id == principal.user_id
+                )
+            )
+            if owned is None:
+                raise WorkspaceNotFound()
+            updated = session.scalars(
+                update(Workspace)
+                .where(
+                    Workspace.id == workspace_id,
+                    Workspace.owner_user_id == principal.user_id,
+                    Workspace.version == expected_version,
+                )
+                .values(
+                    name=normalized,
+                    version=Workspace.version + 1,
+                    updated_at=func.clock_timestamp(),
+                )
+                .returning(Workspace)
+            ).one_or_none()
+            if updated is None:
+                # The atomic UPDATE precondition failed: no last-write-wins.
+                # The existence check has already confirmed verified ownership.
+                raise VersionConflict()
+            return _response(updated)
 
     def list_workspaces(
         self, principal: VerifiedPrincipal, *, limit: int = 20
@@ -155,7 +285,9 @@ class WorkspaceStore:
                     fingerprint=fingerprint,
                     response_status=201,
                     response_body=body,
-                    expires_at=session.scalar(select(func.now() + timedelta(hours=24))),
+                    expires_at=session.scalar(
+                        select(func.clock_timestamp() + text("interval '25 hours'"))
+                    ),
                 )
             )
             session.flush()
