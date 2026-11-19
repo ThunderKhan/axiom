@@ -28,6 +28,9 @@ args.push(
   "src/lib/private-state.test.ts",
   "src/lib/auth-sync.test.ts",
   "src/lib/supabase/cookie-policy.test.ts",
+  "src/lib/workspace-contract.test.ts",
+  "src/lib/workspace-context.test.ts",
+  "src/lib/workspace-api.test.ts",
 );
 
 const result = spawnSync(process.execPath, args, {
