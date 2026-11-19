@@ -1,0 +1,29 @@
+name: Backend dependency lock bootstrap (temporary)
+on:
+  push:
+    branches: [feat/9-fastapi-worker-docker-foundation]
+permissions:
+  contents: read
+jobs:
+  lock:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.12"
+      - name: Resolve and verify exact Python dependencies
+        working-directory: services/api
+        run: |
+          python -m pip install --disable-pip-version-check uv==0.10.0
+          uv lock --python 3.12
+          uv sync --locked --all-groups
+          echo AXIOM_UV_LOCK_BEGIN
+          cat uv.lock
+          echo AXIOM_UV_LOCK_END
+      - name: Inspect Python OCI base digest
+        run: |
+          docker buildx imagetools inspect python:3.12.12-slim-bookworm | head -n 18
