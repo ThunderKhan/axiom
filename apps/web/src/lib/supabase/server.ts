@@ -1,6 +1,7 @@
 import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
 import { publicAuthConfig } from "../auth-config";
+import { authCookieOptions } from "./cookie-policy";
 
 /** Per-request Supabase client. Never cache a user's cookie-bound client globally. */
 export async function createServerAuthClient(writable = false) {
@@ -8,8 +9,10 @@ export async function createServerAuthClient(writable = false) {
   if (!config)
     throw new Error("Supabase public Auth configuration is unavailable");
   const store = await cookies();
+  const policy = authCookieOptions(process.env.NODE_ENV === "production");
   return createServerClient(config.url, config.key, {
     auth: { flowType: "pkce" },
+    cookieOptions: policy,
     cookies: {
       getAll() {
         return store.getAll();
@@ -19,7 +22,7 @@ export async function createServerAuthClient(writable = false) {
         // refreshes them before protected rendering. Actions/routes are writable.
         if (!writable) return;
         toSet.forEach(({ name, value, options }) =>
-          store.set(name, value, options),
+          store.set(name, value, { ...options, ...policy }),
         );
       },
     },

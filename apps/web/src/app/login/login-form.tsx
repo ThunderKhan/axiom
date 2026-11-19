@@ -21,6 +21,7 @@ export function LoginForm({ configured }: { configured: boolean }) {
   const initial: LoginState = { message: "" };
   const [state, action] = useActionState(signIn, initial);
   const [showPassword, setShowPassword] = useState(false);
+  const [email, setEmail] = useState("");
   const messageRef = useRef<HTMLParagraphElement>(null);
   useEffect(() => {
     if (state.message) messageRef.current?.focus();
@@ -40,6 +41,8 @@ export function LoginForm({ configured }: { configured: boolean }) {
         maxLength={254}
         disabled={!configured}
         placeholder="you@example.com"
+        value={email}
+        onChange={(event) => setEmail(event.target.value)}
       />
       <div className="auth-label-row">
         <label htmlFor="account-password">Password</label>

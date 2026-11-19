@@ -23,7 +23,9 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
       "This browser is signed out. Remote session revocation could not be confirmed.",
   };
   const notice =
-    typeof params.notice === "string" ? notices[params.notice] : undefined;
+    typeof params.notice === "string" && Object.hasOwn(notices, params.notice)
+      ? notices[params.notice]
+      : undefined;
   // Do not mirror untrusted returnTo input into the page, form or redirect.
   void params.returnTo;
 

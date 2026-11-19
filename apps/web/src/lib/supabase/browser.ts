@@ -2,6 +2,7 @@
 
 import { createBrowserClient } from "@supabase/ssr";
 import { publicAuthConfig } from "../auth-config";
+import { authCookieOptions } from "./cookie-policy";
 
 export function createBrowserAuthClient() {
   const config = publicAuthConfig();
@@ -10,5 +11,6 @@ export function createBrowserAuthClient() {
   // This SDK is used exclusively for authentication, not Supabase domain-table access.
   return createBrowserClient(config.url, config.key, {
     auth: { flowType: "pkce" },
+    cookieOptions: authCookieOptions(process.env.NODE_ENV === "production"),
   });
 }
