@@ -21,3 +21,9 @@ Axiom's engineering goals include correctness-first CI, reproducible test eviden
 Changes should be reviewed through pull requests with CI and human review. CodeRabbit provides supplementary automated review, not merge authorization. The November 26 fellowship deliverable and staged 100/250/500-active-founder validation are documented separately; no capacity or provider access is claimed verified without actual test evidence.
 
 **Do not commit credentials, production secrets, private founder data, or customer records.**
+
+**Backend foundation (Milestone 0.2):** `services/api` now contains a real
+FastAPI liveness/readiness interface, typed configuration and independent bounded
+idle worker, with one non-root Docker image and `infra/compose.dev.yml`.
+It does **not** connect Supabase, run production jobs, or implement product APIs.
+See [backend setup and tests](services/api/README.md).
