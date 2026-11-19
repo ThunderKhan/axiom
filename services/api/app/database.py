@@ -88,7 +88,40 @@ class Database:
                            AND c.relname IN ('app_users', 'workspaces', 'workspace_create_idempotency')"""
                     )
                 ).scalar_one()
-                return bool(verdict) and count == 3
+                grants = conn.scalar(
+                    text(
+                        """SELECT
+                            has_schema_privilege(current_user, 'axiom', 'USAGE')
+                            AND has_function_privilege(
+                              current_user, 'axiom.current_subject()', 'EXECUTE'
+                            )
+                            AND has_table_privilege(current_user, 'axiom.app_users', 'SELECT')
+                            AND has_column_privilege(
+                              current_user, 'axiom.app_users', 'id', 'INSERT'
+                            )
+                            AND has_table_privilege(current_user, 'axiom.workspaces', 'SELECT')
+                            AND has_column_privilege(
+                              current_user, 'axiom.workspaces', 'name', 'INSERT'
+                            )
+                            AND has_column_privilege(
+                              current_user, 'axiom.workspaces', 'name', 'UPDATE'
+                            )
+                            AND has_table_privilege(
+                              current_user, 'axiom.workspace_create_idempotency', 'SELECT'
+                            )
+                            AND has_column_privilege(
+                              current_user, 'axiom.workspace_create_idempotency',
+                              'response_body', 'INSERT'
+                            )
+                            AND NOT has_table_privilege(
+                              current_user, 'axiom.workspaces', 'DELETE'
+                            )
+                            AND NOT has_column_privilege(
+                              current_user, 'axiom.workspaces', 'owner_user_id', 'UPDATE'
+                            )"""
+                    )
+                )
+                return bool(verdict) and count == 3 and bool(grants)
         except (SQLAlchemyError, ValueError, TypeError):
             return False
 
