@@ -64,12 +64,13 @@ class Database:
                     return False
                 verdict = conn.execute(
                     text(
-                        """SELECT
+                        """SELECT bool_and(
                             NOT r.rolsuper AND NOT r.rolbypassrls
                             AND NOT r.rolcreatedb AND NOT r.rolcreaterole
                             AND NOT has_schema_privilege(current_user, 'axiom', 'CREATE')
                             AND NOT has_database_privilege(current_user, current_database(), 'CREATE')
-                            AND bool_and(c.relrowsecurity AND NOT pg_has_role(current_user, c.relowner, 'MEMBER'))
+                            AND c.relrowsecurity AND NOT pg_has_role(current_user, c.relowner, 'MEMBER')
+                         )
                          FROM pg_class c
                          JOIN pg_namespace n ON n.oid = c.relnamespace
                          CROSS JOIN pg_roles r
