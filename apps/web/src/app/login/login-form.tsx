@@ -2,6 +2,7 @@
 
 import { useActionState, useEffect, useRef, useState } from "react";
 import { useFormStatus } from "react-dom";
+import { clearBrowserPrivateState } from "../../lib/private-state";
 import { signIn, type LoginState } from "./actions";
 
 function SubmitButton({ disabled }: { disabled: boolean }) {
@@ -23,6 +24,11 @@ export function LoginForm({ configured }: { configured: boolean }) {
   const [showPassword, setShowPassword] = useState(false);
   const [email, setEmail] = useState("");
   const messageRef = useRef<HTMLParagraphElement>(null);
+  // Public login is the safe landing for expired, revoked and missing sessions.
+  // Remove only app-private keys, even when this tab missed a logout broadcast.
+  useEffect(() => {
+    clearBrowserPrivateState();
+  }, []);
   useEffect(() => {
     if (state.message) messageRef.current?.focus();
   }, [state.message]);
