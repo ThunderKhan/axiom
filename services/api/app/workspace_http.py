@@ -2,12 +2,12 @@
 
 from __future__ import annotations
 
-from datetime import datetime
+from datetime import UTC, datetime
 from typing import Annotated, Any, Literal
 from uuid import UUID
 
 from fastapi import APIRouter, Body, Depends, Header, Query, Request, Response
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 from app.auth import VerifiedPrincipal, get_verified_principal
 from app.workspace_store import WorkspaceStore
@@ -48,6 +48,13 @@ class WorkspaceDTO(BaseModel):
     updated_at: datetime
     version: int
 
+    @field_validator("created_at", "updated_at")
+    @classmethod
+    def normalize_utc_timestamp(cls, value: datetime) -> datetime:
+        if value.tzinfo is None:
+            raise ValueError("Workspace timestamps must be timezone-aware")
+        return value.astimezone(UTC)
+
 
 class WorkspaceListDTO(BaseModel):
     items: list[WorkspaceDTO]
@@ -84,6 +91,15 @@ def get_workspace_store(request: Request) -> WorkspaceStore:
     return WorkspaceStore(database)
 
 
+async def _validated_bootstrap_body(
+    request: Request, payload: Annotated[BootstrapBody, Body()] = BootstrapBody()
+) -> BootstrapBody:
+    # FastAPI otherwise treats explicit JSON null as missing for defaulted bodies.
+    if (await request.body()).strip() == b"null":
+        raise ApiFailure("VALIDATION_FAILED", 422, "Invalid request body.")
+    return payload
+
+
 Principal = Annotated[VerifiedPrincipal, Depends(get_verified_principal)]
 Store = Annotated[WorkspaceStore, Depends(get_workspace_store)]
 
@@ -108,9 +124,9 @@ def bootstrap(
     principal: Principal,
     store: Store,
     response: Response,
-    payload: Annotated[BootstrapBody | None, Body()] = None,
+    payload: Annotated[BootstrapBody, Depends(_validated_bootstrap_body)],
 ) -> BootstrapDTO:
-    # FastAPI validates optional body when provided; do not accept injected identity fields.
+    # The dependency validates the body; no caller identity field is used.
     del payload
     outcome = store.bootstrap(principal)
     response.status_code = 201 if outcome.created else 200

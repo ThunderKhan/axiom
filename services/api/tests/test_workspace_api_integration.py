@@ -7,7 +7,7 @@ import json
 import os
 import time
 from concurrent.futures import ThreadPoolExecutor
-from datetime import timedelta
+from datetime import UTC, datetime, timedelta
 from uuid import UUID, uuid4
 
 import jwt
@@ -16,7 +16,7 @@ from cryptography.hazmat.primitives.asymmetric import rsa
 from fastapi.testclient import TestClient
 from jwt.algorithms import RSAAlgorithm
 from pydantic import SecretStr
-from sqlalchemy import create_engine, select, text
+from sqlalchemy import create_engine, event, select, text
 from sqlalchemy.exc import DBAPIError
 
 from app.auth import JwtVerifier, VerifiedPrincipal
@@ -242,7 +242,7 @@ def test_create_idempotency_concurrency_replay_restart_and_expiry(api, privilege
                      WHERE owner_user_id=:owner AND key=:key"""),
             {"owner": actor, "key": "idempotencyKey189"},
         ).one()
-        assert record.expires_at - record.created_at >= timedelta(hours=24)
+        assert record.expires_at - record.created_at >= timedelta(hours=25)
 
     # The approved residual behavior: after an *explicit operator purge* of
     # an expired record, a very late replay can create a second workspace.
@@ -339,6 +339,41 @@ def test_keyset_pagination_with_equal_timestamps_and_foreign_cursor(api, privile
         422,
         "VALIDATION_FAILED",
     )
+
+
+def test_pagination_anchor_survives_non_utc_dst_fold(api, privileged_engine) -> None:
+    client, private, settings = api
+    owner = uuid4()
+    auth = headers(private, owner)
+    bootstrap(client, auth)
+    for index in range(2):
+        result = create(client, auth, f"Fold {index}", f"foldKey189-{index}")
+        assert result.status_code == 201
+
+    # 01:30 occurs twice in New York on this date: this is the second occurrence.
+    folded_instant = datetime(2026, 11, 1, 6, 30, tzinfo=UTC)
+    with privileged_engine.begin() as conn:
+        conn.execute(
+            text("UPDATE axiom.workspaces SET created_at=:at WHERE owner_user_id=:owner"),
+            {"at": folded_instant, "owner": owner},
+        )
+    first = client.get("/api/v1/workspaces", params={"limit": 1}, headers=auth)
+    assert first.status_code == 200
+    cursor = first.json()["next_cursor"]
+    assert cursor is not None
+
+    runtime = Database(settings)
+    try:
+        @event.listens_for(runtime.engine, "begin")
+        def non_utc_session(connection) -> None:
+            connection.exec_driver_sql("SET LOCAL TIME ZONE 'America/New_York'")
+
+        page = WorkspaceStore(runtime).page_workspaces(
+            VerifiedPrincipal(owner, None), limit=1, cursor=cursor
+        )
+        assert len(page["items"]) == 1
+    finally:
+        runtime.close()
 
 
 def test_optimistic_patch_atomic_and_owner_immutable(api, privileged_engine) -> None:

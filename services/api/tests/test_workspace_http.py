@@ -4,7 +4,9 @@ from __future__ import annotations
 
 import json
 import time
+from datetime import UTC, datetime
 from uuid import uuid4
+from zoneinfo import ZoneInfo
 
 import jwt
 from cryptography.hazmat.primitives.asymmetric import rsa
@@ -14,6 +16,8 @@ from jwt.algorithms import RSAAlgorithm
 from app.auth import JwtVerifier
 from app.main import create_app
 from app.settings import RuntimeSettings
+from app.workspace_http import WorkspaceDTO, get_workspace_store
+from app.workspace_store import BootstrapResult
 
 ISSUER = "https://axiomtest.supabase.co/auth/v1"
 
@@ -109,14 +113,66 @@ def test_missing_and_invalid_credentials_fail_before_missing_database() -> None:
 def test_strict_transport_errors_do_not_reflect_input_data() -> None:
     client, private = _client()
     token = _token(private)
-    with client:
-        result = client.get(
-            "/api/v1/workspaces?limit=0",
-            headers={"Authorization": "Bearer " + token},
-        )
-        # Database is absent, so no operation may succeed; input is still untrusted.
-        assert result.status_code in (422, 503)
-        assert token not in result.text
+    sentinel = "secret-limit-probe-97283"
+    # Supplying the dependency forces invalid query values to reach validation.
+    client.app.dependency_overrides[get_workspace_store] = lambda: object()
+    try:
+        with client:
+            result = client.get(
+                "/api/v1/workspaces",
+                params={"limit": sentinel},
+                headers={"Authorization": "Bearer " + token},
+            )
+            _assert_envelope(result, "VALIDATION_FAILED", 422)
+            assert sentinel not in result.text
+            assert token not in result.text
+    finally:
+        client.app.dependency_overrides.clear()
+
+
+def test_bootstrap_omitted_object_and_explicit_null_are_distinct() -> None:
+    client, private = _client()
+    auth = {"Authorization": "Bearer " + _token(private)}
+
+    class BootstrapStore:
+        def bootstrap(self, _principal: object) -> BootstrapResult:
+            return BootstrapResult(
+                created=True, status="active", created_at=datetime(2026, 11, 19, tzinfo=UTC)
+            )
+
+    client.app.dependency_overrides[get_workspace_store] = BootstrapStore
+    try:
+        with client:
+            for kwargs in ({}, {"json": {}}):
+                accepted = client.post("/api/v1/me/bootstrap", headers=auth, **kwargs)
+                assert accepted.status_code == 201
+                assert accepted.json()["created"] is True
+            for body in ("null", " \nnull\t"):
+                rejected = client.post(
+                    "/api/v1/me/bootstrap",
+                    content=body,
+                    headers={**auth, "Content-Type": "application/json"},
+                )
+                _assert_envelope(rejected, "VALIDATION_FAILED", 422)
+    finally:
+        client.app.dependency_overrides.clear()
+
+
+def test_workspace_response_timestamps_normalize_non_utc_offsets() -> None:
+    repeated_hour = datetime(2026, 11, 1, 1, 30, tzinfo=ZoneInfo("America/New_York"), fold=1)
+    value = WorkspaceDTO.model_validate(
+        {
+            "id": str(uuid4()),
+            "name": "Product",
+            "created_at": repeated_hour.isoformat(),
+            "updated_at": repeated_hour,
+            "version": 1,
+        }
+    )
+    assert value.created_at == datetime(2026, 11, 1, 6, 30, tzinfo=UTC)
+    assert value.updated_at == value.created_at
+    assert value.created_at.utcoffset().total_seconds() == 0
+    assert value.model_dump(mode="json")["updated_at"].endswith("Z")
 
 
 def test_preflight_allows_only_approved_methods_and_origin() -> None:

@@ -7,7 +7,7 @@ import json
 import re
 import unicodedata
 from dataclasses import dataclass
-from datetime import datetime, timedelta
+from datetime import UTC, datetime
 from typing import Any
 from uuid import UUID, uuid4
 
@@ -161,7 +161,7 @@ class WorkspaceStore:
                         Workspace.owner_user_id == principal.user_id,
                     )
                 )
-                if anchor_at is None or anchor_at != bookmark.created_at:
+                if anchor_at is None or anchor_at.astimezone(UTC) != bookmark.created_at:
                     raise InvalidCursor()
             query = select(Workspace).where(Workspace.owner_user_id == principal.user_id)
             if bookmark is not None:
@@ -285,7 +285,9 @@ class WorkspaceStore:
                     fingerprint=fingerprint,
                     response_status=201,
                     response_body=body,
-                    expires_at=session.scalar(select(func.clock_timestamp() + timedelta(hours=25))),
+                    expires_at=session.scalar(
+                        select(func.clock_timestamp() + text("interval '25 hours'"))
+                    ),
                 )
             )
             session.flush()

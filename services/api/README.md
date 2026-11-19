@@ -329,7 +329,8 @@ Wildcard credentialed CORS remains disabled.
 
 From repository root, with Docker Desktop / WSL2 running, use ONLY the
 disposable test PostgreSQL 17 service on 127.0.0.1:55432. Its data is
-temporary, trust-authenticated and must never be treated as production:
+temporary, trust-authenticated and must never be treated as production.
+Run the following in a dedicated **verification PowerShell terminal**:
 
     docker compose -f infra/compose.db-test.yml up -d --wait postgres-test
     cd services/api
@@ -347,11 +348,15 @@ only the isolated test database, NEVER a hosted Supabase project. General
 pytest runs without database configuration and skips marked postgres tests;
 the separate DB runner must actually execute them.
 
-Before launching the normal API, clear ALL migration/admin credentials:
+Leave all three isolated database URLs available in the **verification
+terminal** for any subsequent run of `run_db_integration.py`. To launch the
+normal API, open a **separate API PowerShell terminal** and configure only the
+runtime URL; never copy migration/admin credentials into that terminal:
 
+    cd services/api
     Remove-Item Env:AXIOM_MIGRATION_DATABASE_URL -ErrorAction SilentlyContinue
     Remove-Item Env:AXIOM_TEST_ADMIN_DATABASE_URL -ErrorAction SilentlyContinue
-    $env:AXIOM_DATABASE_URL = $env:AXIOM_TEST_RUNTIME_DATABASE_URL
+    $env:AXIOM_DATABASE_URL = "postgresql://axiom_runtime@127.0.0.1:55432/axiom_test"
     $env:AXIOM_DATABASE_REQUIRED = "true"
     uv run --frozen python -m app.api
 
@@ -367,7 +372,9 @@ settings. The signer must use the approved asymmetric RS256/ES256 mode.
 Do not paste any JWT/credentials in chat, commit them or upload logs containing
 them. On local configuration with no real Auth, protected endpoints fail closed.
 
-Quality from services/api:
+Quality from services/api. The database runner below must run **only in the
+verification terminal** with all three isolated database URLs still set,
+not in the separate API terminal:
 
     uv run --frozen python scripts/check_style.py
     uv run --frozen mypy app
