@@ -7,12 +7,12 @@ worker recovery. Both processes use one Python package and Docker image.
 ## Runtime and dependency contract
 
 - Python **3.12** is tested in CI; `pyproject.toml` supports 3.12–3.13.
-- `uv==0.10.0`, pinned direct runtime/development dependencies and a
+- `uv==0.10.0`, pinned direct runtime/development dependencies (including patched Starlette 1.10.0 and pytest 9.0.3) and a
   committed, hash-bearing `uv.lock`. Only a lockfile-based sync is supported.
 - The Python base image is `python:3.12.12-slim-bookworm` pinned to its reviewed
   OCI multi-platform SHA-256 digest in the Dockerfile.
-- Runtime dependencies: FastAPI 0.128.2 (MIT), Uvicorn 0.48.0 (BSD-3-Clause),
-  Pydantic Settings 2.14.1 (MIT). Tooling: uv 0.10.0 (MIT or Apache-2.0);
+- Runtime dependencies: FastAPI 0.165.0 (MIT), Uvicorn 0.48.0 (BSD-3-Clause),
+  Pydantic Settings 2.14.2 (MIT). Tooling: uv 0.10.0 (MIT or Apache-2.0);
   pytest, Ruff, mypy and pip-audit are locked in the developer group. Consult
   upstream licenses and transitive package metadata before redistribution.
 
