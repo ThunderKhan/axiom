@@ -109,8 +109,14 @@ test("login after expired or unavailable private session clears stale private st
   await page.goto("/login");
   for (const target of ["/app", "/login?notice=session-expired"]) {
     await page.evaluate(() => {
-      window.localStorage.setItem("axiom:workspace:previous-owner", "private-workspace");
-      window.sessionStorage.setItem("axiom:private:previous-owner:query", "private-query");
+      window.localStorage.setItem(
+        "axiom:workspace:previous-owner",
+        "private-workspace",
+      );
+      window.sessionStorage.setItem(
+        "axiom:private:previous-owner:query",
+        "private-query",
+      );
       window.localStorage.setItem("color-scheme", "light");
     });
     await page.goto(target);
@@ -118,8 +124,12 @@ test("login after expired or unavailable private session clears stale private st
     await expect
       .poll(() =>
         page.evaluate(() => ({
-          workspace: window.localStorage.getItem("axiom:workspace:previous-owner"),
-          query: window.sessionStorage.getItem("axiom:private:previous-owner:query"),
+          workspace: window.localStorage.getItem(
+            "axiom:workspace:previous-owner",
+          ),
+          query: window.sessionStorage.getItem(
+            "axiom:private:previous-owner:query",
+          ),
           unrelated: window.localStorage.getItem("color-scheme"),
         })),
       )
