@@ -6,11 +6,11 @@ Never repurpose this runner for hosted or existing user databases.
 
 from __future__ import annotations
 
+from collections.abc import Mapping
 import os
 import subprocess
 import sys
 from pathlib import Path
-from typing import Mapping
 
 import psycopg
 from sqlalchemy.engine import make_url
