@@ -30,7 +30,8 @@ def test_worker_stops_when_event_signaled() -> None:
 
 def test_worker_runs_as_separate_python_process() -> None:
     env = {**os.environ, "AXIOM_WORKER_RUN_SECONDS": "0.1"}
-    result = subprocess.run(
+    # Fixed interpreter/module argv; no shell or user-provided executable.
+    result = subprocess.run(  # noqa: S603
         [sys.executable, "-m", "app.worker"],
         cwd=ROOT,
         env=env,
@@ -51,7 +52,8 @@ def test_invalid_runtime_configuration_fails_without_leaking_secret() -> None:
         "AXIOM_DATABASE_URL": "postgresql://owner:hiddenpassword@127.0.0.1/db",
     }
     for module in ("app.api", "app.worker"):
-        result = subprocess.run(
+        # Fixed interpreter/module argv; no shell or user-provided executable.
+        result = subprocess.run(  # noqa: S603
             [sys.executable, "-m", module],
             cwd=ROOT,
             env=env,
@@ -67,7 +69,8 @@ def test_invalid_runtime_configuration_fails_without_leaking_secret() -> None:
 @pytest.mark.skipif(os.name == "nt", reason="POSIX signal delivery differs on Windows")
 def test_worker_handles_sigterm_gracefully() -> None:
     env = {**os.environ, "AXIOM_WORKER_RUN_SECONDS": "30"}
-    process = subprocess.Popen(
+    # Only the fixed local worker module is launched; no shell or external inputs.
+    process = subprocess.Popen(  # noqa: S603
         [sys.executable, "-m", "app.worker"],
         cwd=ROOT,
         env=env,
