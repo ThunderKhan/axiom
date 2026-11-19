@@ -23,12 +23,14 @@ const knownCodes = new Set([
 ]);
 
 export class WorkspaceApiError extends Error {
-  constructor(
-    readonly code: string,
-    readonly status: number,
-  ) {
+  readonly code: string;
+  readonly status: number;
+
+  constructor(code: string, status: number) {
     super("Workspace request could not be completed.");
     this.name = "WorkspaceApiError";
+    this.code = code;
+    this.status = status;
   }
 }
 
