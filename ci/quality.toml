@@ -12,3 +12,16 @@ typecheck = ["npm", "run", "typecheck"]
 test = ["npm", "run", "test:ci"]
 build = ["npm", "run", "build"]
 security = ["npm", "run", "audit"]
+
+[packages.api]
+directory = "services/api"
+manifest = "pyproject.toml"
+lockfile = "uv.lock"
+test_files = ["tests/test_*.py"]
+test_report = "test-results/junit.xml"
+install = ["uv", "sync", "--locked", "--all-groups"]
+lint = ["uv", "run", "--frozen", "python", "scripts/check_style.py"]
+typecheck = ["uv", "run", "--frozen", "mypy", "app"]
+test = ["uv", "run", "--frozen", "pytest", "-q", "--junitxml=test-results/junit.xml"]
+build = ["uv", "build", "--wheel", "--out-dir", "dist"]
+security = ["uv", "run", "--frozen", "pip-audit", "--progress-spinner", "off"]

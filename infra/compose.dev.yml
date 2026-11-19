@@ -1,0 +1,39 @@
+name: axiom-foundation
+
+x-api-image: &api-image
+  image: axiom-api:dev
+  build:
+    context: ../services/api
+    dockerfile: Dockerfile
+
+services:
+  api:
+    <<: *api-image
+    command: ["python", "-m", "app.api"]
+    environment:
+      AXIOM_BIND_HOST: "0.0.0.0"
+      AXIOM_PORT: "8000"
+    ports:
+      - "127.0.0.1:8000:8000"
+    healthcheck:
+      test:
+        - CMD
+        - python
+        - -c
+        - "from urllib.request import urlopen; assert urlopen('http://127.0.0.1:8000/api/v1/health/live', timeout=2).status == 200"
+      interval: 5s
+      timeout: 3s
+      retries: 6
+      start_period: 5s
+    init: true
+    restart: "no"
+
+  worker:
+    <<: *api-image
+    command: ["python", "-m", "app.worker"]
+    environment:
+      AXIOM_WORKER_RUN_SECONDS: "30"
+      AXIOM_WORKER_IDLE_SECONDS: "0.25"
+    init: true
+    restart: "no"
+    # No ports, ingress, queue broker, or credentials are provisioned.

@@ -1,0 +1,6 @@
+# Deny everything except the exact locked build inputs and application source.
+**
+!pyproject.toml
+!uv.lock
+!app/
+!app/**
