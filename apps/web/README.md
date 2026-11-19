@@ -91,10 +91,10 @@ Run these commands inside apps/web:
     notepad .env.local
     npm run dev
 
-Set NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY
+Set NEXT*PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY
 in the *ignored* .env.local file, from an explicitly authorized **nonproduction**
 Supabase project. NEXT_PUBLIC_API_BASE_URL can remain the public loopback
-API origin. Only the public key prefixed sb_publishable_ is supported; never
+API origin. Only the public key prefixed sb_publishable* is supported; never
 use a sb_secret/service_role key, private signing material, evaluator credentials
 or database URL in NEXT_PUBLIC variables.
 
@@ -190,7 +190,7 @@ path are explicit. Production requires HTTPS, and HSTS/first-HTTP-request
 handling needs verification on the actual deployed host. Shared SSR
 cookies are **not guaranteed HttpOnly**.
 
-Sign-out broadcasts a *credential-free* notification to open tabs, and
+Sign-out broadcasts a _credential-free_ notification to open tabs, and
 other tabs also revalidate their server session when brought back into
 view. Storage cleanup failures are safely reported without logging private
 storage content and never prevent navigation. Invalid session recovery,

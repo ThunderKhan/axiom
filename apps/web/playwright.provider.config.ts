@@ -9,7 +9,10 @@ const required = [
 ] as const;
 const missing = required.filter((name) => !process.env[name]);
 if (missing.length > 0) {
-  throw new Error("Real Supabase verification requires private test environment settings: " + missing.join(", "));
+  throw new Error(
+    "Real Supabase verification requires private test environment settings: " +
+      missing.join(", "),
+  );
 }
 
 const port = 3101;

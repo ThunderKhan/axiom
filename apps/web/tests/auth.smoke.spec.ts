@@ -95,6 +95,8 @@ test("prototype-related notice parameters are ignored, not rendered as objects",
   for (const notice of ["__proto__", "constructor", "toString"]) {
     const response = await page.goto("/login?notice=" + notice);
     expect(response?.status()).toBe(200);
-    await expect(page.getByRole("heading", { name: "Welcome back." })).toBeVisible();
+    await expect(
+      page.getByRole("heading", { name: "Welcome back." }),
+    ).toBeVisible();
   }
 });

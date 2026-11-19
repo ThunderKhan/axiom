@@ -29,13 +29,24 @@ describe("M1 H3 private-state cleanup contract", () => {
   it("continues cleaning session storage when localStorage throws SecurityError", () => {
     const privateData = new Map([["axiom:private:user-b:query", "sensitive"]]);
     const session = {
-      get length() { return privateData.size; },
-      key(index: number) { return [...privateData.keys()][index] ?? null; },
-      removeItem(key: string) { privateData.delete(key); },
+      get length() {
+        return privateData.size;
+      },
+      key(index: number) {
+        return [...privateData.keys()][index] ?? null;
+      },
+      removeItem(key: string) {
+        privateData.delete(key);
+      },
     };
     const errors: number[] = [];
     clearPrivateStateSafely(
-      [() => { throw new Error("denied"); }, () => session],
+      [
+        () => {
+          throw new Error("denied");
+        },
+        () => session,
+      ],
       (index) => errors.push(index),
     );
     assert.deepEqual(errors, [0]);
@@ -45,10 +56,16 @@ describe("M1 H3 private-state cleanup contract", () => {
   it("reports both inaccessible stores without propagating or logging data", () => {
     const failures: number[] = [];
     clearPrivateStateSafely(
-      [() => { throw new Error("sensitive"); }, () => { throw new Error("sensitive"); }],
+      [
+        () => {
+          throw new Error("sensitive");
+        },
+        () => {
+          throw new Error("sensitive");
+        },
+      ],
       (index) => failures.push(index),
     );
     assert.deepEqual(failures, [0, 1]);
   });
-
 });

@@ -13,10 +13,14 @@ test("real authorized user signs in, survives refresh, then loses private access
   context,
 }, testInfo) => {
   // Fail before entering credentials if a runner re-enables trace capture.
-  if (testInfo.project.use.trace !== "off" ||
-      testInfo.project.use.screenshot !== "off" ||
-      testInfo.project.use.video !== "off") {
-    throw new Error("Real-provider authentication requires trace-free and media-free execution");
+  if (
+    testInfo.project.use.trace !== "off" ||
+    testInfo.project.use.screenshot !== "off" ||
+    testInfo.project.use.video !== "off"
+  ) {
+    throw new Error(
+      "Real-provider authentication requires trace-free and media-free execution",
+    );
   }
   const email = process.env.E2E_SUPABASE_EMAIL!;
   const password = process.env.E2E_SUPABASE_PASSWORD!;

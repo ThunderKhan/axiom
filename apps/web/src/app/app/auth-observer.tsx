@@ -14,21 +14,26 @@ export function AuthObserver({ verifiedSubject }: { verifiedSubject: string }) {
       window.location.replace("/login?notice=session-expired");
     };
     const unsubscribe = subscribeToSignOut(goToLogin);
-    const { data: listener } = client.auth.onAuthStateChange((event, session) => {
-      if (event === "SIGNED_OUT" || (event === "INITIAL_SESSION" && !session)) {
-        goToLogin();
-      } else if (
-        (event === "SIGNED_IN" ||
-          event === "TOKEN_REFRESHED" ||
-          event === "INITIAL_SESSION") &&
-        session?.user.id &&
-        session.user.id !== verifiedSubject
-      ) {
-        clearBrowserPrivateState();
-        // A different principal needs a fresh server-side protected-route check.
-        window.location.replace("/app");
-      }
-    });
+    const { data: listener } = client.auth.onAuthStateChange(
+      (event, session) => {
+        if (
+          event === "SIGNED_OUT" ||
+          (event === "INITIAL_SESSION" && !session)
+        ) {
+          goToLogin();
+        } else if (
+          (event === "SIGNED_IN" ||
+            event === "TOKEN_REFRESHED" ||
+            event === "INITIAL_SESSION") &&
+          session?.user.id &&
+          session.user.id !== verifiedSubject
+        ) {
+          clearBrowserPrivateState();
+          // A different principal needs a fresh server-side protected-route check.
+          window.location.replace("/app");
+        }
+      },
+    );
     const onPageShow = (event: PageTransitionEvent) => {
       if (event.persisted) window.location.reload();
     };
