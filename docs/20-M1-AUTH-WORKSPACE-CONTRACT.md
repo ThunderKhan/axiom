@@ -1,7 +1,7 @@
 # M1 Authentication and Workspace Engineering Contract
 
-**Status:** OWNER-APPROVED ARCHITECTURE; documentation PR pending review; implementation **NOT VERIFIED**  
-**Owner approval:** 19 November 2026, separate consolidated approval of all 25 A1–I3 choices  
+**Status:** OWNER-APPROVED ARCHITECTURE BASELINE — implementation **NOT VERIFIED**  
+**Owner approval:** 19 November 2026, separate consolidated approval of all 25 A1–I3 choices ([recorded owner signoff](https://github.com/ThunderKhan/axiom/issues/21#issuecomment-7006113329))  
 **Issue:** [#21 — M1 contract documentation](https://github.com/ThunderKhan/axiom/issues/21) (standalone, outside Milestone 1)  
 **Independent M1 signoff gate:** [#14](https://github.com/ThunderKhan/axiom/issues/14) (**not completed by this document**)  
 **Approved stack:** Supabase Auth + Supabase PostgreSQL + FastAPI-only domain access + SQLAlchemy 2.x/Alembic, per [ADR-002](decisions/002-authentication-database-and-api-boundary.md)  
