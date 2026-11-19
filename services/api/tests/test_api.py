@@ -37,7 +37,7 @@ def test_readiness_without_external_dependencies_is_scoped() -> None:
 
 
 def test_configured_but_unverified_database_is_not_ready_and_secret_is_hidden() -> None:
-    config = RuntimeSettings(database_url="***127.0.0.1/db")
+    config = RuntimeSettings(database_url="postgresql://owner:private@127.0.0.1/db")
     with TestClient(create_app(config)) as client:
         live = client.get("/api/v1/health/live")
         ready = client.get("/api/v1/health/ready")
