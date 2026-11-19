@@ -35,3 +35,17 @@ Use another `[packages.api]` entry with `directory = "services/api"` for the eve
 Ordinary PR checks deliberately use no production secrets or live paid AI/research services. The lightweight secret-pattern scan is **not** a substitute for GitHub secret scanning or independent security review. The repository job uses pinned PyYAML and markdown-it-py for safe YAML and CommonMark parsing. Staging database/migration/integration/MCP testing and 500-founder performance testing require separately approved services and evidence. The status-check names are stable for branch protection.
 
 **Runner notes:** For Node and Python tests, configure a genuine JUnit-compatible reporter and use `test_report` relative to the package directory. The gate removes any previous report before executing the command, then validates the newly generated XML; a report that describes zero passing tests is not accepted. Go's streaming JSON verifier instead prints stdout/stderr **even when the test command fails**, preserving diagnostic details. The first application-code PR must supply the actual runner, report configuration and lockfiles—this policy does not imply application tests currently exist.
+
+## M1.3 — mandatory real database gate
+
+The protected `Quality / application readiness` job now provisions **isolated
+PostgreSQL 17** and invokes `services/api/scripts/run_db_integration.py` after
+the existing application checks, *before* the mandatory Docker and integrated
+Chromium smoke jobs. The runner rejects any non-loopback, non-`axiom_test`
+connection target; it checks two Alembic revisions, metadata drift, runtime
+roles, real non-owner RLS, concurrent data invariants and DB readiness.
+Tests marked `postgres` are skipped in the generic no-DB pytest invocation
+but **must actually execute** in the dedicated real database CI step.
+Skipped, absent or failed database integration checks are not acceptable
+verification of Issue #16. No hosted Supabase resources or production
+credentials are involved.
