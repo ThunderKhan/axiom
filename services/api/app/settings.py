@@ -118,7 +118,9 @@ class RuntimeSettings(BaseSettings):
             or self.auth_audience.strip() != self.auth_audience
             or not 1 <= len(self.auth_audience) <= 128
         ):
-            raise ValueError("Auth issuer, audience and JWKS must match one trusted Supabase project")
+            raise ValueError(
+                "Auth issuer, audience and JWKS must match one trusted Supabase project"
+            )
         return self
 
 
