@@ -20,7 +20,7 @@ if (junit) {
   );
 }
 
-args.push("src/lib/foundation.test.ts");
+args.push("src/lib/foundation.test.ts", "src/lib/public-api.test.ts");
 
 const result = spawnSync(process.execPath, args, {
   cwd: root,
