@@ -1,4 +1,4 @@
-"""Fail-closed, project-bound Supabase user JWT verification (M1 D1–D3, I3)."""
+"""Fail-closed, project-bound Supabase user JWT verification (M1 D1âD3, I3)."""
 
 from __future__ import annotations
 
@@ -33,7 +33,9 @@ class AuthFailure(Exception):
     """Sanitized failure at the JWT trust boundary, never including raw credentials."""
 
     def __init__(self, *, unavailable: bool = False) -> None:
-        super().__init__("Authentication dependency unavailable" if unavailable else "Invalid authentication")
+        super().__init__(
+            "Authentication dependency unavailable" if unavailable else "Invalid authentication"
+        )
         self.unavailable = unavailable
 
 
