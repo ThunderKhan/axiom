@@ -44,9 +44,8 @@ def upgrade() -> None:
            WITH CHECK (id = axiom.current_subject() AND status = 'active')"""
     )
     for table in ("workspaces", "workspace_create_idempotency"):
-        owner = "owner_user_id"
         active = (
-            f"{owner} = axiom.current_subject() AND EXISTS "
+            "owner_user_id = axiom.current_subject() AND EXISTS "
             "(SELECT 1 FROM axiom.app_users a "
             " WHERE a.id = axiom.current_subject() AND a.status = 'active')"
         )
