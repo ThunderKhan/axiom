@@ -37,6 +37,15 @@ jobs:
         run: |
           python ci/quality_gate.py self-test
           python ci/quality_gate.py repository
+      - name: Canonical Ruff formatting for review (temporary)
+        working-directory: services/api
+        run: |
+          uv run --frozen ruff format app scripts tests
+          for file in app/api.py app/main.py app/settings.py app/worker.py scripts/check_style.py; do
+            echo "AXIOM_FORMAT_BEGIN:$file"
+            cat "$file"
+            echo "AXIOM_FORMAT_END:$file"
+          done
       - name: Full application quality gates
         run: python ci/quality_gate.py application
       - name: Real Docker/Compose/worker smoke and negative inputs
