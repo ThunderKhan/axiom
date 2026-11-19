@@ -26,7 +26,7 @@ test("unconfigured auth reports failure rather than accepting fake credentials",
   page,
 }) => {
   await page.goto("/login");
-  await expect(page.getByRole("alert")).toContainText("not configured");
+  await expect(page.locator(".auth-card .auth-error[role=alert]")).toContainText("not configured");
   await expect(
     page.getByRole("button", { name: "Sign in", exact: true }),
   ).toBeDisabled();
