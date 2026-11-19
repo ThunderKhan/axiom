@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 import re
+from http.client import HTTPException
 import threading
 import time
 from collections.abc import Callable, Mapping
@@ -25,6 +26,7 @@ _ALLOWED_ALGORITHMS: Mapping[str, str] = {"RS256": "RSA", "ES256": "EC"}
 _TOKEN_PATTERN = re.compile(r"^[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+$")
 _JWKS_MAX_BYTES = 65536
 _UNKNOWN_KID_REFRESH_SECONDS = 30.0
+_JWKS_FAILURE_BACKOFF_SECONDS = 5.0
 _NETWORK_TIMEOUT_SECONDS = 3.0
 _CLOCK_SKEW_SECONDS = 30
 
@@ -65,7 +67,7 @@ def fetch_jwks(url: str) -> Mapping[str, object]:
             if length is not None and int(length) > _JWKS_MAX_BYTES:
                 raise AuthFailure(unavailable=True)
             data = response.read(_JWKS_MAX_BYTES + 1)
-    except (OSError, HTTPError, URLError, TimeoutError, ValueError) as exc:
+    except (OSError, HTTPException, HTTPError, URLError, TimeoutError, ValueError) as exc:
         raise AuthFailure(unavailable=True) from exc
     if len(data) > _JWKS_MAX_BYTES:
         raise AuthFailure(unavailable=True)
@@ -103,6 +105,7 @@ class JwtVerifier:
         self._keys: dict[tuple[str, str], Any] = {}
         self._retrieved_at: float | None = None
         self._next_unknown_refresh = 0.0
+        self._retry_failed_refresh_after = 0.0
 
     def invalidate(self) -> None:
         """Operator-triggerable local purge; reset only through trusted server control."""
@@ -110,6 +113,7 @@ class JwtVerifier:
             self._keys.clear()
             self._retrieved_at = None
             self._next_unknown_refresh = 0.0
+            self._retry_failed_refresh_after = 0.0
 
     def _refresh(self, now: float) -> None:
         # Caller holds lock, so a single flight updates keys atomically.
@@ -143,11 +147,22 @@ class JwtVerifier:
                 parser = RSAAlgorithm if alg == "RS256" else ECAlgorithm
                 parsed[key_id] = parser.from_jwk(json.dumps(entry))
         except AuthFailure:
+            self._retry_failed_refresh_after = self._clock() + _JWKS_FAILURE_BACKOFF_SECONDS
             raise
-        except (KeyError, TypeError, ValueError, OverflowError, PyJWTError) as exc:
+        except (
+            KeyError,
+            TypeError,
+            ValueError,
+            OverflowError,
+            PyJWTError,
+            OSError,
+            HTTPException,
+        ) as exc:
+            self._retry_failed_refresh_after = self._clock() + _JWKS_FAILURE_BACKOFF_SECONDS
             raise AuthFailure(unavailable=True) from exc
         self._keys = parsed
         self._retrieved_at = now
+        self._retry_failed_refresh_after = 0.0
 
     def _key(self, kid: str, alg: str) -> Any:
         with self._lock:
@@ -157,19 +172,23 @@ class JwtVerifier:
                 and 0 <= now - self._retrieved_at < self._cache_seconds
             )
             if not fresh:
-                # Expired cached keys never act as an outage fallback.
-                self._keys = {}
+                # Expired keys cannot be used, even when the provider is unavailable.
+                self._keys.clear()
                 self._retrieved_at = None
-                self._refresh(now)
-            key = self._keys.get((kid, alg))
-            if key is None and fresh and now >= self._next_unknown_refresh:
+                if now < self._retry_failed_refresh_after:
+                    raise AuthFailure(unavailable=True)
+                # A cold or expired-cache fetch also counts toward unknown-kid throttling.
                 self._next_unknown_refresh = now + _UNKNOWN_KID_REFRESH_SECONDS
                 self._refresh(now)
-                key = self._keys.get((kid, alg))
-            if key is None:
-                self._next_unknown_refresh = max(
-                    self._next_unknown_refresh, now + _UNKNOWN_KID_REFRESH_SECONDS
-                )
+            key = self._keys.get((kid, alg))
+            if key is None and fresh:
+                if now < self._retry_failed_refresh_after:
+                    raise AuthFailure(unavailable=True)
+                if now >= self._next_unknown_refresh:
+                    # Move the deadline only when starting a real refresh, never on misses.
+                    self._next_unknown_refresh = now + _UNKNOWN_KID_REFRESH_SECONDS
+                    self._refresh(now)
+                    key = self._keys.get((kid, alg))
             if key is None:
                 raise AuthFailure()
             return key
