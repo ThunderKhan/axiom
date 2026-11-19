@@ -15,12 +15,27 @@ if (missing.length > 0) {
   );
 }
 
+const workspaceEnabled = process.env.E2E_WORKSPACE_API_READY === "1";
+if (workspaceEnabled) {
+  const requiredForWorkspaces = [
+    "NEXT_PUBLIC_API_BASE_URL",
+    "E2E_SUPABASE_SECOND_EMAIL",
+    "E2E_SUPABASE_SECOND_PASSWORD",
+  ] as const;
+  const missingWorkspace = requiredForWorkspaces.filter((name) => !process.env[name]);
+  if (missingWorkspace.length) {
+    throw new Error("Workspace provider verification needs settings: " + missingWorkspace.join(", "));
+  }
+}
+
 const port = 3101;
 const baseURL = "http://127.0.0.1:" + port;
 
 export default defineConfig({
   testDir: "./tests",
-  testMatch: "auth-provider.smoke.spec.ts",
+  testMatch: workspaceEnabled
+    ? ["auth-provider.smoke.spec.ts", "workspace-provider.smoke.spec.ts"]
+    : "auth-provider.smoke.spec.ts",
   forbidOnly: true,
   retries: 0,
   fullyParallel: false,
