@@ -363,11 +363,12 @@ def test_pagination_anchor_survives_non_utc_dst_fold(api, privileged_engine) -> 
     assert cursor is not None
 
     runtime = Database(settings)
-    try:
-        @event.listens_for(runtime.engine, "begin")
-        def non_utc_session(connection) -> None:
-            connection.exec_driver_sql("SET LOCAL TIME ZONE 'America/New_York'")
 
+    def non_utc_session(connection) -> None:
+        connection.exec_driver_sql("SET LOCAL TIME ZONE 'America/New_York'")
+
+    event.listen(runtime.engine, "begin", non_utc_session)
+    try:
         page = WorkspaceStore(runtime).page_workspaces(
             VerifiedPrincipal(owner, None), limit=1, cursor=cursor
         )
