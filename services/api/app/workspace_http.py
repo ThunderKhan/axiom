@@ -92,7 +92,7 @@ def get_workspace_store(request: Request) -> WorkspaceStore:
 
 
 async def _validated_bootstrap_body(
-    request: Request, payload: Annotated[BootstrapBody, Body()] = BootstrapBody()
+    request: Request, payload: Annotated[BootstrapBody, Body(default_factory=BootstrapBody)]
 ) -> BootstrapBody:
     # FastAPI otherwise treats explicit JSON null as missing for defaulted bodies.
     if (await request.body()).strip() == b"null":
