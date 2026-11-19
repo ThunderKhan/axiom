@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import re
 from ipaddress import ip_address
 from typing import Self
 from urllib.parse import urlsplit
@@ -9,9 +10,11 @@ from urllib.parse import urlsplit
 from pydantic import Field, SecretStr, field_validator, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
+_PROJECT_HOST = re.compile(r"[a-z0-9][a-z0-9-]{0,62}\.supabase\.co\Z")
+
 
 class RuntimeSettings(BaseSettings):
-    """Settings for both runtime roles; no external provider is required at WP-01."""
+    """Shared process settings; auth must be explicitly configured for protected APIs."""
 
     model_config = SettingsConfigDict(env_prefix="AXIOM_", extra="ignore")
 
@@ -22,11 +25,18 @@ class RuntimeSettings(BaseSettings):
     database_required: bool = False
     worker_run_seconds: float = Field(default=30.0, ge=0.1, le=300.0)
     worker_idle_seconds: float = Field(default=0.25, ge=0.05, le=5.0)
+    auth_issuer: str | None = None
+    auth_audience: str | None = None
+    auth_jwks_url: str | None = None
+    jwks_cache_max_seconds: int = Field(default=300, ge=1, le=300)
+
+    @property
+    def auth_configured(self) -> bool:
+        return all((self.auth_issuer, self.auth_audience, self.auth_jwks_url))
 
     @field_validator("bind_host")
     @classmethod
     def require_ip_bind_address(cls, value: str) -> str:
-        # Only literal interface addresses; never silently resolve a hostname.
         ip_address(value)
         return value
 
@@ -44,8 +54,6 @@ class RuntimeSettings(BaseSettings):
                 port = url.port
             except ValueError as exc:
                 raise ValueError("Invalid CORS origin or port") from exc
-            # Browser serialization lowercases DNS hosts and removes default ports.
-            # Reject noncanonical strings rather than configure an origin browsers never send.
             host = url.hostname or ""
             if not host.isascii():
                 raise ValueError("CORS origins must use ASCII/punycode hosts")
@@ -82,6 +90,35 @@ class RuntimeSettings(BaseSettings):
     def require_database_url_if_requested(self) -> Self:
         if self.database_required and self.database_url is None:
             raise ValueError("AXIOM_DATABASE_URL is required when database_required is true")
+        return self
+
+    @model_validator(mode="after")
+    def validate_auth_project_origin(self) -> Self:
+        provided = (self.auth_issuer, self.auth_audience, self.auth_jwks_url)
+        if not any(value is not None for value in provided):
+            return self  # M0 health-only deployment remains functional.
+        if not all(isinstance(value, str) and value for value in provided):
+            raise ValueError("All AXIOM_AUTH_* values are required together")
+        assert self.auth_issuer is not None
+        assert self.auth_jwks_url is not None
+        assert self.auth_audience is not None
+        url = urlsplit(self.auth_issuer)
+        if (
+            url.scheme != "https"
+            or not url.hostname
+            or not _PROJECT_HOST.fullmatch(url.hostname)
+            or url.port is not None
+            or url.username is not None
+            or url.password is not None
+            or url.path != "/auth/v1"
+            or url.query
+            or url.fragment
+            or self.auth_issuer != f"https://{url.hostname}/auth/v1"
+            or self.auth_jwks_url != f"{self.auth_issuer}/.well-known/jwks.json"
+            or self.auth_audience.strip() != self.auth_audience
+            or not 1 <= len(self.auth_audience) <= 128
+        ):
+            raise ValueError("Auth issuer, audience and JWKS must match one trusted Supabase project")
         return self
 
 
