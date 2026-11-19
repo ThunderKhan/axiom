@@ -36,12 +36,12 @@ cd apps/web
 npm ci --no-audit --no-fund
 Copy-Item .env.example .env.local
 npx playwright install chromium
-cd ../services/api
+cd ../../services/api
 uv sync --locked --all-groups
 cd ../..
 ```
 
-On Linux, use `cp apps/web/.env.example apps/web/.env.local` instead of
+On Linux, use `cp .env.example .env.local` while in `apps/web` instead of
 `Copy-Item`. The copied file is gitignored. Never place real credentials into
 `.env.local` or commit environment files.
 
@@ -124,7 +124,7 @@ npm run typecheck
 npm run test:ci
 npm run build
 npm run audit
-cd ../services/api
+cd ../../services/api
 uv run --frozen python scripts/check_style.py
 uv run --frozen mypy app
 uv run --frozen pytest -q --junitxml=test-results/junit.xml
