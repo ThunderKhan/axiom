@@ -24,9 +24,9 @@ export const capabilities: readonly Capability[] = [
   },
   {
     id: "research",
-    title: "Research and workspace features",
+    title: "Workspace management and research",
     description:
-      "Workspace HTTP APIs, onboarding, live research, and CRM are not yet implemented.",
+      "Workspace APIs and authenticated creation/selection code are implemented but require real provider verification. Product onboarding, research and CRM are not implemented.",
     state: "unavailable",
   },
 ];
