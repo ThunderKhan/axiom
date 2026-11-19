@@ -41,9 +41,12 @@ Ordinary PR checks deliberately use no production secrets or live paid AI/resear
 The protected `Quality / application readiness` job now provisions **isolated
 PostgreSQL 17** and invokes `services/api/scripts/run_db_integration.py` after
 the existing application checks, *before* the mandatory Docker and integrated
-Chromium smoke jobs. The runner rejects any non-loopback, non-`axiom_test`
-connection target; it checks two Alembic revisions, metadata drift, runtime
-roles, real non-owner RLS, concurrent data invariants and DB readiness.
+Chromium smoke jobs. The runner rejects URL query options, `PG*` environment overrides, wrong
+role usernames and any non-loopback, non-`axiom_test` connection target; it checks two Alembic revisions, refused destructive downgrades, schema
+drift, runtime roles, the required RLS policy set, granular column grants,
+real non-owner RLS, concurrent data invariants, pool exhaustion and recovery.
+A separate no-database unit suite verifies rejection of dangerous URL/libpq
+configuration before any DB connection.
 Tests marked `postgres` are skipped in the generic no-DB pytest invocation
 but **must actually execute** in the dedicated real database CI step.
 Skipped, absent or failed database integration checks are not acceptable

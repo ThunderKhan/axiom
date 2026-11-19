@@ -46,11 +46,17 @@ The API binds `127.0.0.1:8000` by default. Visit:
   `{"status":"ready","scope":"foundation_only","dependencies":"none_configured"}`
 - `http://127.0.0.1:8000/docs` — FastAPI OpenAPI documentation for **health only**
 
-If `AXIOM_DATABASE_URL` is configured, readiness deliberately returns **HTTP
-503**, `{"status":"not_ready","scope":"foundation_only","dependencies":"database_not_verified"}`.
-This is not a database connectivity test. With `AXIOM_DATABASE_REQUIRED=true`
-and no URL, configuration validation **fails startup**. The liveness route reports
-the API process, not external dependency availability.
+When `AXIOM_DATABASE_URL` is configured, readiness checks the **real
+database**: the committed Alembic revision, the non-owner runtime role, RLS
+enabled on all three M1 tables, the required policy names/roles/commands and
+the application column grants. It returns HTTP 200 with
+`database_verified` only if those checks succeed; absent, incompatible,
+unavailable or underprivileged databases return HTTP **503**
+(`database_not_verified`). These catalog checks **do not establish arbitrary
+policy-expression equivalence**, a working hosted Supabase project, or domain
+API authorization. With `AXIOM_DATABASE_REQUIRED=true` and no URL,
+configuration validation **fails startup**. Liveness reports the API process,
+not external dependency availability.
 
 The worker prints `axiom_worker_ready mode=idle_only queue=not_implemented`,
 waits for a bounded `AXIOM_WORKER_RUN_SECONDS` (default 30), then prints
@@ -221,6 +227,15 @@ $env:AXIOM_TEST_RUNTIME_DATABASE_URL = "postgresql://axiom_runtime@127.0.0.1:554
 uv run --frozen alembic history
 uv run --frozen python scripts/run_db_integration.py
 ```
+
+The runner rejects PostgreSQL URL query overrides (including `hostaddr`,
+`service`, `options` and alternate host/port), `PG*` environment overrides,
+non-loopback addresses, incorrect role usernames and database names **before
+running SQL**. It passes the validated configuration to child Alembic/pytest
+commands. This prevents libpq's option-priority rules from silently
+rerouting a nominally local test. Still verify that port 55432 belongs to
+the disposable test container; a port forwarded from an unrelated server
+cannot be proven safe by parsing a URL alone. Never use shared/live data.
 
 The runner refuses any other database, host or port. It verifies the additive
 revision path (clean/upgrade/repeat), Alembic metadata drift (including a
