@@ -30,7 +30,6 @@ class RuntimeSettings(BaseSettings):
         ip_address(value)
         return value
 
-
     @field_validator("cors_origins")
     @classmethod
     def validate_exact_cors_origins(cls, value: str) -> str:

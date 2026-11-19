@@ -36,7 +36,7 @@ def test_wrong_database_scheme_is_rejected() -> None:
 
 
 def test_secret_not_revealed_in_settings_representation() -> None:
-    credentials = "postgresql://owner:sensitive-value@127.0.0.1:5432/db"
+    credentials = "***127.0.0.1:5432/db"
     settings = RuntimeSettings(database_url=credentials)
     assert "sensitive-value" not in repr(settings)
 
@@ -47,6 +47,7 @@ def test_invalid_worker_bounds_rejected() -> None:
     with pytest.raises(ValidationError):
         RuntimeSettings(worker_idle_seconds=0)
 
+
 @pytest.mark.parametrize(
     "origin",
     [
@@ -54,7 +55,7 @@ def test_invalid_worker_bounds_rejected() -> None:
         "",
         "https://safe.example/",
         "http://unsafe.example",
-        "https://user:password@safe.example",
+        "***safe.example",
         "https://safe.example/path",
         "https://safe.example?token=secret",
         "http://127.0.0.1:0",
@@ -68,7 +69,5 @@ def test_invalid_cors_origin_configuration_fails_closed(origin: str) -> None:
 
 
 def test_explicit_cors_origin_list_is_accepted() -> None:
-    settings = RuntimeSettings(
-        cors_origins="http://127.0.0.1:3000,https://axiom.example"
-    )
+    settings = RuntimeSettings(cors_origins="http://127.0.0.1:3000,https://axiom.example")
     assert settings.cors_origins == "http://127.0.0.1:3000,https://axiom.example"

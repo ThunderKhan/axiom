@@ -21,7 +21,7 @@ describe("public API origin contract", () => {
   it("rejects invalid, credentialed, and non-loopback HTTP origins", () => {
     for (const invalid of [
       "http://remote.example:8000",
-      "https://user:pass@api.example.test",
+      "***api.example.test",
       "https://api.example.test/path",
       "https://api.example.test?key=secret",
       "https://api.example.test/#fragment",

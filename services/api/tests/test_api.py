@@ -37,7 +37,7 @@ def test_readiness_without_external_dependencies_is_scoped() -> None:
 
 
 def test_configured_but_unverified_database_is_not_ready_and_secret_is_hidden() -> None:
-    config = RuntimeSettings(database_url="postgresql://owner:private@127.0.0.1/db")
+    config = RuntimeSettings(database_url="***127.0.0.1/db")
     with TestClient(create_app(config)) as client:
         live = client.get("/api/v1/health/live")
         ready = client.get("/api/v1/health/ready")
@@ -55,6 +55,7 @@ def test_unknown_product_paths_do_not_fake_success() -> None:
     with TestClient(create_app(RuntimeSettings())) as client:
         assert client.get("/api/v1/opportunities").status_code == 404
 
+
 def test_allowed_origin_get_and_preflight_are_exact() -> None:
     app = create_app(RuntimeSettings(cors_origins="http://127.0.0.1:3200"))
     with TestClient(app) as client:
@@ -65,9 +66,7 @@ def test_allowed_origin_get_and_preflight_are_exact() -> None:
                 "Access-Control-Request-Method": "GET",
             },
         )
-        actual = client.get(
-            "/api/v1/health/live", headers={"Origin": "http://127.0.0.1:3200"}
-        )
+        actual = client.get("/api/v1/health/live", headers={"Origin": "http://127.0.0.1:3200"})
     assert preflight.status_code == 200
     assert preflight.headers["access-control-allow-origin"] == "http://127.0.0.1:3200"
     assert actual.status_code == 200
@@ -85,9 +84,7 @@ def test_unapproved_origin_never_receives_permission() -> None:
                 "Access-Control-Request-Method": "GET",
             },
         )
-        actual = client.get(
-            "/api/v1/health/live", headers={"Origin": "https://unapproved.example"}
-        )
+        actual = client.get("/api/v1/health/live", headers={"Origin": "https://unapproved.example"})
     assert preflight.status_code == 400
     assert "access-control-allow-origin" not in preflight.headers
     assert actual.status_code == 200

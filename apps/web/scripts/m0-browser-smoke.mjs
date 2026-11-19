@@ -15,7 +15,11 @@ try {
     waitUntil: "domcontentloaded",
     timeout: 30000,
   });
-  assert.equal(response?.status(), 200, "Next.js entrypoint must return HTTP 200");
+  assert.equal(
+    response?.status(),
+    200,
+    "Next.js entrypoint must return HTTP 200",
+  );
   assert.equal(
     await page
       .locator('meta[name="axiom-api-base-url"]')
