@@ -285,6 +285,7 @@ def test_http_missing_configuration_fails_closed() -> None:
     assert response.status_code == 503
     assert response.json()["error"]["code"] == "AUTH_UNAVAILABLE"
 
+
 def test_failed_cold_cache_fetch_is_single_flight_then_recovers(rsa_key) -> None:
     """Concurrent requests share an outage result instead of serializing timeouts."""
     from threading import Barrier
