@@ -22,7 +22,7 @@ from ci.integrated_smoke import (  # noqa: E402
 class IntegrationSmokeContracts(unittest.TestCase):
     def test_missing_frontend_dependencies_fail_before_spawning(self) -> None:
         # A clean checkout without npm ci must not masquerade as installed.
-        with patch("ci.integrated_smoke.WEB", Path("/nonexistent-axiom-web")):
+        with patch("ci.integrated_smoke.WEB", Path(__file__).resolve().parents[2] / "missing-axiom-web"):
             with self.assertRaisesRegex(RuntimeError, "Missing integration input"):
                 require_local_inputs()
 
