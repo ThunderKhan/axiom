@@ -5,6 +5,7 @@ from __future__ import annotations
 from typing import Literal
 
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 
@@ -25,6 +26,13 @@ class Readiness(BaseModel):
 def create_app(settings: RuntimeSettings | None = None) -> FastAPI:
     resolved = settings if settings is not None else load_settings()
     application = FastAPI(title="Axiom API (foundation only)", version="0.2.0")
+    application.add_middleware(
+        CORSMiddleware,
+        allow_origins=resolved.cors_origins.split(","),
+        allow_methods=["GET"],
+        allow_headers=[],
+        allow_credentials=False,
+    )
 
     @application.get("/api/v1/health/live", response_model=Liveness, tags=["health"])
     def liveness() -> Liveness:
