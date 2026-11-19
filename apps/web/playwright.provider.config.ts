@@ -22,9 +22,14 @@ if (workspaceEnabled) {
     "E2E_SUPABASE_SECOND_EMAIL",
     "E2E_SUPABASE_SECOND_PASSWORD",
   ] as const;
-  const missingWorkspace = requiredForWorkspaces.filter((name) => !process.env[name]);
+  const missingWorkspace = requiredForWorkspaces.filter(
+    (name) => !process.env[name],
+  );
   if (missingWorkspace.length) {
-    throw new Error("Workspace provider verification needs settings: " + missingWorkspace.join(", "));
+    throw new Error(
+      "Workspace provider verification needs settings: " +
+        missingWorkspace.join(", "),
+    );
   }
 }
 

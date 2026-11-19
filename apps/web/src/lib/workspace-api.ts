@@ -51,7 +51,8 @@ function readErrorCode(body: unknown, status: number): string {
     "code" in body.error &&
     typeof body.error.code === "string" &&
     knownCodes.has(body.error.code)
-  ) return body.error.code;
+  )
+    return body.error.code;
   return status === 401 ? "AUTH_REQUIRED" : "UNEXPECTED_RESPONSE";
 }
 
@@ -75,7 +76,8 @@ export function createWorkspaceApi(
     let response: Response;
     try {
       const token = await getToken(subject);
-      if (!token || signal.aborted) throw new WorkspaceApiError("AUTH_REQUIRED", 401);
+      if (!token || signal.aborted)
+        throw new WorkspaceApiError("AUTH_REQUIRED", 401);
       const headers: Record<string, string> = {
         Authorization: "Bearer " + token,
         Accept: "application/json",
@@ -105,7 +107,11 @@ export function createWorkspaceApi(
     } catch {
       throw new InvalidWorkspaceResponse();
     }
-    if (!response.ok) throw new WorkspaceApiError(readErrorCode(payload, response.status), response.status);
+    if (!response.ok)
+      throw new WorkspaceApiError(
+        readErrorCode(payload, response.status),
+        response.status,
+      );
     return payload;
   }
 
@@ -121,7 +127,8 @@ export function createWorkspaceApi(
       let cursor: string | null = null;
       // Hard ceiling prevents a malicious/broken API from causing unbounded traffic.
       for (let page = 0; page < 100; page += 1) {
-        const path = "/api/v1/workspaces?limit=100" +
+        const path =
+          "/api/v1/workspaces?limit=100" +
           (cursor === null ? "" : "&cursor=" + encodeURIComponent(cursor));
         const response = parseWorkspaceList(await request(path, "GET", signal));
         for (const item of response.items) {
@@ -130,7 +137,8 @@ export function createWorkspaceApi(
           result.push(item);
         }
         if (response.next_cursor === null) return result;
-        if (cursors.has(response.next_cursor)) throw new InvalidWorkspaceResponse();
+        if (cursors.has(response.next_cursor))
+          throw new InvalidWorkspaceResponse();
         cursors.add(response.next_cursor);
         cursor = response.next_cursor;
       }
@@ -138,10 +146,18 @@ export function createWorkspaceApi(
     },
     async read(id: string, signal: AbortSignal): Promise<Workspace> {
       return parseWorkspace(
-        await request("/api/v1/workspaces/" + encodeURIComponent(id), "GET", signal),
+        await request(
+          "/api/v1/workspaces/" + encodeURIComponent(id),
+          "GET",
+          signal,
+        ),
       );
     },
-    async create(name: string, key: string, signal: AbortSignal): Promise<Workspace> {
+    async create(
+      name: string,
+      key: string,
+      signal: AbortSignal,
+    ): Promise<Workspace> {
       return parseWorkspace(
         await request("/api/v1/workspaces", "POST", signal, { name }, key),
       );

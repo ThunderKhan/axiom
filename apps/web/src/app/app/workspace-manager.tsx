@@ -1,6 +1,13 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState, type FormEvent } from "react";
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type FormEvent,
+} from "react";
 import {
   canonicalWorkspaceName,
   isWorkspaceId,
@@ -34,7 +41,11 @@ type ReadyView = {
 type View =
   | ReadyView
   | { kind: "loading"; message: string }
-  | { kind: "blocked"; reason: "expired" | "disabled" | "unavailable" | "error"; message: string };
+  | {
+      kind: "blocked";
+      reason: "expired" | "disabled" | "unavailable" | "error";
+      message: string;
+    };
 
 type CreateState =
   | { kind: "idle" }
@@ -130,7 +141,8 @@ export function WorkspaceManager({
 
   const reject = useCallback(
     (error: unknown) => {
-      if (error instanceof WorkspaceApiError && error.code === "CANCELLED") return;
+      if (error instanceof WorkspaceApiError && error.code === "CANCELLED")
+        return;
       if (error instanceof WorkspaceApiError && error.status === 401) {
         invalidate();
         window.location.replace("/login?notice=session-expired");
@@ -142,7 +154,8 @@ export function WorkspaceManager({
         setView({
           kind: "blocked",
           reason: "disabled",
-          message: "This application account is disabled. Contact your administrator.",
+          message:
+            "This application account is disabled. Contact your administrator.",
         });
         return;
       }
@@ -184,7 +197,8 @@ export function WorkspaceManager({
             if (error instanceof WorkspaceApiError && error.status === 404) {
               // Foreign and missing workspace IDs are intentionally identical.
               saveWorkspacePreference(sessionPreference(), subject, null);
-              notice = "Your previous workspace is unavailable. Choose an authorized workspace.";
+              notice =
+                "Your previous workspace is unavailable. Choose an authorized workspace.";
             } else {
               throw error;
             }
@@ -192,15 +206,24 @@ export function WorkspaceManager({
         } else if (items.length === 1) {
           selected = items[0]; // Fresh owner-filtered FastAPI list.
         } else if (requested !== null) {
-          notice = "The requested workspace is invalid. Choose a workspace below.";
+          notice =
+            "The requested workspace is invalid. Choose a workspace below.";
         }
         if (!generation.current.current(seq)) return;
-        const nextItems = selected ? mergeOwnedWorkspaces(items, selected) : items;
-        saveWorkspacePreference(sessionPreference(), subject, selected?.id ?? null);
+        const nextItems = selected
+          ? mergeOwnedWorkspaces(items, selected)
+          : items;
+        saveWorkspacePreference(
+          sessionPreference(),
+          subject,
+          selected?.id ?? null,
+        );
         window.history.replaceState(
           null,
           "",
-          selected ? "/app?workspace=" + encodeURIComponent(selected.id) : "/app",
+          selected
+            ? "/app?workspace=" + encodeURIComponent(selected.id)
+            : "/app",
         );
         setView({ kind: "ready", items: nextItems, selected, notice });
       } catch (error) {
@@ -240,7 +263,12 @@ export function WorkspaceManager({
   }, [auth, invalidate, load, requestedWorkspace, subject]);
 
   const select = async (id: string) => {
-    if (view.kind !== "ready" || creation.kind === "submitting" || !isWorkspaceId(id)) return;
+    if (
+      view.kind !== "ready" ||
+      creation.kind === "submitting" ||
+      !isWorkspaceId(id)
+    )
+      return;
     const items = view.items;
     const seq = generation.current.next();
     activeRequest.current?.abort();
@@ -255,7 +283,11 @@ export function WorkspaceManager({
       if (!generation.current.current(seq)) return;
       setSwitching(null);
       saveWorkspacePreference(sessionPreference(), subject, selected.id);
-      window.history.replaceState(null, "", "/app?workspace=" + encodeURIComponent(selected.id));
+      window.history.replaceState(
+        null,
+        "",
+        "/app?workspace=" + encodeURIComponent(selected.id),
+      );
       setView({
         kind: "ready",
         items: mergeOwnedWorkspaces(items, selected),
@@ -283,7 +315,8 @@ export function WorkspaceManager({
       creation.kind === "uncertain" ||
       switching !== null ||
       pendingCreation.current
-    ) return;
+    )
+      return;
     let attempt: CreateAttempt;
     try {
       attempt = makeCreateAttempt(
@@ -295,7 +328,8 @@ export function WorkspaceManager({
     } catch (error) {
       setCreation({
         kind: "error",
-        message: error instanceof Error ? error.message : "Invalid workspace name.",
+        message:
+          error instanceof Error ? error.message : "Invalid workspace name.",
       });
       return;
     }
@@ -306,11 +340,19 @@ export function WorkspaceManager({
     createRequest.current = controller;
     setCreation({ kind: "submitting" });
     try {
-      const created = await api.create(attempt.name, attempt.key, controller.signal);
+      const created = await api.create(
+        attempt.name,
+        attempt.key,
+        controller.signal,
+      );
       if (!generation.current.current(seq)) return;
       pendingCreation.current = null;
       saveWorkspacePreference(sessionPreference(), subject, created.id);
-      window.history.replaceState(null, "", "/app?workspace=" + encodeURIComponent(created.id));
+      window.history.replaceState(
+        null,
+        "",
+        "/app?workspace=" + encodeURIComponent(created.id),
+      );
       setView({
         kind: "ready",
         items: mergeOwnedWorkspaces(view.items, created),
@@ -349,8 +391,9 @@ export function WorkspaceManager({
         <p className="eyebrow">YOUR PRODUCT WORKSPACES</p>
         <h1 id="workspace-heading">Work from the right context.</h1>
         <p className="introduction">
-          Workspaces belong to your verified account. Every selection is authorized
-          by FastAPI. Research, onboarding and CRM are not available in this milestone.
+          Workspaces belong to your verified account. Every selection is
+          authorized by FastAPI. Research, onboarding and CRM are not available
+          in this milestone.
         </p>
       </div>
 
@@ -361,10 +404,18 @@ export function WorkspaceManager({
       )}
       {view.kind === "blocked" && (
         <div className="workspace-card" role="alert">
-          <h2>{view.reason === "disabled" ? "Account access unavailable" : "Workspace access unavailable"}</h2>
+          <h2>
+            {view.reason === "disabled"
+              ? "Account access unavailable"
+              : "Workspace access unavailable"}
+          </h2>
           <p>{view.message}</p>
           {view.reason !== "disabled" && view.reason !== "expired" && (
-            <button type="button" className="workspace-secondary" onClick={() => void load()}>
+            <button
+              type="button"
+              className="workspace-secondary"
+              onClick={() => void load()}
+            >
               Try again
             </button>
           )}
@@ -375,25 +426,50 @@ export function WorkspaceManager({
         <div className="workspace-grid">
           <div className="workspace-card">
             <div className="workspace-card-heading">
-              <h2>{view.items.length === 0 ? "Create your first workspace" : "Choose a workspace"}</h2>
+              <h2>
+                {view.items.length === 0
+                  ? "Create your first workspace"
+                  : "Choose a workspace"}
+              </h2>
               <span className="workspace-count">{view.items.length} owned</span>
             </div>
-            {view.notice && <p className="workspace-notice" role="status">{view.notice}</p>}
+            {view.notice && (
+              <p className="workspace-notice" role="status">
+                {view.notice}
+              </p>
+            )}
             {view.items.length === 0 ? (
-              <p>No workspaces yet. Give your first product or idea a name to begin.</p>
+              <p>
+                No workspaces yet. Give your first product or idea a name to
+                begin.
+              </p>
             ) : (
-              <ul className="workspace-list" aria-label="Your authorized workspaces">
+              <ul
+                className="workspace-list"
+                aria-label="Your authorized workspaces"
+              >
                 {view.items.map((item) => (
                   <li key={item.id}>
                     <button
                       type="button"
-                      className={"workspace-choice" + (view.selected?.id === item.id ? " workspace-choice--active" : "")}
+                      className={
+                        "workspace-choice" +
+                        (view.selected?.id === item.id
+                          ? " workspace-choice--active"
+                          : "")
+                      }
                       aria-pressed={view.selected?.id === item.id}
                       disabled={busy}
                       onClick={() => void select(item.id)}
                     >
                       <span>{item.name}</span>
-                      <span>{switching === item.id ? "Checking…" : view.selected?.id === item.id ? "Active" : "Select"}</span>
+                      <span>
+                        {switching === item.id
+                          ? "Checking…"
+                          : view.selected?.id === item.id
+                            ? "Active"
+                            : "Select"}
+                      </span>
                     </button>
                   </li>
                 ))}
@@ -406,10 +482,16 @@ export function WorkspaceManager({
                 <>
                   <strong>{view.selected.name}</strong>
                   <p>Verified owner access · Workspace ID {view.selected.id}</p>
-                  <p className="workspace-limit">Workspace context is ready. Product onboarding and opportunities follow in later milestones.</p>
+                  <p className="workspace-limit">
+                    Workspace context is ready. Product onboarding and
+                    opportunities follow in later milestones.
+                  </p>
                 </>
               ) : (
-                <p>Nothing selected. Choose a workspace to establish an authorized context.</p>
+                <p>
+                  Nothing selected. Choose a workspace to establish an
+                  authorized context.
+                </p>
               )}
             </div>
             <button
@@ -423,9 +505,16 @@ export function WorkspaceManager({
           </div>
 
           <div className="workspace-card">
-            <h2>{view.items.length === 0 ? "New workspace" : "Add another workspace"}</h2>
+            <h2>
+              {view.items.length === 0
+                ? "New workspace"
+                : "Add another workspace"}
+            </h2>
             <p>Each workspace is independent and private to your account.</p>
-            <form className="workspace-form" onSubmit={(event) => void create(event)}>
+            <form
+              className="workspace-form"
+              onSubmit={(event) => void create(event)}
+            >
               <label htmlFor="workspace-name">Product or idea name</label>
               <input
                 id="workspace-name"
@@ -434,13 +523,21 @@ export function WorkspaceManager({
                 maxLength={240}
                 required
                 value={name}
-                disabled={busy || switching !== null || creation.kind === "uncertain"}
+                disabled={
+                  busy || switching !== null || creation.kind === "uncertain"
+                }
                 onChange={(event) => setName(event.target.value)}
                 placeholder="e.g. Research notes"
               />
-              {creation.kind === "error" && <p className="workspace-error" role="alert">{creation.message}</p>}
+              {creation.kind === "error" && (
+                <p className="workspace-error" role="alert">
+                  {creation.message}
+                </p>
+              )}
               {creation.kind === "submitting" && (
-                <p role="status" aria-live="polite">Creating your workspace…</p>
+                <p role="status" aria-live="polite">
+                  Creating your workspace…
+                </p>
               )}
               {creation.kind === "uncertain" && (
                 <div className="workspace-warning" role="alert">
@@ -449,7 +546,11 @@ export function WorkspaceManager({
                     The request for “{creation.name}” may have succeeded. Do not
                     submit a new request until you inspect your workspaces.
                   </p>
-                  <button type="button" className="workspace-secondary" onClick={() => void load()}>
+                  <button
+                    type="button"
+                    className="workspace-secondary"
+                    onClick={() => void load()}
+                  >
                     Inspect owned workspaces
                   </button>
                   <button
@@ -467,7 +568,9 @@ export function WorkspaceManager({
               <button
                 className="workspace-primary"
                 type="submit"
-                disabled={busy || switching !== null || creation.kind === "uncertain"}
+                disabled={
+                  busy || switching !== null || creation.kind === "uncertain"
+                }
               >
                 {busy ? "Creating…" : "Create workspace"}
               </button>

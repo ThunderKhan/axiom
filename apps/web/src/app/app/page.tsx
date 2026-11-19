@@ -13,7 +13,9 @@ type PageProps = {
   searchParams: Promise<{ workspace?: string | string[] }>;
 };
 
-export default async function AuthenticatedWorkspacePage({ searchParams }: PageProps) {
+export default async function AuthenticatedWorkspacePage({
+  searchParams,
+}: PageProps) {
   if (!publicAuthConfig()) redirect(loginDestination("auth-unavailable"));
 
   let verifiedSubject: string | null = null;
@@ -37,11 +39,14 @@ export default async function AuthenticatedWorkspacePage({ searchParams }: PageP
     unavailable = true;
   }
   if (!verifiedSubject) {
-    redirect(loginDestination(unavailable ? "auth-unavailable" : "session-expired"));
+    redirect(
+      loginDestination(unavailable ? "auth-unavailable" : "session-expired"),
+    );
   }
 
   const params = await searchParams;
-  const requestedWorkspace = typeof params.workspace === "string" ? params.workspace : null;
+  const requestedWorkspace =
+    typeof params.workspace === "string" ? params.workspace : null;
 
   return (
     <>
@@ -62,7 +67,8 @@ export default async function AuthenticatedWorkspacePage({ searchParams }: PageP
           />
         </main>
         <footer className="site-footer">
-          Axiom · Authenticated workspace foundation · Provider verification pending
+          Axiom · Authenticated workspace foundation · Provider verification
+          pending
         </footer>
       </div>
       <AuthObserver verifiedSubject={verifiedSubject} />

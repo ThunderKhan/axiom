@@ -21,15 +21,22 @@ function mockStorage() {
   const records = new Map<string, string>();
   return {
     records,
-    getItem(key: string) { return records.get(key) ?? null; },
-    setItem(key: string, value: string) { records.set(key, value); },
-    removeItem(key: string) { records.delete(key); },
+    getItem(key: string) {
+      return records.get(key) ?? null;
+    },
+    setItem(key: string, value: string) {
+      records.set(key, value);
+    },
+    removeItem(key: string) {
+      records.delete(key);
+    },
   };
 }
 
 function workspace(id: string): Workspace {
   return {
-    id, name: id,
+    id,
+    name: id,
     created_at: "2026-11-19T10:00:00Z",
     updated_at: "2026-11-19T10:00:00Z",
     version: 1,
@@ -57,9 +64,15 @@ describe("H2/H3 per-subject preferences and async context", () => {
 
   it("does not promote storage failures into authorization", () => {
     const blocked = {
-      getItem() { throw new Error("SecurityError"); },
-      setItem() { throw new Error("SecurityError"); },
-      removeItem() { throw new Error("SecurityError"); },
+      getItem() {
+        throw new Error("SecurityError");
+      },
+      setItem() {
+        throw new Error("SecurityError");
+      },
+      removeItem() {
+        throw new Error("SecurityError");
+      },
     };
     assert.equal(readWorkspacePreference(blocked, a), null);
     assert.doesNotThrow(() => saveWorkspacePreference(blocked, a, one));
@@ -75,7 +88,10 @@ describe("H2/H3 per-subject preferences and async context", () => {
     current.next(); // Logout/account change invalidates every pending response.
     assert.equal(current.current(bSequence), false);
     assert.deepEqual(
-      mergeOwnedWorkspaces([workspace(one), workspace(two)], workspace(two)).map((x) => x.id),
+      mergeOwnedWorkspaces(
+        [workspace(one), workspace(two)],
+        workspace(two),
+      ).map((x) => x.id),
       [two, one],
     );
   });

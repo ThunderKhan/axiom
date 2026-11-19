@@ -219,7 +219,6 @@ provider security settings merely to turn tests green.
 **No real Supabase project, hosted backend, production deploy, account
 provisioning or billable resource is touched by this change.**
 
-
 ## M1.6 — authenticated workspace creation and selection (Issue #19)
 
 The existing server-verified /app route now hosts workspace bootstrap, creation,
@@ -232,7 +231,7 @@ A first login explicitly bootstraps the active application user through
 POST /api/v1/me/bootstrap. A zero-workspace account sees a real creation form;
 there is no synthetic product data. The owner can create two or more independent
 workspaces, switch, and reload. Any deep link /app?workspace=UUID and any saved
-selection is treated as an *untrusted candidate*: FastAPI reauthorizes it before
+selection is treated as an _untrusted candidate_: FastAPI reauthorizes it before
 display. Foreign/missing IDs use identical safe fallback.
 
 The current preference is stored in sessionStorage only under the verified
@@ -290,9 +289,9 @@ Terminal C (Node 22.16.0, npm 10.9.2, from repository root):
     notepad .env.local
     npm run dev
 
-In ignored .env.local set only NEXT_PUBLIC_API_BASE_URL (default
+In ignored .env.local set only NEXT*PUBLIC_API_BASE_URL (default
 http://127.0.0.1:8000), NEXT_PUBLIC_SUPABASE_URL and public
-NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY, with the sb_publishable_ prefix. Do not
+NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY, with the sb_publishable* prefix. Do not
 put credentials, service keys, signing keys or DB URLs in browser settings.
 The exact http://127.0.0.1:3000/auth/callback must be allowed by the
 nonproduction provider. Restart Next.js after changing .env.local.

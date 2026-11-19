@@ -22,10 +22,13 @@ const workspace = {
 describe("M1.6 workspace DTO and name boundary", () => {
   it("accepts the approved typed workspace shape", () => {
     assert.deepEqual(parseWorkspace(workspace), workspace);
-    assert.deepEqual(parseWorkspaceList({ items: [workspace], next_cursor: null }), {
-      items: [workspace],
-      next_cursor: null,
-    });
+    assert.deepEqual(
+      parseWorkspaceList({ items: [workspace], next_cursor: null }),
+      {
+        items: [workspace],
+        next_cursor: null,
+      },
+    );
     parseBootstrap(
       {
         user: { id: owner, status: "active", created_at: workspace.created_at },
@@ -70,7 +73,14 @@ describe("M1.6 workspace DTO and name boundary", () => {
 
   it("trims names but rejects unsafe and oversized names", () => {
     assert.equal(canonicalWorkspaceName("  Café 👋  "), "Café 👋");
-    for (const value of ["", "  ", "a".repeat(121), "x\u0000y", "x\u0007y", "\ud800"]) {
+    for (const value of [
+      "",
+      "  ",
+      "a".repeat(121),
+      "x\u0000y",
+      "x\u0007y",
+      "\ud800",
+    ]) {
       assert.throws(() => canonicalWorkspaceName(value));
     }
     assert.equal(canonicalWorkspaceName("😃".repeat(120)), "😃".repeat(120));

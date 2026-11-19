@@ -10,7 +10,10 @@ export function workspacePreferenceKey(subject: string): string {
 
 type Preferences = Pick<Storage, "getItem" | "setItem" | "removeItem">;
 
-export function readWorkspacePreference(storage: Preferences, subject: string): string | null {
+export function readWorkspacePreference(
+  storage: Preferences,
+  subject: string,
+): string | null {
   try {
     const key = workspacePreferenceKey(subject);
     const value = storage.getItem(key);
@@ -91,7 +94,8 @@ export function allowAutomaticCreateRetry(
     verifiedMaxDeliveryMs === undefined ||
     !Number.isFinite(verifiedMaxDeliveryMs) ||
     verifiedMaxDeliveryMs <= 0
-  ) return false;
+  )
+    return false;
   // Conservative bound, with delivery and clock-safety margin. Deployment
   // verification must establish the maximum client/proxy/network delay first.
   const deadline = 24 * 60 * 60 * 1000 - 2 * verifiedMaxDeliveryMs;

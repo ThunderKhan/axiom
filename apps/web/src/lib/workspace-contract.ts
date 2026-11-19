@@ -107,7 +107,9 @@ export function canonicalWorkspaceName(value: string): string {
     [...name].length > 120 ||
     /[\u0000-\u001f\u007f-\u009f\uD800-\uDFFF]/u.test(name)
   ) {
-    throw new Error("Use a name of 1–120 characters without control characters.");
+    throw new Error(
+      "Use a name of 1–120 characters without control characters.",
+    );
   }
   return name;
 }
