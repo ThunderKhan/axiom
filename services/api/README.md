@@ -245,11 +245,14 @@ bootstrap/create, role privileges, constraints, and safe readiness. Re-running
 it against the *same isolated test database* is supported. Do not interpret
 these tests as verified Supabase-hosted role or pooler behavior.
 
-To exercise the API with this local database from `services/api`:
+To exercise the API with this local database from `services/api`, remove
+the migration-only credential from this PowerShell session before starting
+the ordinary API process:
 
 ```powershell
 $env:AXIOM_DATABASE_URL = $env:AXIOM_TEST_RUNTIME_DATABASE_URL
 $env:AXIOM_DATABASE_REQUIRED = "true"
+Remove-Item Env:AXIOM_MIGRATION_DATABASE_URL -ErrorAction SilentlyContinue
 uv run --frozen python -m app.api
 ```
 
