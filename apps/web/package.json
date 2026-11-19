@@ -19,9 +19,12 @@
     "test:unit": "node scripts/run-unit-tests.mjs",
     "test:ci": "node scripts/run-unit-tests.mjs --junit && playwright install chromium && playwright test --trace=on && node scripts/verify-playwright-report.mjs",
     "test:smoke": "playwright test",
-    "audit": "npm audit --audit-level=high"
+    "audit": "npm audit --audit-level=high",
+    "test:provider": "playwright test --config=playwright.provider.config.ts"
   },
   "dependencies": {
+    "@supabase/ssr": "0.12.7",
+    "@supabase/supabase-js": "2.119.1",
     "next": "16.4.6",
     "react": "19.3.1",
     "react-dom": "19.3.1"
