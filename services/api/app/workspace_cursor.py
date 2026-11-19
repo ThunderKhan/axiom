@@ -57,7 +57,7 @@ def decode_cursor(value: str, *, owner_id: UUID, limit: int) -> WorkspaceCursor:
             raise InvalidCursor()
         if type(data["limit"]) is not int or data["limit"] != limit:
             raise InvalidCursor()
-        if str(UUID(data["owner"])) != str(owner_id):
+        if not isinstance(data["owner"], str) or str(UUID(data["owner"])) != str(owner_id):
             raise InvalidCursor()
         if not isinstance(data["id"], str) or str(UUID(data["id"])) != data["id"]:
             raise InvalidCursor()

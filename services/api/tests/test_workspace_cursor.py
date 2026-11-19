@@ -43,6 +43,11 @@ def test_malformed_and_modified_cursors_are_rejected() -> None:
     for change in (
         {"v": 99},
         {"owner": str(uuid4())},
+        {"owner": 1},
+        {"owner": True},
+        {"owner": None},
+        {"owner": []},
+        {"owner": {}},
         {"at": (at + timedelta(seconds=1)).replace(tzinfo=None).isoformat()},
         {"at": "2026-01-01T12:00:00+03:00"},
         {"id": "bad-id"},
