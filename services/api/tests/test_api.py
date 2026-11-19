@@ -54,3 +54,41 @@ def test_configured_but_unverified_database_is_not_ready_and_secret_is_hidden() 
 def test_unknown_product_paths_do_not_fake_success() -> None:
     with TestClient(create_app(RuntimeSettings())) as client:
         assert client.get("/api/v1/opportunities").status_code == 404
+
+def test_allowed_origin_get_and_preflight_are_exact() -> None:
+    app = create_app(RuntimeSettings(cors_origins="http://127.0.0.1:3200"))
+    with TestClient(app) as client:
+        preflight = client.options(
+            "/api/v1/health/live",
+            headers={
+                "Origin": "http://127.0.0.1:3200",
+                "Access-Control-Request-Method": "GET",
+            },
+        )
+        actual = client.get(
+            "/api/v1/health/live", headers={"Origin": "http://127.0.0.1:3200"}
+        )
+    assert preflight.status_code == 200
+    assert preflight.headers["access-control-allow-origin"] == "http://127.0.0.1:3200"
+    assert actual.status_code == 200
+    assert actual.headers["access-control-allow-origin"] == "http://127.0.0.1:3200"
+    assert "access-control-allow-credentials" not in actual.headers
+
+
+def test_unapproved_origin_never_receives_permission() -> None:
+    app = create_app(RuntimeSettings(cors_origins="http://127.0.0.1:3200"))
+    with TestClient(app) as client:
+        preflight = client.options(
+            "/api/v1/health/live",
+            headers={
+                "Origin": "https://unapproved.example",
+                "Access-Control-Request-Method": "GET",
+            },
+        )
+        actual = client.get(
+            "/api/v1/health/live", headers={"Origin": "https://unapproved.example"}
+        )
+    assert preflight.status_code == 400
+    assert "access-control-allow-origin" not in preflight.headers
+    assert actual.status_code == 200
+    assert "access-control-allow-origin" not in actual.headers

@@ -46,3 +46,29 @@ def test_invalid_worker_bounds_rejected() -> None:
         RuntimeSettings(worker_run_seconds=-1)
     with pytest.raises(ValidationError):
         RuntimeSettings(worker_idle_seconds=0)
+
+@pytest.mark.parametrize(
+    "origin",
+    [
+        "*",
+        "",
+        "https://safe.example/",
+        "http://unsafe.example",
+        "https://user:password@safe.example",
+        "https://safe.example/path",
+        "https://safe.example?token=secret",
+        "http://127.0.0.1:0",
+        "http://127.0.0.1:99999",
+        "http://127.0.0.1:3000,http://127.0.0.1:3000",
+    ],
+)
+def test_invalid_cors_origin_configuration_fails_closed(origin: str) -> None:
+    with pytest.raises(ValidationError):
+        RuntimeSettings(cors_origins=origin)
+
+
+def test_explicit_cors_origin_list_is_accepted() -> None:
+    settings = RuntimeSettings(
+        cors_origins="http://127.0.0.1:3000,https://axiom.example"
+    )
+    assert settings.cors_origins == "http://127.0.0.1:3000,https://axiom.example"
