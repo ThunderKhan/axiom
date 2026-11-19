@@ -43,14 +43,14 @@ npm run start
 npm run audit
 ```
 
-`test:ci` executes unit tests **and** Chromium smoke tests. Node.js writes fresh
+`test:ci` executes unit tests **and unconfigured-provider Chromium smoke tests only**. Node.js writes fresh
 JUnit XML to `test-results/junit.xml`. The repo-level quality gate intentionally
 removes a prior report before every test invocation and rejects missing, empty,
 skipped-only or failing reports.
 
 Playwright keeps list output and writes an HTML report without opening it
-interactively (including when a test fails locally). `test:ci` enables tracing
-and verifies the HTML report and attached trace archives after the browser tests,
+interactively (including when a test fails locally). `test:ci` enables tracing **only for the deterministic, credential-free suite**
+and verifies the HTML report and attached trace archives after those browser tests,
 with artifacts isolated in `playwright-artifacts/` rather than inside
 `playwright-report/` or `test-results/`. The generated reports are ignored
 by Git.
@@ -139,11 +139,63 @@ workspace APIs must enforce this separately.
     npm run build
     npm run audit
 
-The default CI browser tests run **without real Supabase credentials**.
+The default CI browser tests force Supabase Auth **unconfigured** and exclude the
+real-provider test file, even if a developer has credentials in their shell.
+The traced CI/HTML-report pipeline never performs the genuine login.
 They are real browser tests of error/negative/routing behavior, not a
 successful provider sign-in. Real nonproduction provider login, session
 refresh, logout, cookie persistence, two-user isolation and FastAPI API
 authorization remain a separate H4 verification gate.
+
+### Separate real-provider login verification (no traces or recordings)
+
+The provider-backed test requires an explicitly authorized nonproduction
+Supabase test account. It is **not** part of `npm run test:ci` or
+`npm run test:smoke`. Its dedicated `playwright.provider.config.ts` selects
+only the real-provider test, uses **list output only**, and disables trace,
+screenshots, video and HTML report storage to avoid recording passwords or
+session cookies. Do **not** override these security settings with CLI flags.
+The test now also checks a second tab loses its private view after sign-out.
+
+Use PowerShell in `apps/web` and your authorized test project settings.
+Public provider settings must be available to the Playwright process, not
+only in `.env.local` (which Next.js loads separately). Use the exact local
+test origin `http://127.0.0.1:3101` if checking callbacks:
+
+```powershell
+$env:NEXT_PUBLIC_SUPABASE_URL = "https://YOUR-TEST-PROJECT.supabase.co"
+$env:NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY = "YOUR-PUBLIC-PUBLISHABLE-KEY"
+$env:E2E_SUPABASE_EMAIL = Read-Host "Test account email"
+$securePassword = Read-Host "Test account password" -AsSecureString
+$env:E2E_SUPABASE_PASSWORD = [System.Net.NetworkCredential]::new("", $securePassword).Password
+npm run test:provider
+Remove-Item Env:E2E_SUPABASE_PASSWORD -ErrorAction SilentlyContinue
+Remove-Item Env:E2E_SUPABASE_EMAIL -ErrorAction SilentlyContinue
+Remove-Variable securePassword -ErrorAction SilentlyContinue
+```
+
+Do not put test credentials in package scripts, Playwright traces, browser
+screenshots, committed files, CI artifacts, PR descriptions, or command
+arguments. The separate test fails on missing credentials rather than
+silently passing or skipping; an actual provider round-trip remains
+unverified until run against the authorized provider. Keep the test-runner
+environment and any process logs access-controlled and redacted.
+
+### Cookies and logout verification
+
+All Supabase SSR client factories (browser, server action and proxy) set
+`Secure` on session cookies whenever `NODE_ENV=production`; local
+`next dev` on loopback allows non-Secure cookies. `SameSite=Lax` and root
+path are explicit. Production requires HTTPS, and HSTS/first-HTTP-request
+handling needs verification on the actual deployed host. Shared SSR
+cookies are **not guaranteed HttpOnly**.
+
+Sign-out broadcasts a *credential-free* notification to open tabs, and
+other tabs also revalidate their server session when brought back into
+view. Storage cleanup failures are safely reported without logging private
+storage content and never prevent navigation. Invalid session recovery,
+cross-tab behavior and cookie flags require real-provider/HTTPS evidence
+before any release claim.
 
 From repository root, Docker Desktop/WSL2 is required for the existing
 real-integrated smoke, with no changes to application policies:
