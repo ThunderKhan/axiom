@@ -1,0 +1,41 @@
+name: M0 temporary formatting diagnostics
+on:
+  push:
+    branches: [feat/10-integrated-m0-smoke]
+permissions:
+  contents: read
+jobs:
+  format:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v7
+        with:
+          node-version: "22"
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.12"
+      - name: Canonical frontend formatting output (diagnostics only)
+        working-directory: apps/web
+        run: |
+          npm ci --no-audit --no-fund
+          npx prettier --write scripts/m0-browser-smoke.mjs src/lib/public-api.test.ts src/lib/public-api.ts
+          for file in scripts/m0-browser-smoke.mjs src/lib/public-api.test.ts src/lib/public-api.ts; do
+            echo "AXIOM_FORMAT_BEGIN:$file"
+            cat "$file"
+            echo "AXIOM_FORMAT_END:$file"
+          done
+      - name: Canonical Python formatting output (diagnostics only)
+        working-directory: services/api
+        run: |
+          python -m pip install --disable-pip-version-check uv==0.10.0
+          uv sync --locked --all-groups
+          uv run --frozen ruff format app tests
+          for file in app/main.py app/settings.py tests/test_api.py tests/test_settings.py; do
+            echo "AXIOM_FORMAT_BEGIN:$file"
+            cat "$file"
+            echo "AXIOM_FORMAT_END:$file"
+          done
