@@ -180,6 +180,17 @@ def main() -> int:
                 or "axiom_worker_stopped" not in worker.stdout
             ):
                 raise AssertionError("Independent worker did not report honest startup/shutdown")
+            # A worker failing settings validation must never be counted as ready.
+            invalid_worker = subprocess.run(
+                [
+                    *compose, "run", "--rm", "--no-deps",
+                    "-e", "AXIOM_PORT=0", "worker",
+                ],
+                cwd=ROOT, env=runtime_env, capture_output=True, text=True,
+                timeout=45, check=False,
+            )
+            if invalid_worker.returncode == 0 or "axiom_worker_ready" in invalid_worker.stdout:
+                raise AssertionError("Invalid worker runtime configuration was incorrectly accepted")
             config = json.loads(command(*compose, "config", "--format", "json", env=runtime_env).stdout)
             if config["services"]["worker"].get("ports"):
                 raise AssertionError("Worker must not publish a network port")
