@@ -85,6 +85,37 @@ class IntegrationSmokeContracts(unittest.TestCase):
                 require_invalid_worker_rejected(bad)
 
     @unittest.skipUnless(os.name == "posix", "POSIX process groups are unavailable on Windows")
+    def test_cleanup_reaps_live_launcher_while_monitoring_group(self) -> None:
+        # A direct POSIX group probe also sees an exited but unreaped leader.
+        # Exercise that fallback, not only the Linux /proc zombie filter.
+        launcher = subprocess.Popen(
+            [sys.executable, "-c", "import time; time.sleep(30)"],
+            start_new_session=True,
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+        )
+
+        def group_exists(group_id: int) -> bool:
+            try:
+                os.killpg(group_id, 0)
+            except ProcessLookupError:
+                return False
+            return True
+
+        try:
+            self.assertIsNone(launcher.poll(), "Launcher must be running when cleanup starts")
+            with patch("ci.integrated_smoke.owned_web_group_exists", side_effect=group_exists):
+                stop_web(launcher)
+            self.assertIsNotNone(launcher.returncode, "Cleanup must reap the launcher")
+            self.assertFalse(group_exists(launcher.pid), "Owned process group survived cleanup")
+        finally:
+            try:
+                os.killpg(launcher.pid, signal.SIGKILL)
+            except ProcessLookupError:
+                pass
+            launcher.wait(timeout=5)
+
+    @unittest.skipUnless(os.name == "posix", "POSIX process groups are unavailable on Windows")
     def test_cleanup_stops_owned_child_when_launcher_exits_before_listening(self) -> None:
         # npm can exit while Next.js remains alive inside the new POSIX session.
         with tempfile.TemporaryDirectory(prefix="axiom-owned-web-test-") as tmp:
