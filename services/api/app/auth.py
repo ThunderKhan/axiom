@@ -53,7 +53,10 @@ class _NoRedirects(HTTPRedirectHandler):
 def fetch_jwks(url: str) -> Mapping[str, object]:
     """Bounded HTTPS fetch from a *server-validated*, fixed project JWKS URL."""
     opener = build_opener(_NoRedirects())
-    request = Request(url, headers={"Accept": "application/json", "User-Agent": "Axiom-Auth/1"})
+    # A fixed, server-validated Supabase project HTTPS URL; never trust a JWT-supplied URL.
+    request = Request(  # noqa: S310
+        url, headers={"Accept": "application/json", "User-Agent": "Axiom-Auth/1"}
+    )
     try:
         with opener.open(request, timeout=_NETWORK_TIMEOUT_SECONDS) as response:
             length = response.headers.get("Content-Length")
