@@ -144,7 +144,25 @@ def require_invalid_worker_rejected(result: subprocess.CompletedProcess[str]) ->
         )
 
 def owned_web_group_exists(group_id: int) -> bool:
-    """Probe only the group created by the smoke's start_new_session process."""
+    """Detect living members of our private group, excluding reaped-but-zombie children."""
+    if sys.platform.startswith("linux"):
+        # os.killpg(pgid, 0) also reports zombie grandchildren left to PID 1.
+        # Zombies cannot hold ports or handle signals; treating them as live
+        # falsely fails cleanup even after a successful group SIGKILL.
+        try:
+            for proc in Path("/proc").iterdir():
+                if not proc.name.isdecimal():
+                    continue
+                try:
+                    fields = (proc / "stat").read_text(encoding="utf-8").rsplit(") ", 1)[1].split()
+                    state, process_group = fields[0], int(fields[2])
+                except (OSError, ValueError, IndexError):
+                    continue  # Process exited while /proc was being inspected.
+                if process_group == group_id and state not in {"Z", "X", "x"}:
+                    return True
+            return False
+        except OSError:
+            pass  # Nonstandard /proc mount: use the POSIX group probe below.
     try:
         os.killpg(group_id, 0)
     except ProcessLookupError:
