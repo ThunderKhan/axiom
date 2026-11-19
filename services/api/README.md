@@ -134,7 +134,10 @@ Only RS256/ES256 signed ordinary authenticated-user tokens are eligible;
 HS256, service-role, anon, unsigned, foreign issuer/audience and unknown keys
 are rejected. The verifier uses the configured HTTPS JWKS, bounded response
 size/network timeout, a 300-second-or-less cache age, a single-flight refresh
-lock and bounded unknown-key refresh attempts. `JwtVerifier.invalidate()`
+lock, a five-second backoff after failed JWKS fetches (while never using stale
+keys), and a fixed 30-second cooldown on actual unknown-key refresh attempts.
+Failed key retrieval returns a safe retryable 503; rejected unknown signing-key
+requests cannot perpetually postpone a later successful key rotation. `JwtVerifier.invalidate()`
 provides process-local operator invalidation to be wired to an authenticated
 operational control in later deployment work; no public invalidation route exists.
 
