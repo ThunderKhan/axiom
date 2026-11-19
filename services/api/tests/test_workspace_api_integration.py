@@ -421,7 +421,9 @@ def test_privileged_rls_bypass_is_not_app_authorization(api, privileged_engine) 
             )
         # HTTP must independently forbid IDOR even if DB role bypasses RLS.
         privileged_app = create_app(
-            settings.model_copy(update={"database_url": os.environ["AXIOM_MIGRATION_DATABASE_URL"]})
+            settings.model_copy(
+                update={"database_url": SecretStr(os.environ["AXIOM_MIGRATION_DATABASE_URL"])}
+            )
         )
         privileged_app.state.database.close()  # dispose the unused engine created by create_app
         privileged_app.state.database = privileged
