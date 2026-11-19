@@ -191,17 +191,27 @@ def stop_web(process: subprocess.Popen[str]) -> None:
             pass
 
         deadline = time.monotonic() + 10
-        while time.monotonic() < deadline and owned_web_group_exists(group_id):
+        while time.monotonic() < deadline:
+            # Reap the owned launcher if SIGTERM ended it; a zombie leader
+            # otherwise makes POSIX group probes report a still-existing group.
+            process.poll()
+            if not owned_web_group_exists(group_id):
+                break
             time.sleep(0.1)
 
+        process.poll()
         if owned_web_group_exists(group_id):
             try:
                 os.killpg(group_id, signal.SIGKILL)
             except ProcessLookupError:
                 pass
             kill_deadline = time.monotonic() + 5
-            while time.monotonic() < kill_deadline and owned_web_group_exists(group_id):
+            while time.monotonic() < kill_deadline:
+                process.poll()
+                if not owned_web_group_exists(group_id):
+                    break
                 time.sleep(0.1)
+            process.poll()
             if owned_web_group_exists(group_id):
                 raise RuntimeError("Owned Next.js process group did not stop after SIGKILL")
 
