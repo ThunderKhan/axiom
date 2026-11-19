@@ -7,7 +7,8 @@ import sys
 
 def main() -> int:
     for args in (("ruff", "check", "."), ("ruff", "format", "--check", ".")):
-        result = subprocess.run(args, check=False)
+        # Fixed, trusted executable/args; never a shell or user-controlled command.
+        result = subprocess.run(args, check=False)  # noqa: S603
         if result.returncode != 0:
             return result.returncode
     return 0
