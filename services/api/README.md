@@ -1,8 +1,10 @@
 # Axiom Python API and worker foundation — issue #9
 
-This package delivers **runtime packaging and operational health only**, not
-Supabase authorization, a database connection, research, AI, a job queue or durable
-worker recovery. Both processes use one Python package and Docker image.
+This package delivers **runtime packaging, operational health and a scoped
+Supabase JWT identity-verification dependency**. The provider integration is not
+yet verified against a real Supabase test project; application-user persistence,
+workspace authorization, database connections, research and worker job recovery
+are not implemented. Both processes use one Python package and Docker image.
 
 ## Runtime and dependency contract
 
@@ -111,3 +113,48 @@ integration enabled is recommended on Windows.
 
 Production hosting, paid services, credentials, database migrations, queue
 durability/recovery and provider integrations are **not implemented or verified**.
+
+## Issue #15 — Supabase JWT principal boundary (M1 D1–D3, I3)
+
+`app.auth` exposes a reusable `get_verified_principal` FastAPI dependency and a
+`VerifiedPrincipal` whose `user_id` is the validated Supabase JWT `sub` UUID.
+This identity is **not** an active application user or workspace owner. It must
+be followed by application-user status and object authorization in later issues.
+No fake `/api/v1/me` or bootstrap response is implemented here: both require
+app-user database state owned by #16/#18. Tests attach a private test-only route
+at runtime to exercise the dependency end-to-end via HTTP.
+
+Configure all three non-secret test-project values in the backend environment:
+`AXIOM_AUTH_ISSUER=https://<project-ref>.supabase.co/auth/v1`,
+`AXIOM_AUTH_AUDIENCE=authenticated`,
+`AXIOM_AUTH_JWKS_URL=https://<project-ref>.supabase.co/auth/v1/.well-known/jwks.json`.
+The JWKS URL must exactly match the configured project issuer, and
+`AXIOM_JWKS_CACHE_MAX_SECONDS` is bounded between 1 and 300 (default 300).
+Only RS256/ES256 signed ordinary authenticated-user tokens are eligible;
+HS256, service-role, anon, unsigned, foreign issuer/audience and unknown keys
+are rejected. The verifier uses the configured HTTPS JWKS, bounded response
+size/network timeout, a 300-second-or-less cache age, a single-flight refresh
+lock, a five-second backoff after failed JWKS fetches (while never using stale
+keys), and a fixed 30-second cooldown on actual unknown-key refresh attempts.
+Failed key retrieval returns a safe retryable 503; rejected unknown signing-key
+requests cannot perpetually postpone a later successful key rotation. `JwtVerifier.invalidate()`
+provides process-local operator invalidation to be wired to an authenticated
+operational control in later deployment work; no public invalidation route exists.
+
+On missing or invalid credentials the protected dependency returns 401
+`AUTH_REQUIRED`; unavailable required signing metadata returns 503
+`AUTH_UNAVAILABLE`, with safe request-ID error envelopes. When Auth is
+configured but still lacks provider and app-user validation, foundation
+readiness remains truthful (`503 auth_not_verified`); unconfigured health-only
+M0 behavior stays unchanged. No bearer or secret is logged or put in errors.
+A still-valid JWT can outlive provider logout or refresh-session revocation;
+trusted signature verification alone cannot guarantee immediate revocation.
+Supabase edge caches can outlive the local 300-second cache; this is **not** a
+global five-minute key-revocation guarantee.
+
+Run isolated fixture-based checks from `services/api` using
+`uv run --frozen pytest -q tests/test_auth.py`. Then run the existing mandatory
+repository checks as described above and in `ci/README.md`. Provider-backed
+authentication requires a separately authorized nonproduction Supabase project
+with asymmetric Auth signing and a real normal-user access token, supplied
+privately and never pasted into repository, logs, screenshots or PR text.
