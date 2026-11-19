@@ -1,0 +1,45 @@
+name: Temporary M1.6 formatter diagnostic
+on:
+  pull_request:
+    types: [opened, synchronize]
+permissions:
+  contents: read
+jobs:
+  formatting-diagnostic:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v7
+        with:
+          node-version: '22'
+      - name: Format changed workspace files and print read-only patch payload
+        working-directory: apps/web
+        run: |
+          npm ci --ignore-scripts
+          node <<'NODE'
+          const { execFileSync } = require("node:child_process");
+          const fs = require("node:fs");
+          const files = [
+            "playwright.provider.config.ts",
+            "README.md",
+            "src/app/app/page.tsx",
+            "src/app/app/workspace-manager.tsx",
+            "src/app/globals.css",
+            "src/lib/workspace-api.test.ts",
+            "src/lib/workspace-api.ts",
+            "src/lib/workspace-context.test.ts",
+            "src/lib/workspace-context.ts",
+            "src/lib/workspace-contract.test.ts",
+            "src/lib/workspace-contract.ts",
+            "tests/workspace-provider.smoke.spec.ts",
+            "tests/workspace.smoke.spec.ts",
+          ];
+          execFileSync("node", ["node_modules/prettier/bin/prettier.cjs", "--write", ...files], { stdio: "inherit" });
+          const records = files.map(path => ({ path: "apps/web/" + path, content: fs.readFileSync(path, "utf8") }));
+          const encoded = Buffer.from(JSON.stringify(records), "utf8").toString("base64");
+          for (let offset = 0; offset < encoded.length; offset += 3000) {
+            console.log("AXIOM_FORMAT_CHUNK:" + encoded.slice(offset, offset + 3000));
+          }
+          NODE
