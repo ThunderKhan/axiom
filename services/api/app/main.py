@@ -47,7 +47,8 @@ def create_app(settings: RuntimeSettings | None = None) -> FastAPI:
                     "code": "AUTH_UNAVAILABLE" if unavailable else "AUTH_REQUIRED",
                     "message": (
                         "Authentication verification unavailable."
-                        if unavailable else "Authentication required."
+                        if unavailable
+                        else "Authentication required."
                     ),
                     "retryable": unavailable,
                     "details": {},
