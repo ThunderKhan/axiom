@@ -20,7 +20,9 @@ test("M1 genuine JWT and two-user cross-tenant API acceptance", async ({
     testInfo.project.use.screenshot !== "off" ||
     testInfo.project.use.video !== "off"
   ) {
-    throw new Error("M1 real-provider acceptance requires trace-free execution");
+    throw new Error(
+      "M1 real-provider acceptance requires trace-free execution",
+    );
   }
   if (
     process.env.M1_ACCEPTANCE_NONPRODUCTION !== "I_CONFIRM_NONPRODUCTION" ||
@@ -168,24 +170,26 @@ test("M1 genuine JWT and two-user cross-tenant API acceptance", async ({
       );
       expect(itemsB.map((item) => item.id)).toContain(b1);
       expect(itemsA.some((item) => item.id === b1)).toBe(false);
-      expect(
-        itemsB.some((item) => item.id === a1 || item.id === a2),
-      ).toBe(false);
+      expect(itemsB.some((item) => item.id === a1 || item.id === a2)).toBe(
+        false,
+      );
 
       await ownerA.page
         .getByRole("button", { name: new RegExp(nameA1) })
         .click();
-      await expect(
-        ownerA.page.locator(".workspace-active strong"),
-      ).toHaveText(nameA1);
+      await expect(ownerA.page.locator(".workspace-active strong")).toHaveText(
+        nameA1,
+      );
       await ownerA.page
         .getByRole("button", { name: new RegExp(nameA2) })
         .click();
-      await expect(
-        ownerA.page.locator(".workspace-active strong"),
-      ).toHaveText(nameA2);
+      await expect(ownerA.page.locator(".workspace-active strong")).toHaveText(
+        nameA2,
+      );
       await ownerA.page.reload();
-      await expect(ownerA.page.locator(".workspace-active strong")).toHaveText(nameA2);
+      await expect(ownerA.page.locator(".workspace-active strong")).toHaveText(
+        nameA2,
+      );
       await expect(ownerA.page).toHaveURL(new RegExp("workspace=" + a2));
 
       const own = await apiA.get("/api/v1/workspaces/" + a1);
@@ -297,7 +301,9 @@ test("M1 genuine JWT and two-user cross-tenant API acceptance", async ({
       // B's authenticated browser must not reauthorize A's forged deep link.
       await ownerB.page.goto("/app?workspace=" + a1);
       await expect(
-        ownerB.page.getByRole("heading", { name: "Work from the right context." }),
+        ownerB.page.getByRole("heading", {
+          name: "Work from the right context.",
+        }),
       ).toBeVisible();
       await expect(
         ownerB.page.locator(".workspace-active strong"),
@@ -318,25 +324,27 @@ test("M1 genuine JWT and two-user cross-tenant API acceptance", async ({
       await ownButton.focus();
       await expect(ownButton).toBeFocused();
       await ownerB.page.keyboard.press("Enter");
-      await expect(
-        ownerB.page.locator(".workspace-active strong"),
-      ).toHaveText(nameB1);
+      await expect(ownerB.page.locator(".workspace-active strong")).toHaveText(
+        nameB1,
+      );
 
       // Cookie removal simulates missing browser session state, not revoked JWTs.
       await a.clearCookies();
       await ownerA.page.reload();
       await expect(ownerA.page).toHaveURL(/\/login\?/);
       await expect(
-        ownerA.page.getByRole("heading", { name: "Work from the right context." }),
+        ownerA.page.getByRole("heading", {
+          name: "Work from the right context.",
+        }),
       ).toHaveCount(0);
 
       await ownerB.page.getByRole("button", { name: "Sign out" }).click();
       await expect(ownerB.page).toHaveURL(/\/login\?notice=signed-out/);
       await ownerB.page.goto("/app?workspace=" + a1);
       await expect(ownerB.page).toHaveURL(/\/login\?/);
-      await expect(
-        ownerB.page.locator(".workspace-active strong"),
-      ).toHaveCount(0);
+      await expect(ownerB.page.locator(".workspace-active strong")).toHaveCount(
+        0,
+      );
 
       // An evaluator must use the same ordinary flow; optional when provisioned.
       const evaluatorEmail = process.env.E2E_SUPABASE_EVALUATOR_EMAIL;
@@ -349,7 +357,9 @@ test("M1 genuine JWT and two-user cross-tenant API acceptance", async ({
             evaluatorEmail,
             evaluatorPassword,
           );
-          await evaluator.page.getByRole("button", { name: "Sign out" }).click();
+          await evaluator.page
+            .getByRole("button", { name: "Sign out" })
+            .click();
           await expect(evaluator.page).toHaveURL(/\/login\?notice=signed-out/);
         } finally {
           await evaluatorContext.close();
