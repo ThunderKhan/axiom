@@ -305,9 +305,11 @@ test("M1 genuine JWT and two-user cross-tenant API acceptance", async ({
           name: "Work from the right context.",
         }),
       ).toBeVisible();
+      // A workspace was renamed earlier; any name containing A's original
+      // identifier must still be rejected from B's private detail view.
       await expect(
         ownerB.page.locator(".workspace-active strong"),
-      ).not.toHaveText(nameA1);
+      ).not.toContainText(nameA1);
       await expect(
         ownerB.page.getByRole("button", { name: new RegExp(nameA1) }),
       ).toHaveCount(0);
