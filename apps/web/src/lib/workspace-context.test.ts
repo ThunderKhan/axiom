@@ -2,12 +2,14 @@ import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 import {
   allowAutomaticCreateRetry,
+  availablePreferenceStorage,
   chooseRequestedWorkspace,
   makeCreateAttempt,
   mergeOwnedWorkspaces,
   readWorkspacePreference,
   RequestGeneration,
   saveWorkspacePreference,
+  uncertainCreationState,
   workspacePreferenceKey,
 } from "./workspace-context.ts";
 import type { Workspace } from "./workspace-contract.ts";
@@ -76,6 +78,33 @@ describe("H2/H3 per-subject preferences and async context", () => {
     };
     assert.equal(readWorkspacePreference(blocked, a), null);
     assert.doesNotThrow(() => saveWorkspacePreference(blocked, a, one));
+  });
+
+  it("continues without persistence when acquiring browser storage throws", () => {
+    const unavailable = availablePreferenceStorage(() => {
+      throw new Error("SecurityError");
+    });
+    assert.equal(unavailable, null);
+    assert.equal(readWorkspacePreference(unavailable, a), null);
+    assert.doesNotThrow(() => saveWorkspacePreference(unavailable, a, one));
+    const storage = mockStorage();
+    assert.equal(availablePreferenceStorage(() => storage), storage);
+  });
+
+  it("keeps an interrupted write blocked until an authorized list is inspected", () => {
+    const attempt = makeCreateAttempt(a, "Project", 1000, () => one);
+    assert.deepEqual(uncertainCreationState(attempt, a, false), {
+      kind: "uncertain",
+      name: "Project",
+      inspected: false,
+    });
+    assert.deepEqual(uncertainCreationState(attempt, a, true), {
+      kind: "uncertain",
+      name: "Project",
+      inspected: true,
+    });
+    assert.equal(uncertainCreationState(attempt, b, true), null);
+    assert.equal(uncertainCreationState(null, a, true), null);
   });
 
   it("select and switch preserve only the newest context", () => {

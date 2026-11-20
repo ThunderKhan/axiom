@@ -10,11 +10,23 @@ export function workspacePreferenceKey(subject: string): string {
 
 type Preferences = Pick<Storage, "getItem" | "setItem" | "removeItem">;
 
+/** The browser storage getter itself may throw under restrictive policies. */
+export function availablePreferenceStorage(
+  acquire: () => Preferences,
+): Preferences | null {
+  try {
+    return acquire();
+  } catch {
+    return null;
+  }
+}
+
 export function readWorkspacePreference(
-  storage: Preferences,
+  storage: Preferences | null,
   subject: string,
 ): string | null {
   try {
+    if (!storage) return null;
     const key = workspacePreferenceKey(subject);
     const value = storage.getItem(key);
     if (value !== null && !isWorkspaceId(value)) {
@@ -28,11 +40,12 @@ export function readWorkspacePreference(
 }
 
 export function saveWorkspacePreference(
-  storage: Preferences,
+  storage: Preferences | null,
   subject: string,
   workspaceId: string | null,
 ): void {
   try {
+    if (!storage) return;
     const key = workspacePreferenceKey(subject);
     if (workspaceId === null) storage.removeItem(key);
     else if (isWorkspaceId(workspaceId)) storage.setItem(key, workspaceId);
@@ -100,6 +113,23 @@ export function allowAutomaticCreateRetry(
   // verification must establish the maximum client/proxy/network delay first.
   const deadline = 24 * 60 * 60 * 1000 - 2 * verifiedMaxDeliveryMs;
   return deadline > 0 && now - attempt.startedAt < deadline;
+}
+
+/** Pending creates require owner-authorized list inspection after interruption. */
+export type UncertainCreation = Readonly<{
+  kind: "uncertain";
+  name: string;
+  inspected: boolean;
+}>;
+
+export function uncertainCreationState(
+  attempt: CreateAttempt | null,
+  subject: string,
+  inspected: boolean,
+): UncertainCreation | null {
+  return attempt?.subject === subject
+    ? { kind: "uncertain", name: attempt.name, inspected }
+    : null;
 }
 
 export class RequestGeneration {
