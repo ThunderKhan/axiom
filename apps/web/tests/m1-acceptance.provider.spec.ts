@@ -1,4 +1,11 @@
-import { expect, test, type BrowserContext, type Page } from "@playwright/test";
+import {
+  expect,
+  request,
+  test,
+  type APIResponse,
+  type BrowserContext,
+  type Page,
+} from "@playwright/test";
 
 /**
  * M1 H4 / AUTH-01: genuine, explicitly authorized nonproduction provider test.
@@ -7,7 +14,6 @@ import { expect, test, type BrowserContext, type Page } from "@playwright/test";
  */
 test("M1 genuine JWT and two-user cross-tenant API acceptance", async ({
   browser,
-  request,
 }, testInfo) => {
   if (
     testInfo.project.use.trace !== "off" ||
@@ -105,7 +111,7 @@ test("M1 genuine JWT and two-user cross-tenant API acceptance", async ({
   }
 
   async function assertError(
-    response: Awaited<ReturnType<typeof request.get>>,
+    response: APIResponse,
     status: number,
     code: string,
   ) {
