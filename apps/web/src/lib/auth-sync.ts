@@ -2,14 +2,33 @@
 export const AUTH_CHANNEL = "axiom:auth";
 export const SIGNED_OUT_MESSAGE = "signed-out";
 
+// Each browser tab has its own module instance. Other BroadcastChannel objects
+// in the sender's *same tab* receive posts too, so tag each sender and ignore
+// self-originating events to preserve the initiating server-action redirect.
+const TAB_SENDER = crypto.randomUUID();
+
 export function isSignOutMessage(value: unknown): boolean {
   return value === SIGNED_OUT_MESSAGE;
+}
+
+type SignOutEnvelope = { type: typeof SIGNED_OUT_MESSAGE; sender: string };
+
+function isOtherTabSignOutMessage(value: unknown): value is SignOutEnvelope {
+  return (
+    typeof value === "object" &&
+    value !== null &&
+    "type" in value &&
+    isSignOutMessage(value.type) &&
+    "sender" in value &&
+    typeof value.sender === "string" &&
+    value.sender !== TAB_SENDER
+  );
 }
 
 export function broadcastSignOut(): void {
   try {
     const channel = new BroadcastChannel(AUTH_CHANNEL);
-    channel.postMessage(SIGNED_OUT_MESSAGE);
+    channel.postMessage({ type: SIGNED_OUT_MESSAGE, sender: TAB_SENDER });
     channel.close();
   } catch {
     // Other tabs still revalidate the server session when becoming visible.
@@ -21,7 +40,7 @@ export function subscribeToSignOut(callback: () => void): () => void {
   try {
     const channel = new BroadcastChannel(AUTH_CHANNEL);
     channel.onmessage = (event: MessageEvent<unknown>) => {
-      if (isSignOutMessage(event.data)) callback();
+      if (isOtherTabSignOutMessage(event.data)) callback();
     };
     return () => channel.close();
   } catch {
