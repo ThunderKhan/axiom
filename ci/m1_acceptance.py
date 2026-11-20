@@ -422,8 +422,12 @@ def self_test() -> None:
     # even if Playwright's raw JSON contains private provider response material.
     assert "report unavailable" in sanitized_provider_outcomes(b"not JSON: hidden-password")
     fail_report = test_report(sorted(REQUIRED_TEST_TITLES))
-    fail_report["suites"][0]["specs"][0]["tests"][0]["results"][0]["status"] = "failed"
-    fail_report["suites"][0]["specs"][0]["tests"][0]["results"][0]["error"] = {
+    failed_spec = next(
+        spec for spec in fail_report["suites"][0]["specs"]
+        if spec["title"] == SAFE_PROVIDER_LABELS[0][0]
+    )
+    failed_spec["tests"][0]["results"][0]["status"] = "failed"
+    failed_spec["tests"][0]["results"][0]["error"] = {
         "message": "PRIVATE_PASSWORD_DO_NOT_PRINT",
         "stack": "SECRET_SESSION_TOKEN_DO_NOT_PRINT",
     }
