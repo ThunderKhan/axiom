@@ -31,7 +31,10 @@ import {
   WorkspaceApiError,
 } from "../../lib/workspace-api";
 import { clearBrowserPrivateState } from "../../lib/private-state";
-import { subscribeToLocalSignOutStarted, subscribeToSignOut } from "../../lib/auth-sync";
+import {
+  subscribeToLocalSignOutStarted,
+  subscribeToSignOut,
+} from "../../lib/auth-sync";
 import { publicApiBaseUrl } from "../../lib/public-api";
 import { createBrowserAuthClient } from "../../lib/supabase/browser";
 
