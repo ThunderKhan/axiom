@@ -1,17 +1,20 @@
 # Milestone 1.7 — Security Acceptance Evidence Ledger
 
 **Status: M1 INCOMPLETE VERIFICATION / ACCEPTANCE BLOCKED**
-**Issue:** #20 | **Work package:** WP-02 | **Governing policy:** AGENTS.md 1.1, ENGINEERING.md 1.1
+**Outstanding gate:** [#29](https://github.com/ThunderKhan/axiom/issues/29) | **Merged implementation:** [#20 / PR #28](https://github.com/ThunderKhan/axiom/pull/28) | **Work package:** WP-02 | **Governing policy:** AGENTS.md 1.1, ENGINEERING.md 1.1
 **Approved authority:** docs/20-M1-AUTH-WORKSPACE-CONTRACT.md, ADR-002
 **Starting main:** a55e0d1a2735d9b0669e78791840c2386002d20e
 **Recorded:** 20 November 2026. This is an execution ledger, not an approved new design.
 
-All six prerequisite stages are merged, including PR #27. Existing tests
-use real isolated PostgreSQL 17 with locally signed asymmetric fixture JWTs;
-the real Supabase Auth provider was NOT run. The connected Supabase project
-inventory does not identify an authorized Axiom-specific nonproduction test
-project. Never reuse unrelated projects or provision live/paid resources.
-This issue cannot honestly declare live M1 acceptance yet.
+All six prerequisite stages and the acceptance harness (PR #28) are now
+merged into main. Existing tests use real isolated PostgreSQL 17 with
+locally signed asymmetric fixture JWTs; the real Supabase Auth provider
+was NOT run. Current connected Supabase inventory confirms a Free-tier
+organization with its two active project slots occupied by unrelated
+projects, not an authorized Axiom-specific nonproduction test project.
+Do not pause or reuse unrelated projects, incur charges or claim provider
+evidence without explicit authorization. Issue #29 tracks the remaining
+security acceptance gate; Milestone 1 is not complete.
 
 ## Requirements, implementation and actual evidence boundary
 
@@ -28,7 +31,7 @@ This issue cannot honestly declare live M1 acceptance yet.
 | M1-WEB-01 | Next.js auth and workspace picker, 12 prior anonymous Chromium tests | Live A1/A2/B1 ordinary login NOT VERIFIED |
 | M1-WEB-02 | Browser subject-scoped preference and stale async generation | Deterministic tests only; live cross-account timing NOT VERIFIED |
 | M1-OPS-01 | Runtime/role configuration and separate protected provider harness | Nonproduction Auth, managed pooler, HTTPS and evaluator NOT VERIFIED |
-| M1-CI-01 | Three existing required jobs and M0 real Docker/browser smoke | New PR head checks PENDING; real provider gate NOT RUN |
+| M1-CI-01 | Three existing required jobs and M0 real Docker/browser smoke | PR #28 head 89d8953 and merge commit 93794ba: required checks PASS; real provider gate NOT RUN |
 
 The new provider-only Playwright test obtains **two independent genuine
 Supabase-authenticated browser sessions** and the user bearer actually sent
@@ -295,9 +298,14 @@ accepted merely because local-only checks pass.
 
 ## Final disposition
 
-**M1 ACCEPTANCE BLOCKED / INCOMPLETE VERIFICATION:** no authorized
-Axiom nonproduction Supabase project and no real-provider execution
-evidence. The new acceptance gate is not required branch protection yet.
-Managed database parity, deployment security and qualified human approval
-remain pending. Issue #20 and Milestone 1 remain OPEN; the PR remains
-OPEN and UNMERGED. No production deployment, migration or M2 authorized.
+**M1 ACCEPTANCE BLOCKED / INCOMPLETE VERIFICATION:** [PR #28](https://github.com/ThunderKhan/axiom/pull/28)
+merged into main at [93794bae](https://github.com/ThunderKhan/axiom/commit/93794bae7de4c030b512e9bf3692258926372241).
+[Post-merge Quality](https://github.com/ThunderKhan/axiom/actions/runs/44655822190)
+and [Governance](https://github.com/ThunderKhan/axiom/actions/runs/44655822283)
+checks PASS. No authorized dedicated Axiom nonproduction Supabase project,
+real-provider execution evidence or hosted database/pooler parity exists.
+The provider gate is not required by default branch protection yet.
+Managed deployment security and qualified human security approval remain
+pending. Issue #20 was closed administratively; [issue #29](https://github.com/ThunderKhan/axiom/issues/29)
+remains OPEN under Milestone 1. No production deployment, migration or M2
+authorization is implied by this ledger.
