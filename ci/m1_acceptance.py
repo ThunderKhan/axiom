@@ -198,6 +198,11 @@ SAFE_PROVIDER_LABELS = (
     ("two authorized users create and isolate workspaces", "WORKSPACE_UI"),
     ("M1 genuine JWT and two-user cross-tenant API acceptance", "TENANT_API"),
 )
+SAFE_PROVIDER_TEST_FILES = {
+    "AUTH_SESSION": "auth-provider.smoke.spec.ts",
+    "WORKSPACE_UI": "workspace-provider.smoke.spec.ts",
+    "TENANT_API": "m1-acceptance.provider.spec.ts",
+}
 
 
 def sanitized_provider_outcomes(output: bytes) -> str:
@@ -241,7 +246,36 @@ def sanitized_provider_outcomes(output: bytes) -> str:
                         and isinstance(results[0], dict)
                         and results[0].get("status") == "passed"
                     )
-                    observations[title].append("passed" if passed else "not_passed")
+                    outcome = "passed" if passed else "not_passed"
+                    # Only expose a numeric line in the known *public test file*.
+                    # Playwright error messages, locations and stacks are never emitted.
+                    if not passed and isinstance(results, list) and results:
+                        first = results[0]
+                        errors = first.get("errors") if isinstance(first, dict) else None
+                        if isinstance(errors, list):
+                            for error in errors:
+                                if not isinstance(error, dict):
+                                    continue
+                                location = error.get("location")
+                                if not isinstance(location, dict):
+                                    continue
+                                raw_file = location.get("file")
+                                line = location.get("line")
+                                label = next(
+                                    (code for name, code in SAFE_PROVIDER_LABELS if name == title),
+                                    None,
+                                )
+                                if (
+                                    isinstance(raw_file, str)
+                                    and isinstance(label, str)
+                                    and raw_file.replace("\\", "/").rsplit("/", 1)[-1]
+                                    == SAFE_PROVIDER_TEST_FILES[label]
+                                    and type(line) is int
+                                    and 1 <= line <= 800
+                                ):
+                                    outcome += f"@line{line}"
+                                    break
+                    observations[title].append(outcome)
             visit(suite.get("suites"))
 
     visit(report.get("suites"))
@@ -427,13 +461,18 @@ def self_test() -> None:
         if spec["title"] == SAFE_PROVIDER_LABELS[0][0]
     )
     failed_spec["tests"][0]["results"][0]["status"] = "failed"
-    failed_spec["tests"][0]["results"][0]["error"] = {
+    failed_spec["tests"][0]["results"][0]["errors"] = [{
         "message": "PRIVATE_PASSWORD_DO_NOT_PRINT",
         "stack": "SECRET_SESSION_TOKEN_DO_NOT_PRINT",
-    }
+        "location": {
+            "file": "/private/SENSITIVE_ROOT/auth-provider.smoke.spec.ts",
+            "line": 42,
+        },
+    }]
     summary = sanitized_provider_outcomes(json.dumps(fail_report).encode("utf-8"))
-    assert "AUTH_SESSION=not_passed" in summary
+    assert "AUTH_SESSION=not_passed@line42" in summary
     assert "WORKSPACE_UI=passed" in summary
+    assert "SENSITIVE_ROOT" not in summary
     assert "TENANT_API=passed" in summary
     assert "PRIVATE_PASSWORD" not in summary and "SECRET_SESSION_TOKEN" not in summary
     for title, label in SAFE_PROVIDER_LABELS:
