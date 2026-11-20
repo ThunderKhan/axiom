@@ -1,10 +1,11 @@
-# Axiom web — foundation plus M1.4 Supabase Auth
+# Axiom web — M1.4 identity and M1.6 workspace selection
 
 Issue #17 adds ordinary email/password login, SSR/PKCE cookies, a Next.js 16
 session-refresh proxy, server-verified protected /app, safe internal login
 redirection and sign-out. The existing public / foundation page and M0
-browser/API smoke remain working. **This does not implement the Edviro landing
-redesign, workspace APIs, onboarding, live research or CRM.**
+browser/API smoke remain working. **M1.6 now integrates the approved FastAPI workspace APIs for authenticated
+creation, selection and isolation. The landing redesign, product onboarding,
+research and CRM remain outside this milestone.**
 
 The frontend can run with no provider configured but denies access to /app and
 explains why login is unavailable. NEXT_PUBLIC_API_BASE_URL remains public
@@ -217,3 +218,150 @@ provider security settings merely to turn tests green.
 
 **No real Supabase project, hosted backend, production deploy, account
 provisioning or billable resource is touched by this change.**
+
+## M1.6 — authenticated workspace creation and selection (Issue #19)
+
+The existing server-verified /app route now hosts workspace bootstrap, creation,
+selection, reauthorization and recovery. The browser obtains its normal Supabase
+user access JWT and calls only FastAPI for domain data. The backend separately
+verifies the JWT, active app-user status and workspace ownership. No new provider,
+schema migration, service-role client, product onboarding, research or CRM.
+
+A first login explicitly bootstraps the active application user through
+POST /api/v1/me/bootstrap. A zero-workspace account sees a real creation form;
+there is no synthetic product data. The owner can create two or more independent
+workspaces, switch, and reload. Any deep link /app?workspace=UUID and any saved
+selection is treated as an _untrusted candidate_: FastAPI reauthorizes it before
+display. Foreign/missing IDs use identical safe fallback.
+
+The current preference is stored in sessionStorage only under the verified
+axiom:workspace:<user-id> key. Logout, account change, expired auth or failed
+authorization clears private state and cancels outstanding requests. Switching
+invalidates a request generation and aborts prior selections so even a late
+response cannot restore another workspace's context. No private domain-data
+cache is introduced. Existing cross-tab logout/visibility rechecks remain.
+
+Workspace creation binds a cryptographically random Idempotency-Key and a
+canonical name to one user/attempt. Double submission is prevented. If a
+POST transport fails or the backend reports unavailable after a possible write,
+the outcome is **uncertain**, not a certain failure. No automatic retry is
+performed because the maximum client/proxy/network delivery delay has not
+been verified for a deployment. Inspect the owned workspace list before
+choosing to begin a separate creation. Duplicate outcomes remain possible
+after a very late retry past retention expiry and purge.
+
+### Windows PowerShell — isolated end-to-end setup
+
+From the repository root, use Docker Desktop/WSL2 and disposable local
+PostgreSQL 17. Terminal A (dedicated database verification; never production):
+
+    docker compose -f infra/compose.db-test.yml up -d --wait postgres-test
+    cd services/api
+    uv sync --locked --all-groups
+    $env:AXIOM_TEST_ADMIN_DATABASE_URL = "postgresql://postgres@127.0.0.1:55432/axiom_test"
+    $env:AXIOM_MIGRATION_DATABASE_URL = "postgresql://axiom_migrator@127.0.0.1:55432/axiom_test"
+    $env:AXIOM_TEST_RUNTIME_DATABASE_URL = "postgresql://axiom_runtime@127.0.0.1:55432/axiom_test"
+    uv run --frozen python scripts/run_db_integration.py
+
+Terminal B (ordinary API; do not copy privileged test credentials into it):
+
+    cd services/api
+    Remove-Item Env:AXIOM_MIGRATION_DATABASE_URL -ErrorAction SilentlyContinue
+    Remove-Item Env:AXIOM_TEST_ADMIN_DATABASE_URL -ErrorAction SilentlyContinue
+    $env:AXIOM_DATABASE_URL = "postgresql://axiom_runtime@127.0.0.1:55432/axiom_test"
+    $env:AXIOM_DATABASE_REQUIRED = "true"
+    $env:AXIOM_CORS_ORIGINS = "http://127.0.0.1:3000"
+    $env:AXIOM_AUTH_ISSUER = "https://YOUR-TEST-PROJECT.supabase.co/auth/v1"
+    $env:AXIOM_AUTH_AUDIENCE = "authenticated"
+    $env:AXIOM_AUTH_JWKS_URL = "$env:AXIOM_AUTH_ISSUER/.well-known/jwks.json"
+    uv run --frozen python -m app.api
+
+Replace the test project placeholder locally with a separately authorized
+nonproduction Supabase Auth project issuing approved asymmetric user JWTs.
+The API listens on 127.0.0.1:8000; verify
+/api/v1/health/live and /api/v1/health/ready using Invoke-RestMethod.
+
+Terminal C (Node 22.16.0, npm 10.9.2, from repository root):
+
+    cd apps/web
+    npm ci
+    Copy-Item .env.example .env.local
+    notepad .env.local
+    npm run dev
+
+In ignored .env.local set only NEXT*PUBLIC_API_BASE_URL (default
+http://127.0.0.1:8000), NEXT_PUBLIC_SUPABASE_URL and public
+NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY, with the sb_publishable* prefix. Do not
+put credentials, service keys, signing keys or DB URLs in browser settings.
+The exact http://127.0.0.1:3000/auth/callback must be allowed by the
+nonproduction provider. Restart Next.js after changing .env.local.
+
+Open http://127.0.0.1:3000, sign in with an ordinary preprovisioned account,
+wait for app-user bootstrap, create workspace A, create B, select A and B,
+reload to check the remembered valid selection, then sign out. Sign in as a
+distinct second account; it must not see A or B. Test a fabricated/foreign
+/app?workspace=UUID, expired session, Back after logout, and DevTools
+network delay while switching A to B. Simulate a dropped creation response:
+the UI must show uncertain completion without submitting another POST.
+The backend remains authoritative regardless of local preference injection.
+
+### Verification and evidence boundaries
+
+In apps/web:
+
+    npm ci
+    npm run lint
+    npm run format:check
+    npm run typecheck
+    npm run test:unit
+    npx playwright install chromium
+    npm run test:smoke
+    npm run test:ci
+    npm run build
+    npm run audit
+
+In services/api:
+
+    uv run --frozen python scripts/check_style.py
+    uv run --frozen mypy app
+    uv run --frozen pytest -q --junitxml=test-results/junit.xml
+
+Run scripts/run_db_integration.py only from Terminal A with all three
+isolated DB URLs still present. From root, backend Docker/worker and
+existing M0 browser integration smoke commands are:
+
+    python ci/docker_smoke.py
+    python ci/integrated_smoke.py
+
+Ordinary traced Playwright CI intentionally forces Supabase unconfigured.
+It verifies denied private access and deterministic client/unit contracts,
+**not real login or browser-to-DB acceptance**. Real-provider testing stays
+separate via npm run test:provider (trace/screenshot/video off, list-only,
+no retained artifacts). To opt into the real two-account workspace journey,
+set E2E_WORKSPACE_API_READY=1, valid NEXT_PUBLIC_API_BASE_URL and the private
+E2E_SUPABASE_SECOND_EMAIL/PASSWORD in addition to the ordinary first-account
+E2E_SUPABASE_EMAIL/PASSWORD. Set API CORS to allow
+http://127.0.0.1:3101 for that test. This opt-in writes genuine test
+workspaces: run only on a separately authorized nonproduction project.
+No real-provider, Windows, deployed HTTPS or full browser-to-database test
+is claimed merely by adding that test.
+
+Troubleshooting: use nvm use 22.16.0; verify Docker with docker info; ensure
+Postgres test role/grants/RLS are initialized by the isolated DB runner; verify
+API origin, port 8000, CORS exact Next.js origin, issuer/JWKS, and provider
+signing mode. 401 requires new authentication; 403 indicates disabled app
+account; 409 can signal missing bootstrap or create-key conflict; 503 means
+provider/DB unavailable, not an empty workspace list. Install Chromium with
+npx playwright install chromium if missing. Never paste token-containing
+request headers, credentials or SQL URLs into public logs or discussions.
+
+Stop the API and web native processes using Ctrl+C. From repository root:
+
+    docker compose -f infra/compose.db-test.yml down
+
+Do not add -v or delete persistent volumes. Before returning to main, inspect
+git status, commit/stash local changes, then git switch main and
+git pull --ff-only origin main. To update an existing checked-out feature
+branch after saving work, use git pull --ff-only origin
+feat/19-workspace-selection-ui. Browser-to-Supabase-to-FastAPI-to-RLS live
+acceptance remains issue #20; qualified human security review is required.

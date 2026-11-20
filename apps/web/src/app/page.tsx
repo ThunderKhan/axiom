@@ -20,7 +20,7 @@ export default function HomePage() {
           <p className="introduction">
             An evidence-grounded intelligence workspace for founders is planned.
             This public page shows the implementation status; private research
-            and workspaces are not yet available.
+            and live provider-backed workspaces are not yet verified.
           </p>
           <Link className="primary-cta" href="/login">
             Sign in to Axiom

@@ -5,10 +5,17 @@ import { loginDestination } from "../../lib/redirects";
 import { createServerAuthClient } from "../../lib/supabase/server";
 import { AuthObserver } from "./auth-observer";
 import { SignOutButton } from "./sign-out-button";
+import { WorkspaceManager } from "./workspace-manager";
 
 export const dynamic = "force-dynamic";
 
-export default async function AuthenticatedFoundationPage() {
+type PageProps = {
+  searchParams: Promise<{ workspace?: string | string[] }>;
+};
+
+export default async function AuthenticatedWorkspacePage({
+  searchParams,
+}: PageProps) {
   if (!publicAuthConfig()) redirect(loginDestination("auth-unavailable"));
 
   let verifiedSubject: string | null = null;
@@ -37,6 +44,10 @@ export default async function AuthenticatedFoundationPage() {
     );
   }
 
+  const params = await searchParams;
+  const requestedWorkspace =
+    typeof params.workspace === "string" ? params.workspace : null;
+
   return (
     <>
       <a href="#app-main" className="skip-link">
@@ -50,50 +61,14 @@ export default async function AuthenticatedFoundationPage() {
           <SignOutButton />
         </header>
         <main id="app-main" className="private-main" tabIndex={-1}>
-          <div className="eyebrow">VERIFIED SUPABASE SESSION</div>
-          <h1>Your Axiom session is active.</h1>
-          <p className="introduction">
-            Your identity was verified by Supabase Auth. This is the Milestone 1
-            protected application foundation, not an authorized product
-            workspace.
-          </p>
-          <section
-            className="status-panel private-status"
-            aria-labelledby="private-heading"
-          >
-            <div className="status-heading">
-              <h2 id="private-heading">What is available?</h2>
-              <p>
-                Session verification is separate from application and workspace
-                authorization.
-              </p>
-            </div>
-            <ul className="capabilities">
-              <li className="capability">
-                <div>
-                  <h3>Session</h3>
-                  <p>Signed in using a verified provider identity.</p>
-                </div>
-                <span className="status status--available">Verified</span>
-              </li>
-              <li className="capability">
-                <div>
-                  <h3>Workspace access</h3>
-                  <p>
-                    Account bootstrap, workspace authorization and product
-                    screens depend on later FastAPI and frontend implementation
-                    issues.
-                  </p>
-                </div>
-                <span className="status status--unavailable">
-                  Not yet available
-                </span>
-              </li>
-            </ul>
-          </section>
+          <WorkspaceManager
+            subject={verifiedSubject}
+            requestedWorkspace={requestedWorkspace}
+          />
         </main>
         <footer className="site-footer">
-          Axiom · Private session · No fabricated workspace data
+          Axiom · Authenticated workspace foundation · Provider verification
+          pending
         </footer>
       </div>
       <AuthObserver verifiedSubject={verifiedSubject} />

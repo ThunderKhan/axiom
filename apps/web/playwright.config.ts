@@ -8,7 +8,10 @@ export default defineConfig({
   outputDir: "./playwright-artifacts",
   testMatch: "*.smoke.spec.ts",
   // Credential-bearing provider tests must never enter the traced CI suite.
-  testIgnore: ["auth-provider.smoke.spec.ts"],
+  testIgnore: [
+    "auth-provider.smoke.spec.ts",
+    "workspace-provider.smoke.spec.ts",
+  ],
   fullyParallel: true,
   forbidOnly: Boolean(process.env.CI),
   retries: 0,
