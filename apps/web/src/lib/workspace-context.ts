@@ -11,9 +11,9 @@ export function workspacePreferenceKey(subject: string): string {
 type Preferences = Pick<Storage, "getItem" | "setItem" | "removeItem">;
 
 /** The browser storage getter itself may throw under restrictive policies. */
-export function availablePreferenceStorage(
-  acquire: () => Preferences,
-): Preferences | null {
+export function availablePreferenceStorage<T extends Preferences>(
+  acquire: () => T,
+): T | null {
   try {
     return acquire();
   } catch {
