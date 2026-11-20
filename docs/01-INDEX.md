@@ -2,7 +2,7 @@
 
 **Project:** Axiom  
 **Repository:** [ThunderKhan/axiom](https://github.com/ThunderKhan/axiom)  
-**Last updated:** 19 November 2026 (M1 identity/workspace architecture separately approved; implementation unverified)  
+**Last updated:** 20 November 2026 (M1 implementation harness merged; live provider acceptance remains blocked)  
 **Purpose:** Canonical map of product specifications, architectural decisions, and documentation authority for Axiom.
 
 ## Repository-Level Engineering Instructions
@@ -70,7 +70,7 @@ Only documents explicitly approved by the project owner belong in this section. 
 
 | Document | Purpose | Status |
 |---|---|---|
-| [21-M1-ACCEPTANCE-LEDGER.md](21-M1-ACCEPTANCE-LEDGER.md) | Issue #20 requirement/evidence matrix, fail-closed provider verification, operational limitations and Windows PowerShell handoff | **Execution ledger — acceptance BLOCKED pending actual authorized provider testing** |
+| [21-M1-ACCEPTANCE-LEDGER.md](21-M1-ACCEPTANCE-LEDGER.md) | M1 acceptance evidence ledger and provider test procedures; [PR #28](https://github.com/ThunderKhan/axiom/pull/28) merged, [issue #20](https://github.com/ThunderKhan/axiom/issues/20) closed administratively; [issue #29](https://github.com/ThunderKhan/axiom/issues/29) tracks provider/hosted-DB/human review gates | **Execution ledger — acceptance BLOCKED; no live-provider evidence** |
 
 This does not supersede the approved M1 contract or authorize a release.
 
