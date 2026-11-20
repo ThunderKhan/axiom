@@ -14,6 +14,7 @@ import subprocess
 import sys
 from collections.abc import Mapping
 from pathlib import Path
+from tempfile import TemporaryDirectory
 from typing import Any
 from urllib.error import HTTPError, URLError
 from urllib.parse import urlsplit
@@ -59,6 +60,21 @@ def verified_head() -> str:
     if not SHA_PATTERN.fullmatch(value):
         raise AcceptanceBlocked("Checked-out commit must be a full SHA")
     return value
+
+
+def require_clean_checkout(root: Path = ROOT) -> None:
+    """Do not attribute provider execution to a commit with modified or untracked source."""
+    try:
+        completed = subprocess.run(
+            ["git", "status", "--porcelain=v1", "--untracked-files=all",
+             "--ignore-submodules=none"],
+            cwd=root, check=True, capture_output=True, timeout=10,
+        )
+    except (OSError, subprocess.SubprocessError) as exc:
+        raise AcceptanceBlocked("Cannot verify that the checkout is clean") from exc
+    if completed.stdout:
+        # Git status may contain private local paths. Never print its output.
+        raise AcceptanceBlocked("Checkout has tracked changes or untracked files")
 
 
 def preflight(env: Mapping[str, str], head: str) -> None:
@@ -172,6 +188,7 @@ def validated_report(document: Any) -> int:
 
 def run_provider(env: Mapping[str, str], *, head: str) -> None:
     preflight(env, head)
+    require_clean_checkout()
     require_real_database_readiness()
     command = [
         "node", "node_modules/playwright/cli.js", "test",
@@ -184,6 +201,9 @@ def run_provider(env: Mapping[str, str], *, head: str) -> None:
         )
     except (OSError, subprocess.SubprocessError) as exc:
         raise AcceptanceBlocked("Real-provider suite did not complete") from exc
+    # Check after execution too: the provider tests may have altered tracked or
+    # untracked executable inputs without changing HEAD.
+    require_clean_checkout()
     if result.returncode != 0:
         # NEVER print Playwright stdout/stderr: these can contain passwords,
         # credentials, cookies, tokens, URLs or private browser state.
@@ -277,6 +297,44 @@ def self_test() -> None:
         pass
     else:
         raise AssertionError("Skipped mandatory test was accepted")
+    # Use a disposable repository so this guard itself is exercised by offline CI.
+    with TemporaryDirectory(prefix="axiom-m1-checkout-") as directory:
+        checkout = Path(directory)
+        fixture = checkout / "provider.spec.ts"
+        fixture.write_text("original test\\n", encoding="utf-8")
+
+        def git(*args: str) -> None:
+            subprocess.run(
+                ["git", *args], cwd=checkout, check=True,
+                capture_output=True, timeout=10,
+            )
+
+        git("init", "--quiet")
+        git("add", "provider.spec.ts")
+        git("-c", "user.name=Acceptance Fixture",
+            "-c", "user.email=fixture@example.test", "commit", "--quiet",
+            "-m", "test clean checkout")
+        require_clean_checkout(checkout)
+
+        fixture.write_text("modified test\\n", encoding="utf-8")
+        try:
+            require_clean_checkout(checkout)
+        except AcceptanceBlocked:
+            pass
+        else:
+            raise AssertionError("Changed tracked provider test was accepted")
+        fixture.write_text("original test\\n", encoding="utf-8")
+
+        untracked = checkout / "injected-provider-test.ts"
+        untracked.write_text("untracked code\\n", encoding="utf-8")
+        try:
+            require_clean_checkout(checkout)
+        except AcceptanceBlocked:
+            pass
+        else:
+            raise AssertionError("Untracked executable input was accepted")
+        untracked.unlink()
+        require_clean_checkout(checkout)
     print("PASS: M1 acceptance gate negative controls (no provider connection).")
 
 
@@ -287,6 +345,7 @@ def main() -> int:
             self_test()
         elif mode == "preflight":
             preflight(os.environ, verified_head())
+            require_clean_checkout()
             print("PASS: nonproduction provider settings and exact SHA prerequisites.")
             print("NOT VERIFIED: provider/DB execution; preflight alone is not acceptance.")
         elif mode == "run":
