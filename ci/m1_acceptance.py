@@ -191,6 +191,102 @@ def validated_report(document: Any) -> int:
     return len(titles)
 
 
+# Only hard-coded, public test names and enumerated outcome labels may reach CI.
+# Never emit Playwright's error, stack, stdout/stderr, request, URL or test attachments.
+SAFE_PROVIDER_LABELS = (
+    ("real authorized user signs in, survives refresh, then loses private access", "AUTH_SESSION"),
+    ("two authorized users create and isolate workspaces", "WORKSPACE_UI"),
+    ("M1 genuine JWT and two-user cross-tenant API acceptance", "TENANT_API"),
+)
+SAFE_PROVIDER_TEST_FILES = {
+    "AUTH_SESSION": "auth-provider.smoke.spec.ts",
+    "WORKSPACE_UI": "workspace-provider.smoke.spec.ts",
+    "TENANT_API": "m1-acceptance.provider.spec.ts",
+}
+
+
+def sanitized_provider_outcomes(output: bytes) -> str:
+    """Summarize expected Playwright test outcomes without revealing private diagnostics."""
+    try:
+        report = json.loads(output)
+    except (UnicodeError, ValueError):
+        return "M1 provider outcomes: report unavailable (private diagnostics withheld)"
+    if not isinstance(report, dict):
+        return "M1 provider outcomes: report unavailable (private diagnostics withheld)"
+
+    observations: dict[str, list[str]] = {title: [] for title, _ in SAFE_PROVIDER_LABELS}
+
+    def visit(suites: Any) -> None:
+        if not isinstance(suites, list):
+            return
+        for suite in suites:
+            if not isinstance(suite, dict):
+                continue
+            specs = suite.get("specs")
+            if isinstance(specs, list):
+                for spec in specs:
+                    if not isinstance(spec, dict):
+                        continue
+                    title = spec.get("title")
+                    if not isinstance(title, str) or title not in observations:
+                        continue
+                    tests = spec.get("tests")
+                    if not isinstance(tests, list) or len(tests) != 1:
+                        observations[title].append("incomplete")
+                        continue
+                    test = tests[0]
+                    if not isinstance(test, dict):
+                        observations[title].append("incomplete")
+                        continue
+                    results = test.get("results")
+                    passed = (
+                        test.get("status") == "expected"
+                        and isinstance(results, list)
+                        and len(results) == 1
+                        and isinstance(results[0], dict)
+                        and results[0].get("status") == "passed"
+                    )
+                    outcome = "passed" if passed else "not_passed"
+                    # Only expose a numeric line in the known *public test file*.
+                    # Playwright error messages, locations and stacks are never emitted.
+                    if not passed and isinstance(results, list) and results:
+                        first = results[0]
+                        errors = first.get("errors") if isinstance(first, dict) else None
+                        if isinstance(errors, list):
+                            for error in errors:
+                                if not isinstance(error, dict):
+                                    continue
+                                location = error.get("location")
+                                if not isinstance(location, dict):
+                                    continue
+                                raw_file = location.get("file")
+                                line = location.get("line")
+                                label = next(
+                                    (code for name, code in SAFE_PROVIDER_LABELS if name == title),
+                                    None,
+                                )
+                                if (
+                                    isinstance(raw_file, str)
+                                    and isinstance(label, str)
+                                    and raw_file.replace("\\", "/").rsplit("/", 1)[-1]
+                                    == SAFE_PROVIDER_TEST_FILES[label]
+                                    and type(line) is int
+                                    and 1 <= line <= 800
+                                ):
+                                    outcome += f"@line{line}"
+                                    break
+                    observations[title].append(outcome)
+            visit(suite.get("suites"))
+
+    visit(report.get("suites"))
+    parts = []
+    for title, label in SAFE_PROVIDER_LABELS:
+        seen = observations[title]
+        outcome = seen[0] if len(seen) == 1 else ("not_run" if not seen else "incomplete")
+        parts.append(f"{label}={outcome}")
+    return "M1 provider outcomes (private diagnostics withheld): " + ", ".join(parts)
+
+
 def run_provider(env: Mapping[str, str], *, head: str) -> None:
     preflight(env, head)
     require_clean_checkout()
@@ -210,8 +306,9 @@ def run_provider(env: Mapping[str, str], *, head: str) -> None:
     # untracked executable inputs without changing HEAD.
     require_clean_checkout()
     if result.returncode != 0:
-        # NEVER print Playwright stdout/stderr: these can contain passwords,
-        # credentials, cookies, tokens, URLs or private browser state.
+        # The report itself can contain secrets. Print only fixed test IDs and
+        # enumerated statuses parsed from its in-memory JSON, never raw content.
+        print(sanitized_provider_outcomes(result.stdout), file=sys.stderr)
         raise AcceptanceBlocked("Real-provider suite failed; private diagnostics withheld")
     try:
         report = json.loads(result.stdout)
@@ -355,6 +452,32 @@ def self_test() -> None:
             raise AssertionError("Untracked executable input was accepted")
         untracked.unlink()
         require_clean_checkout(checkout)
+    # The failure summary may publish only predefined identifiers/status labels,
+    # even if Playwright's raw JSON contains private provider response material.
+    assert "report unavailable" in sanitized_provider_outcomes(b"not JSON: hidden-password")
+    fail_report = test_report(sorted(REQUIRED_TEST_TITLES))
+    failed_spec = next(
+        spec for spec in fail_report["suites"][0]["specs"]
+        if spec["title"] == SAFE_PROVIDER_LABELS[0][0]
+    )
+    failed_spec["tests"][0]["results"][0]["status"] = "failed"
+    failed_spec["tests"][0]["results"][0]["errors"] = [{
+        "message": "PRIVATE_PASSWORD_DO_NOT_PRINT",
+        "stack": "SECRET_SESSION_TOKEN_DO_NOT_PRINT",
+        "location": {
+            "file": "/private/SENSITIVE_ROOT/auth-provider.smoke.spec.ts",
+            "line": 42,
+        },
+    }]
+    summary = sanitized_provider_outcomes(json.dumps(fail_report).encode("utf-8"))
+    assert "AUTH_SESSION=not_passed@line42" in summary
+    assert "WORKSPACE_UI=passed" in summary
+    assert "SENSITIVE_ROOT" not in summary
+    assert "TENANT_API=passed" in summary
+    assert "PRIVATE_PASSWORD" not in summary and "SECRET_SESSION_TOKEN" not in summary
+    for title, label in SAFE_PROVIDER_LABELS:
+        assert title not in summary and label in summary
+
     print("PASS: M1 acceptance gate negative controls (no provider connection).")
 
 
