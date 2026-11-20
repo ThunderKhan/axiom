@@ -301,6 +301,8 @@ def self_test() -> None:
     with TemporaryDirectory(prefix="axiom-m1-checkout-") as directory:
         checkout = Path(directory)
         fixture = checkout / "provider.spec.ts"
+        ignored_declaration = checkout / "next-env.d.ts"
+        (checkout / ".gitignore").write_text("next-env.d.ts\\n", encoding="utf-8")
         fixture.write_text("original test\\n", encoding="utf-8")
 
         def git(*args: str) -> None:
@@ -310,7 +312,7 @@ def self_test() -> None:
             )
 
         git("init", "--quiet")
-        git("add", "provider.spec.ts")
+        git("add", "provider.spec.ts", ".gitignore")
         git("-c", "user.name=Acceptance Fixture",
             "-c", "user.email=fixture@example.test", "commit", "--quiet",
             "-m", "test clean checkout")
@@ -324,6 +326,11 @@ def self_test() -> None:
         else:
             raise AssertionError("Changed tracked provider test was accepted")
         fixture.write_text("original test\\n", encoding="utf-8")
+
+        # The Next-generated, type-only stub may be rewritten without dirtying
+        # executable source, while an untracked test file must still fail closed.
+        ignored_declaration.write_text("generated Next types\\n", encoding="utf-8")
+        require_clean_checkout(checkout)
 
         untracked = checkout / "injected-provider-test.ts"
         untracked.write_text("untracked code\\n", encoding="utf-8")
@@ -350,8 +357,15 @@ def main() -> int:
             print("NOT VERIFIED: provider/DB execution; preflight alone is not acceptance.")
         elif mode == "run":
             run_provider(os.environ, head=verified_head())
+        elif mode == "verify-checkout":
+            head = verified_head()
+            require_clean_checkout()
+            print(f"PASS: clean tracked and ordinarily untracked checkout at SHA {head}.")
         else:
-            print("Usage: python ci/m1_acceptance.py self-test|preflight|run", file=sys.stderr)
+            print(
+                "Usage: python ci/m1_acceptance.py self-test|preflight|run|verify-checkout",
+                file=sys.stderr,
+            )
             return 2
         return 0
     except AcceptanceBlocked as exc:
