@@ -302,7 +302,7 @@ def self_test() -> None:
         checkout = Path(directory)
         fixture = checkout / "provider.spec.ts"
         ignored_declaration = checkout / "next-env.d.ts"
-        (checkout / ".gitignore").write_text("next-env.d.ts\\n", encoding="utf-8")
+        (checkout / ".gitignore").write_text("next-env.d.ts" + chr(10), encoding="utf-8")
         fixture.write_text("original test\\n", encoding="utf-8")
 
         def git(*args: str) -> None:
@@ -329,7 +329,7 @@ def self_test() -> None:
 
         # The Next-generated, type-only stub may be rewritten without dirtying
         # executable source, while an untracked test file must still fail closed.
-        ignored_declaration.write_text("generated Next types\\n", encoding="utf-8")
+        ignored_declaration.write_text("generated Next types", encoding="utf-8")
         require_clean_checkout(checkout)
 
         untracked = checkout / "injected-provider-test.ts"
