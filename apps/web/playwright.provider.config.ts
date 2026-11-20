@@ -16,6 +16,10 @@ if (missing.length > 0) {
 }
 
 const workspaceEnabled = process.env.E2E_WORKSPACE_API_READY === "1";
+const acceptanceEnabled = process.env.E2E_M1_ACCEPTANCE === "1";
+if (acceptanceEnabled && !workspaceEnabled) {
+  throw new Error("M1 acceptance must include real workspace provider tests");
+}
 if (workspaceEnabled) {
   const requiredForWorkspaces = [
     "NEXT_PUBLIC_API_BASE_URL",
@@ -38,9 +42,15 @@ const baseURL = "http://127.0.0.1:" + port;
 
 export default defineConfig({
   testDir: "./tests",
-  testMatch: workspaceEnabled
-    ? ["auth-provider.smoke.spec.ts", "workspace-provider.smoke.spec.ts"]
-    : "auth-provider.smoke.spec.ts",
+  testMatch: acceptanceEnabled
+    ? [
+        "auth-provider.smoke.spec.ts",
+        "workspace-provider.smoke.spec.ts",
+        "m1-acceptance.provider.spec.ts",
+      ]
+    : workspaceEnabled
+      ? ["auth-provider.smoke.spec.ts", "workspace-provider.smoke.spec.ts"]
+      : "auth-provider.smoke.spec.ts",
   forbidOnly: true,
   retries: 0,
   fullyParallel: false,
