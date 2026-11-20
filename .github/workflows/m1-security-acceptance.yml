@@ -97,6 +97,8 @@ jobs:
         run: |
           npm ci --no-audit --no-fund
           npx playwright install --with-deps chromium
+      - name: Reject installer or database-test changes before provider access
+        run: python ci/m1_acceptance.py verify-checkout
       - name: Execute genuine provider/browser/API/database acceptance without leaking output
         shell: bash
         run: |
