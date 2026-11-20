@@ -6,15 +6,19 @@
 **Starting main:** a55e0d1a2735d9b0669e78791840c2386002d20e
 **Recorded:** 20 November 2026. This is an execution ledger, not an approved new design.
 
-All six prerequisite stages and the acceptance harness (PR #28) are now
+All six prerequisite stages and the acceptance harness (PR #28) have
 merged into main. Existing tests use real isolated PostgreSQL 17 with
-locally signed asymmetric fixture JWTs; the real Supabase Auth provider
-was NOT run. Current connected Supabase inventory confirms a Free-tier
-organization with its two active project slots occupied by unrelated
-projects, not an authorized Axiom-specific nonproduction test project.
-Do not pause or reuse unrelated projects, incur charges or claim provider
-evidence without explicit authorization. Issue #29 tracks the remaining
-security acceptance gate; Milestone 1 is not complete.
+locally signed asymmetric fixture JWTs; the real Supabase Auth suite
+was NOT run. On 20 November 2026 the owner explicitly authorized
+pausing only VSPH Supabase to free a zero-cost project slot. VSPH is
+verified INACTIVE (paused, not deleted). A new Axiom-only Free-tier
+project, `axiom-m1-auth-test` in ap-south-1, was created after a
+**$0/month project quote**, verified ACTIVE_HEALTHY with an empty
+public schema, an enabled modern publishable key and no Supabase
+security-advisor findings. No paid services were enabled.
+Real Auth users/JWKS signing validation, GitHub protected environment,
+provider execution, hosted database parity and qualified human review
+remain outstanding in issue #29. Milestone 1 remains incomplete.
 
 ## Requirements, implementation and actual evidence boundary
 
@@ -30,7 +34,7 @@ security acceptance gate; Milestone 1 is not complete.
 | M1-API-02 | 25h idempotency, concurrency/replay/restart/expiry and optimistic PATCH | Isolated PG tested; real uncertain network bounds NOT VERIFIED |
 | M1-WEB-01 | Next.js auth and workspace picker, 12 prior anonymous Chromium tests | Live A1/A2/B1 ordinary login NOT VERIFIED |
 | M1-WEB-02 | Browser subject-scoped preference and stale async generation | Deterministic tests only; live cross-account timing NOT VERIFIED |
-| M1-OPS-01 | Runtime/role configuration and separate protected provider harness | Nonproduction Auth, managed pooler, HTTPS and evaluator NOT VERIFIED |
+| M1-OPS-01 | Runtime/role configuration and separate protected provider harness | Dedicated nonproduction Free project exists; genuine Auth users/signing, protected CI environment, hosted pooler, HTTPS and evaluator NOT VERIFIED |
 | M1-CI-01 | Three existing required jobs and M0 real Docker/browser smoke | PR #28 head 89d8953 and merge commit 93794ba: required checks PASS; real provider gate NOT RUN |
 
 The new provider-only Playwright test obtains **two independent genuine
@@ -86,7 +90,53 @@ A successful manual technical gate **still does not prove** hosted
 PostgreSQL parity, deployed HTTPS/HSTS, global token revocation,
 backup/restore, or qualified human release approval. Do not rename,
 disable or bypass the original three required Quality/Governance jobs.
-If no test Supabase project is authorized, the gate stays BLOCKED.
+The dedicated test project now exists, but the gate stays BLOCKED
+until genuine Auth identities, verified asymmetric signing, protected CI,
+hosted database parity and qualified human security approval are documented.
+
+## Dedicated zero-cost Supabase project — remaining operator setup
+
+Project `axiom-m1-auth-test` (Mumbai, ap-south-1) is active in the
+existing Free-tier organization, quoted at **$0/month**. The owner
+explicitly authorized pausing `vsph-supabase`, which was verified
+INACTIVE. VSPH-dependent services are unavailable until it is
+restored; no database was deleted. Do not restore it without confirming
+a free active-project slot or accidentally enabling a paid plan.
+
+The available connectors do not support creating ordinary Auth users,
+configuring hosted Auth signing/redirect settings, setting GitHub
+Environment secrets/reviewers or dispatching the manual workflow.
+An authorized operator must complete these steps:
+
+1. Under the new Supabase project's **Authentication** settings, check
+   that the active signing key is **ES256 or RS256**, verify its public
+   `/auth/v1/.well-known/jwks.json` endpoint and allow both
+   `http://127.0.0.1:3000/auth/callback` and
+   `http://127.0.0.1:3101/auth/callback` as redirect URLs.
+   Create two distinct, ordinary **confirmed** Auth test accounts
+   via Supabase Auth (not direct inserts into `auth.users`).
+2. In GitHub Settings → Environments, create `m1-nonproduction`
+   with required independent reviewers. Set environment variables
+   `M1_NONPRODUCTION_SUPABASE_URL`,
+   `M1_NONPRODUCTION_ISSUER` and
+   `M1_NONPRODUCTION_JWKS_URL` for the same Axiom test project.
+   The last two are the Supabase origin plus `/auth/v1` and
+   `/auth/v1/.well-known/jwks.json` respectively.
+3. Set environment secrets `M1_NONPRODUCTION_PUBLISHABLE_KEY`,
+   `M1_NONPRODUCTION_EMAIL_A`, `M1_NONPRODUCTION_PASSWORD_A`,
+   `M1_NONPRODUCTION_EMAIL_B`, `M1_NONPRODUCTION_PASSWORD_B`.
+   Optional evaluator email and password must be paired. Never
+   commit credentials or paste them in issues, logs or chat.
+4. From the repository Actions tab, manually dispatch **M1
+   real-provider security acceptance** against the exact reviewed
+   40-character `main` SHA and explicitly confirm nonproduction
+   authorization. Obtain required environment approval.
+5. Save redacted passing evidence and separately verify hosted
+   nonproduction Supabase database/migration/RLS/pooler parity;
+   the workflow's PostgreSQL database is an isolated CI container.
+   Obtain qualified human security signoff before M1 acceptance.
+
+No live provider or hosted DB migration test has yet run.
 
 ## Windows PowerShell — reproducible local testing
 
@@ -104,7 +154,8 @@ Existing clone:
     cd D:\Projects\axiom
     git status
     git fetch origin
-    git switch --track origin/feat/20-m1-e2e-security-acceptance
+    git switch main
+    git pull --ff-only origin main
     docker compose -f infra/compose.db-test.yml up -d --wait
     cd services/api
     uv sync --locked --all-groups
@@ -114,11 +165,8 @@ Existing clone:
     uv run --frozen python scripts/run_db_integration.py
 
 Fresh clone: git clone https://github.com/ThunderKhan/axiom.git,
-cd axiom, then git switch --track origin/feat/20-m1-e2e-security-acceptance.
-If this local feature branch already exists, preserve local changes,
-git switch feat/20-m1-e2e-security-acceptance, then
-git pull --ff-only origin feat/20-m1-e2e-security-acceptance.
-Do not reset or force discard uncommitted work.
+cd axiom; its default branch is main. Preserve local changes before
+switching branches; do not reset or force discard uncommitted work.
 
 ### Terminal B — FastAPI with normal runtime role ONLY
 
@@ -302,9 +350,11 @@ accepted merely because local-only checks pass.
 merged into main at [93794bae](https://github.com/ThunderKhan/axiom/commit/93794bae7de4c030b512e9bf3692258926372241).
 [Post-merge Quality](https://github.com/ThunderKhan/axiom/actions/runs/44655822190)
 and [Governance](https://github.com/ThunderKhan/axiom/actions/runs/44655822283)
-checks PASS. No authorized dedicated Axiom nonproduction Supabase project,
-real-provider execution evidence or hosted database/pooler parity exists.
-The provider gate is not required by default branch protection yet.
+checks PASS. A dedicated nonproduction Axiom Supabase project now exists
+on the Free tier, but genuine provider test execution, hosted RLS/pooler
+parity and qualified human signoff are NOT VERIFIED. The protected GitHub
+environment is not configured and provider acceptance is not currently a
+default branch-protection requirement.
 Managed deployment security and qualified human security approval remain
 pending. Issue #20 was closed administratively; [issue #29](https://github.com/ThunderKhan/axiom/issues/29)
 remains OPEN under Milestone 1. No production deployment, migration or M2
