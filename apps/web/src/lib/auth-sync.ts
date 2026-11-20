@@ -55,7 +55,9 @@ export function notifyLocalSignOutStarted(): void {
   window.dispatchEvent(new Event(LOCAL_SIGNOUT_STARTED));
 }
 
-export function subscribeToLocalSignOutStarted(callback: () => void): () => void {
+export function subscribeToLocalSignOutStarted(
+  callback: () => void,
+): () => void {
   window.addEventListener(LOCAL_SIGNOUT_STARTED, callback);
   return () => window.removeEventListener(LOCAL_SIGNOUT_STARTED, callback);
 }
