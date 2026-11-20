@@ -14,13 +14,16 @@ import {
   type Workspace,
 } from "../../lib/workspace-contract";
 import {
+  availablePreferenceStorage,
   chooseRequestedWorkspace,
   makeCreateAttempt,
   mergeOwnedWorkspaces,
   readWorkspacePreference,
   RequestGeneration,
   saveWorkspacePreference,
+  uncertainCreationState,
   type CreateAttempt,
+  type UncertainCreation,
 } from "../../lib/workspace-context";
 import {
   createWorkspaceApi,
@@ -50,7 +53,7 @@ type View =
 type CreateState =
   | { kind: "idle" }
   | { kind: "submitting" }
-  | { kind: "uncertain"; name: string }
+  | UncertainCreation
   | { kind: "error"; message: string };
 
 const emptyForm: CreateState = { kind: "idle" };
@@ -73,8 +76,8 @@ function errorText(error: unknown): string {
   return "Workspace information could not be verified. No private data was restored.";
 }
 
-function sessionPreference(): Storage {
-  return window.sessionStorage;
+function sessionPreference(): Storage | null {
+  return availablePreferenceStorage(() => window.sessionStorage);
 }
 
 /** A signed-in Supabase session is not proof of active application/workspace access. */
@@ -174,6 +177,19 @@ export function WorkspaceManager({
 
   const load = useCallback(
     async (requested: string | null = null) => {
+      const pending = pendingCreation.current;
+      if (pending) {
+        // Revalidation can interrupt an already-committed POST. Keep the
+        // original guard until the owner verifies the actual workspace list.
+        createRequest.current?.abort();
+        createRequest.current = null;
+        const uncertain = uncertainCreationState(pending, subject, false);
+        if (uncertain) setCreation(uncertain);
+        else {
+          pendingCreation.current = null;
+          setCreation(emptyForm);
+        }
+      }
       const seq = generation.current.next();
       activeRequest.current?.abort();
       const controller = new AbortController();
@@ -210,6 +226,12 @@ export function WorkspaceManager({
             "The requested workspace is invalid. Choose a workspace below.";
         }
         if (!generation.current.current(seq)) return;
+        const inspected = uncertainCreationState(
+          pendingCreation.current,
+          subject,
+          true,
+        );
+        if (inspected) setCreation(inspected);
         const nextItems = selected
           ? mergeOwnedWorkspaces(items, selected)
           : items;
@@ -256,7 +278,7 @@ export function WorkspaceManager({
       currentGeneration.next();
       activeRequest.current?.abort();
       createRequest.current?.abort();
-      pendingCreation.current = null;
+      // Do not discard a pending attempt on a same-user URL/query change.
       unsubscribe();
       listener.subscription.unsubscribe();
     };
@@ -366,7 +388,11 @@ export function WorkspaceManager({
       if (isUncertainCreateFailure(error)) {
         // The request may have committed despite a lost response. No automatic
         // retry is safe without a deployment-verified network delivery bound.
-        setCreation({ kind: "uncertain", name: attempt.name });
+        setCreation({
+          kind: "uncertain",
+          name: attempt.name,
+          inspected: false,
+        });
       } else {
         pendingCreation.current = null;
         if (
@@ -553,16 +579,18 @@ export function WorkspaceManager({
                   >
                     Inspect owned workspaces
                   </button>
-                  <button
-                    type="button"
-                    className="workspace-secondary"
-                    onClick={() => {
-                      pendingCreation.current = null;
-                      setCreation(emptyForm);
-                    }}
-                  >
-                    I have inspected; allow a separate new attempt
-                  </button>
+                  {creation.inspected && (
+                    <button
+                      type="button"
+                      className="workspace-secondary"
+                      onClick={() => {
+                        pendingCreation.current = null;
+                        setCreation(emptyForm);
+                      }}
+                    >
+                      I have inspected; allow a separate new attempt
+                    </button>
+                  )}
                 </div>
               )}
               <button
