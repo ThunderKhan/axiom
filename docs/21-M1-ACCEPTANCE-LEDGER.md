@@ -54,17 +54,21 @@ Local DB evidence does not establish managed Supabase pooler parity.
 - python ci/m1_acceptance.py self-test: offline proof that absent
   credentials, mismatched SHA, unapproved test mode, changed issuer,
   same identity, missing/failed/skipped report and forged test counts
-  do not pass. Required by existing Quality / repository integrity job.
+  do not pass. Also uses a disposable Git repository to prove clean
+  checkouts pass while tracked edits and untracked executable inputs
+  fail closed. Required by existing Quality / repository integrity job.
 - python ci/m1_acceptance.py preflight: exact 40-hex commit, canonical
   HTTPS Supabase project/issuer/JWKS, publishable browser key, two
   ordinary distinct test accounts, explicit authorized nonproduction
   marker, loopback FastAPI and required DB. This is a prerequisite,
   **not evidence of successful provider interaction**.
-- python ci/m1_acceptance.py run: probes actual API database_verified
-  readiness, runs all three named provider Playwright tests with no
-  media/traces/HTML, captures credential-bearing output **in memory
-  only**, rejects skipped/failed/unreported tests, and re-verifies
-  exact SHA. Only sanitized PASS count/SHA are printed.
+- python ci/m1_acceptance.py run: rejects any tracked or untracked
+  Git checkout changes before and after the provider suite (ignored
+  local secrets/dependency installations are not enumerated), probes
+  actual API database_verified readiness, runs all three named provider
+  Playwright tests with no media/traces/HTML, captures credential-bearing
+  output **in memory only**, rejects skipped/failed/unreported tests,
+  and re-verifies exact SHA. Only sanitized PASS count/SHA are printed.
 - .github/workflows/m1-security-acceptance.yml: MANUAL
   workflow_dispatch with owner-controlled, reviewer-protected
   m1-nonproduction GitHub Environment, explicit consent input,
