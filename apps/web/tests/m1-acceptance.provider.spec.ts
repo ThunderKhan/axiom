@@ -313,9 +313,9 @@ test("M1 genuine JWT and two-user cross-tenant API acceptance", async ({
       await expect(ownerB.page.locator(".workspace-active")).toContainText(
         "Nothing selected.",
       );
-      await expect(
-        ownerB.page.locator(".workspace-active strong"),
-      ).toHaveCount(0);
+      await expect(ownerB.page.locator(".workspace-active strong")).toHaveCount(
+        0,
+      );
       await expect(
         ownerB.page.getByRole("button", { name: new RegExp(nameA1) }),
       ).toHaveCount(0);
