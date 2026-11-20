@@ -107,6 +107,26 @@ jobs:
             api_pid=$!
             trap 'kill "$api_pid" 2>/dev/null || true' EXIT
             cd ../..
+            # The server may need several seconds for imports and DB checks.
+            # Do not misreport a slow startup as failed provider acceptance.
+            ready=0
+            for attempt in $(seq 1 50); do
+              if ! kill -0 "$api_pid" 2>/dev/null; then
+                echo "M1 ACCEPTANCE BLOCKED: FastAPI exited before readiness" >&2
+                exit 1
+              fi
+              if curl --fail --silent --max-time 2 \
+                http://127.0.0.1:8000/api/v1/health/ready >/dev/null 2>&1; then
+                ready=1
+                break
+              fi
+              sleep 1
+            done
+            if [ "$ready" != 1 ]; then
+              echo "M1 ACCEPTANCE BLOCKED: FastAPI readiness timed out" >&2
+              exit 1
+            fi
+            # The runner independently verifies the ready response's DB state.
             python ci/m1_acceptance.py run
           )
       - name: Record sanitized technical evidence (not M1 release approval)
