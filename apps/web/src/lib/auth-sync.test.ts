@@ -23,7 +23,39 @@ describe("M1 H3 cross-tab sign-out messages", () => {
       assert.equal(isSignOutMessage(invalid), false);
     }
   });
+  it("delivers to another tab without redirecting subscribers in the sending tab", async () => {
+    // Separate module instances emulate separate browser-tab sender identities.
+    const otherTab = (await import(
+      new URL("./auth-sync.ts?different-tab", import.meta.url).href
+    )) as typeof import("./auth-sync.ts");
+    let sameTabNotifications = 0;
+    const unsubscribeSender = subscribeToSignOut(() => {
+      sameTabNotifications++;
+    });
+    try {
+      await new Promise<void>((resolve, reject) => {
+        let stop = () => {};
+        const timeout = setTimeout(() => {
+          stop();
+          reject(new Error("Cross-tab logout notification was not delivered"));
+        }, 3000);
+        stop = otherTab.subscribeToSignOut(() => {
+          clearTimeout(timeout);
+          stop();
+          resolve();
+        });
+        broadcastSignOut();
+      });
+      assert.equal(sameTabNotifications, 0);
+    } finally {
+      unsubscribeSender();
+    }
+  });
+
   it("delivers a cross-tab logout event without any credentials", async () => {
+    const otherTab = (await import(
+      new URL("./auth-sync.ts?another-tab", import.meta.url).href
+    )) as typeof import("./auth-sync.ts");
     await new Promise<void>((resolve, reject) => {
       let stop = () => {};
       const timeout = setTimeout(() => {
@@ -35,7 +67,7 @@ describe("M1 H3 cross-tab sign-out messages", () => {
         stop();
         resolve();
       });
-      broadcastSignOut();
+      otherTab.broadcastSignOut();
     });
   });
 });
