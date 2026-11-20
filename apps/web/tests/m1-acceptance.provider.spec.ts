@@ -32,14 +32,24 @@ test("M1 genuine JWT and two-user cross-tenant API acceptance", async ({
   const a = await browser.newContext();
   const b = await browser.newContext();
   const readJWT = (part: string): Record<string, unknown> => {
-    const decoded: unknown = JSON.parse(Buffer.from(part, "base64url").toString("utf8"));
-    if (typeof decoded !== "object" || decoded === null || Array.isArray(decoded)) {
+    const decoded: unknown = JSON.parse(
+      Buffer.from(part, "base64url").toString("utf8"),
+    );
+    if (
+      typeof decoded !== "object" ||
+      decoded === null ||
+      Array.isArray(decoded)
+    ) {
       throw new Error("Provider JWT has an invalid structure");
     }
     return decoded as Record<string, unknown>;
   };
 
-  async function login(context: BrowserContext, email: string, password: string) {
+  async function login(
+    context: BrowserContext,
+    email: string,
+    password: string,
+  ) {
     const page = await context.newPage();
     await page.goto("/");
     await page.getByRole("link", { name: "Sign in to Axiom" }).click();
@@ -82,7 +92,10 @@ test("M1 genuine JWT and two-user cross-tenant API acceptance", async ({
     return { page, jwt, subject: claims.sub as string };
   }
 
-  async function createThroughBrowser(page: Page, name: string): Promise<string> {
+  async function createThroughBrowser(
+    page: Page,
+    name: string,
+  ): Promise<string> {
     await page.getByLabel("Product or idea name").fill(name);
     await page.getByRole("button", { name: "Create workspace" }).click();
     await expect(page.locator(".workspace-active strong")).toHaveText(name);
@@ -91,7 +104,11 @@ test("M1 genuine JWT and two-user cross-tenant API acceptance", async ({
     return value!;
   }
 
-  async function assertError(response: Awaited<ReturnType<typeof request.get>>, status: number, code: string) {
+  async function assertError(
+    response: Awaited<ReturnType<typeof request.get>>,
+    status: number,
+    code: string,
+  ) {
     expect(response.status()).toBe(status);
     const body = await response.json();
     expect(Object.keys(body).sort()).toEqual(["error", "request_id"]);
@@ -137,17 +154,30 @@ test("M1 genuine JWT and two-user cross-tenant API acceptance", async ({
       const listB = await apiB.get("/api/v1/workspaces?limit=100");
       expect(listA.status()).toBe(200);
       expect(listB.status()).toBe(200);
-      const itemsA: Array<{ id: string; name: string }> = (await listA.json()).items;
-      const itemsB: Array<{ id: string; name: string }> = (await listB.json()).items;
-      expect(itemsA.map((item) => item.id)).toEqual(expect.arrayContaining([a1, a2]));
+      type WorkspaceListItem = { id: string; name: string };
+      const itemsA: WorkspaceListItem[] = (await listA.json()).items;
+      const itemsB: WorkspaceListItem[] = (await listB.json()).items;
+      expect(itemsA.map((item) => item.id)).toEqual(
+        expect.arrayContaining([a1, a2]),
+      );
       expect(itemsB.map((item) => item.id)).toContain(b1);
       expect(itemsA.some((item) => item.id === b1)).toBe(false);
-      expect(itemsB.some((item) => item.id === a1 || item.id === a2)).toBe(false);
+      expect(
+        itemsB.some((item) => item.id === a1 || item.id === a2),
+      ).toBe(false);
 
-      await ownerA.page.getByRole("button", { name: new RegExp(nameA1) }).click();
-      await expect(ownerA.page.locator(".workspace-active strong")).toHaveText(nameA1);
-      await ownerA.page.getByRole("button", { name: new RegExp(nameA2) }).click();
-      await expect(ownerA.page.locator(".workspace-active strong")).toHaveText(nameA2);
+      await ownerA.page
+        .getByRole("button", { name: new RegExp(nameA1) })
+        .click();
+      await expect(
+        ownerA.page.locator(".workspace-active strong"),
+      ).toHaveText(nameA1);
+      await ownerA.page
+        .getByRole("button", { name: new RegExp(nameA2) })
+        .click();
+      await expect(
+        ownerA.page.locator(".workspace-active strong"),
+      ).toHaveText(nameA2);
       await ownerA.page.reload();
       await expect(ownerA.page.locator(".workspace-active strong")).toHaveText(nameA2);
       await expect(ownerA.page).toHaveURL(new RegExp("workspace=" + a2));
@@ -228,7 +258,11 @@ test("M1 genuine JWT and two-user cross-tenant API acceptance", async ({
         "IDEMPOTENCY_CONFLICT",
       );
 
-      await assertError(await anonymous.get("/api/v1/me"), 401, "AUTH_REQUIRED");
+      await assertError(
+        await anonymous.get("/api/v1/me"),
+        401,
+        "AUTH_REQUIRED",
+      );
       await assertError(
         await anonymous.get("/api/v1/me", {
           headers: { Authorization: "Bearer malformed" },
@@ -239,10 +273,16 @@ test("M1 genuine JWT and two-user cross-tenant API acceptance", async ({
       // Same claims but a changed signature must not authenticate.
       const segments = ownerA.jwt.split(".");
       const signature = segments[2];
-      const tampered = signature.slice(0, -2) + (signature.at(-2) === "A" ? "B" : "A") + signature.at(-1);
+      const tampered =
+        signature.slice(0, -2) +
+        (signature.at(-2) === "A" ? "B" : "A") +
+        signature.at(-1);
       await assertError(
         await anonymous.get("/api/v1/me", {
-          headers: { Authorization: "Bearer " + segments[0] + "." + segments[1] + "." + tampered },
+          headers: {
+            Authorization:
+              "Bearer " + segments[0] + "." + segments[1] + "." + tampered,
+          },
         }),
         401,
         "AUTH_REQUIRED",
@@ -253,7 +293,9 @@ test("M1 genuine JWT and two-user cross-tenant API acceptance", async ({
       await expect(
         ownerB.page.getByRole("heading", { name: "Work from the right context." }),
       ).toBeVisible();
-      await expect(ownerB.page.locator(".workspace-active strong")).not.toHaveText(nameA1);
+      await expect(
+        ownerB.page.locator(".workspace-active strong"),
+      ).not.toHaveText(nameA1);
       await expect(
         ownerB.page.getByRole("button", { name: new RegExp(nameA1) }),
       ).toHaveCount(0);
@@ -264,11 +306,15 @@ test("M1 genuine JWT and two-user cross-tenant API acceptance", async ({
           () => document.documentElement.scrollWidth <= window.innerWidth,
         ),
       ).toBe(true);
-      const ownButton = ownerB.page.getByRole("button", { name: new RegExp(nameB1) });
+      const ownButton = ownerB.page.getByRole("button", {
+        name: new RegExp(nameB1),
+      });
       await ownButton.focus();
       await expect(ownButton).toBeFocused();
       await ownerB.page.keyboard.press("Enter");
-      await expect(ownerB.page.locator(".workspace-active strong")).toHaveText(nameB1);
+      await expect(
+        ownerB.page.locator(".workspace-active strong"),
+      ).toHaveText(nameB1);
 
       // Cookie removal simulates missing browser session state, not revoked JWTs.
       await a.clearCookies();
@@ -282,7 +328,9 @@ test("M1 genuine JWT and two-user cross-tenant API acceptance", async ({
       await expect(ownerB.page).toHaveURL(/\/login\?notice=signed-out/);
       await ownerB.page.goto("/app?workspace=" + a1);
       await expect(ownerB.page).toHaveURL(/\/login\?/);
-      await expect(ownerB.page.locator(".workspace-active strong")).toHaveCount(0);
+      await expect(
+        ownerB.page.locator(".workspace-active strong"),
+      ).toHaveCount(0);
 
       // An evaluator must use the same ordinary flow; optional when provisioned.
       const evaluatorEmail = process.env.E2E_SUPABASE_EVALUATOR_EMAIL;
@@ -290,7 +338,11 @@ test("M1 genuine JWT and two-user cross-tenant API acceptance", async ({
       if (evaluatorEmail && evaluatorPassword) {
         const evaluatorContext = await browser.newContext();
         try {
-          const evaluator = await login(evaluatorContext, evaluatorEmail, evaluatorPassword);
+          const evaluator = await login(
+            evaluatorContext,
+            evaluatorEmail,
+            evaluatorPassword,
+          );
           await evaluator.page.getByRole("button", { name: "Sign out" }).click();
           await expect(evaluator.page).toHaveURL(/\/login\?notice=signed-out/);
         } finally {
