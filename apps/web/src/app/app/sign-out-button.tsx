@@ -2,7 +2,10 @@
 
 import { useFormStatus } from "react-dom";
 import { clearBrowserPrivateState } from "../../lib/private-state";
-import { broadcastSignOut, notifyLocalSignOutStarted } from "../../lib/auth-sync";
+import {
+  broadcastSignOut,
+  notifyLocalSignOutStarted,
+} from "../../lib/auth-sync";
 import { signOut } from "../login/actions";
 
 function Button() {
