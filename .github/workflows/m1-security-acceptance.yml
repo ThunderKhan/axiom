@@ -108,7 +108,11 @@ jobs:
             unset AXIOM_MIGRATION_DATABASE_URL
             unset AXIOM_TEST_RUNTIME_DATABASE_URL
             cd services/api
-            uv run --frozen python -m app.api >/dev/null 2>&1 &
+            # Never pass the administrator/migrator test URLs into the API runtime.
+            env -u AXIOM_TEST_ADMIN_DATABASE_URL \
+              -u AXIOM_MIGRATION_DATABASE_URL \
+              -u AXIOM_TEST_RUNTIME_DATABASE_URL \
+              uv run --frozen python -m app.api >/dev/null 2>&1 &
             api_pid=$!
             trap 'kill "$api_pid" 2>/dev/null || true' EXIT
             cd ../..
