@@ -42,6 +42,9 @@ jobs:
     timeout-minutes: 40
     env:
       CI: 'true'
+      # PR checkouts use GitHub's synthetic merge SHA; pushes use the head SHA.
+      # This is the exact commit actions/checkout checks out in this job.
+      M1_ACCEPTANCE_HEAD_SHA: ${{ github.sha }}
       PIP_DISABLE_PIP_VERSION_CHECK: '1'
     services:
       postgres:
