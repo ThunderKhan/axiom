@@ -2,6 +2,7 @@
 
 import { useFormStatus } from "react-dom";
 import { clearBrowserPrivateState } from "../../lib/private-state";
+import { broadcastSignOut } from "../../lib/auth-sync";
 import { signOut } from "../login/actions";
 
 function Button() {
@@ -18,9 +19,9 @@ export function SignOutButton() {
     <form
       action={signOut}
       onSubmit={() => {
-        // Do not broadcast before the server action completes: the initiating
-        // tab subscribes too and would navigate to session-expired prematurely.
         clearBrowserPrivateState();
+        // Same-tab auth listeners ignore this tagged cross-tab notification.
+        broadcastSignOut();
       }}
     >
       <Button />
