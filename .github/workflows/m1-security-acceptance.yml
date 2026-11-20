@@ -102,6 +102,11 @@ jobs:
         run: |
           set -euo pipefail
           (
+            # The isolated migration check is finished. These privileged
+            # variables must not reach the API or its browser test child.
+            unset AXIOM_TEST_ADMIN_DATABASE_URL
+            unset AXIOM_MIGRATION_DATABASE_URL
+            unset AXIOM_TEST_RUNTIME_DATABASE_URL
             cd services/api
             uv run --frozen python -m app.api >/dev/null 2>&1 &
             api_pid=$!
