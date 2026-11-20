@@ -1,0 +1,28 @@
+name: Temporary M1.7 exact formatter
+on:
+  pull_request:
+    types: [opened, synchronize]
+permissions:
+  contents: read
+jobs:
+  formatter:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v7
+        with:
+          node-version: '22'
+      - name: Emit pinned Prettier canonical source
+        working-directory: apps/web
+        run: |
+          npm ci --ignore-scripts
+          node <<'NODE'
+          const { execFileSync } = require("node:child_process");
+          const fs = require("node:fs");
+          const file = "tests/m1-acceptance.provider.spec.ts";
+          execFileSync("node", ["node_modules/prettier/bin/prettier.cjs", "--write", file], { stdio:"inherit" });
+          const data = Buffer.from(fs.readFileSync(file,"utf8"),"utf8").toString("base64");
+          for (let i=0;i<data.length;i+=3000) console.log("AXIOM_FORMAT_CHUNK:"+data.slice(i,i+3000));
+          NODE
