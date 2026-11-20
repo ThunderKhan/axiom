@@ -88,7 +88,10 @@ describe("H2/H3 per-subject preferences and async context", () => {
     assert.equal(readWorkspacePreference(unavailable, a), null);
     assert.doesNotThrow(() => saveWorkspacePreference(unavailable, a, one));
     const storage = mockStorage();
-    assert.equal(availablePreferenceStorage(() => storage), storage);
+    assert.equal(
+      availablePreferenceStorage(() => storage),
+      storage,
+    );
   });
 
   it("keeps an interrupted write blocked until an authorized list is inspected", () => {

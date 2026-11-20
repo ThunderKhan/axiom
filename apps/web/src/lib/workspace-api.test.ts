@@ -243,7 +243,10 @@ describe("FastAPI-only authenticated workspace client", () => {
       async () => Response.json(workspace),
     );
     assert.equal((await api.read(id.toUpperCase(), controller.signal)).id, id);
-    await assert.rejects(api.read(a, controller.signal), InvalidWorkspaceResponse);
+    await assert.rejects(
+      api.read(a, controller.signal),
+      InvalidWorkspaceResponse,
+    );
   });
 
   it("refuses to send when the session or public API origin is not usable", async () => {
