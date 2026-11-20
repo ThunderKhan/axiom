@@ -307,9 +307,15 @@ test("M1 genuine JWT and two-user cross-tenant API acceptance", async ({
       ).toBeVisible();
       // A workspace was renamed earlier; any name containing A's original
       // identifier must still be rejected from B's private detail view.
+      // A foreign deep link is refused. No active workspace name is rendered;
+      // asserting a missing <strong> has no text would time out rather than
+      // establish isolation. Verify the safe empty state and absence instead.
+      await expect(ownerB.page.locator(".workspace-active")).toContainText(
+        "Nothing selected.",
+      );
       await expect(
         ownerB.page.locator(".workspace-active strong"),
-      ).not.toContainText(nameA1);
+      ).toHaveCount(0);
       await expect(
         ownerB.page.getByRole("button", { name: new RegExp(nameA1) }),
       ).toHaveCount(0);
