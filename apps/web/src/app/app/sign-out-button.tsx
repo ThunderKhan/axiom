@@ -2,7 +2,7 @@
 
 import { useFormStatus } from "react-dom";
 import { clearBrowserPrivateState } from "../../lib/private-state";
-import { broadcastSignOut } from "../../lib/auth-sync";
+import { broadcastSignOut, notifyLocalSignOutStarted } from "../../lib/auth-sync";
 import { signOut } from "../login/actions";
 
 function Button() {
@@ -19,8 +19,10 @@ export function SignOutButton() {
     <form
       action={signOut}
       onSubmit={() => {
+        // Abort same-tab workspace work now; leave the normal server-action
+        // redirect alone. Only other tabs should navigate on the broadcast.
+        notifyLocalSignOutStarted();
         clearBrowserPrivateState();
-        // Same-tab auth listeners ignore this tagged cross-tab notification.
         broadcastSignOut();
       }}
     >
