@@ -106,18 +106,24 @@ export function createWorkspaceApi(
         0,
       );
     }
-    let payload: unknown;
+    if (!response.ok) {
+      // Malformed proxy errors must not erase the HTTP authorization status.
+      let errorBody: unknown = null;
+      try {
+        errorBody = await response.json();
+      } catch {
+        // Keep status (401/403/503 etc.) even when no JSON error is available.
+      }
+      throw new WorkspaceApiError(
+        readErrorCode(errorBody, response.status),
+        response.status,
+      );
+    }
     try {
-      payload = await response.json();
+      return await response.json();
     } catch {
       throw new InvalidWorkspaceResponse();
     }
-    if (!response.ok)
-      throw new WorkspaceApiError(
-        readErrorCode(payload, response.status),
-        response.status,
-      );
-    return payload;
   }
 
   return {
@@ -157,7 +163,8 @@ export function createWorkspaceApi(
           signal,
         ),
       );
-      if (item.id !== id) throw new InvalidWorkspaceResponse();
+      if (item.id.toLowerCase() !== id.toLowerCase())
+        throw new InvalidWorkspaceResponse();
       return item;
     },
     async create(

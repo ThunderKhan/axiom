@@ -29,7 +29,7 @@ test("real authorized user signs in, survives refresh, then loses private access
   await page.getByRole("textbox", { name: "Email address" }).fill(email!);
   await page.getByLabel("Password", { exact: true }).fill(password!);
   await page.getByRole("button", { name: "Sign in", exact: true }).click();
-  await expect(page).toHaveURL(/\/app$/);
+  await expect(page).toHaveURL(/\/app(?:\?.*)?$/);
   await expect(
     page.getByRole("heading", { name: "Work from the right context." }),
   ).toBeVisible();

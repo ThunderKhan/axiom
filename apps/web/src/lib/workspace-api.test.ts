@@ -211,6 +211,41 @@ describe("FastAPI-only authenticated workspace client", () => {
     );
   });
 
+  it("keeps 401 authorization failures when error bodies are empty", async () => {
+    const api = createWorkspaceApi(
+      "https://api.example.test",
+      a,
+      async () => token,
+      async () => new Response("", { status: 401 }),
+    );
+    await assert.rejects(
+      api.create("First", "originalKey189", controller.signal),
+      (error: unknown) =>
+        error instanceof WorkspaceApiError &&
+        error.status === 401 &&
+        error.code === "AUTH_REQUIRED" &&
+        !isUncertainCreateFailure(error),
+    );
+    await assert.rejects(
+      api.bootstrap(controller.signal),
+      (error: unknown) =>
+        error instanceof WorkspaceApiError &&
+        error.status === 401 &&
+        error.code === "AUTH_REQUIRED",
+    );
+  });
+
+  it("accepts uppercase deep-link UUIDs but rejects a different workspace", async () => {
+    const api = createWorkspaceApi(
+      "https://api.example.test",
+      a,
+      async () => token,
+      async () => Response.json(workspace),
+    );
+    assert.equal((await api.read(id.toUpperCase(), controller.signal)).id, id);
+    await assert.rejects(api.read(a, controller.signal), InvalidWorkspaceResponse);
+  });
+
   it("refuses to send when the session or public API origin is not usable", async () => {
     const noApi = createWorkspaceApi("", a, async () => token);
     await assert.rejects(noApi.list(controller.signal), WorkspaceApiError);
