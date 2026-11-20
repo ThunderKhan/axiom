@@ -1,0 +1,28 @@
+name: Temporary M1.7 formatter diagnostic
+on:
+  pull_request:
+    types: [opened, synchronize]
+permissions:
+  contents: read
+jobs:
+  formatting-diagnostic:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v7
+        with:
+          node-version: '22'
+      - name: Emit formatting output for the one changed browser test
+        working-directory: apps/web
+        run: |
+          npm ci --ignore-scripts
+          node <<'NODE'
+          const { execFileSync } = require("node:child_process");
+          const fs = require("node:fs");
+          const path = "tests/m1-acceptance.provider.spec.ts";
+          execFileSync("node", ["node_modules/prettier/bin/prettier.cjs", "--write", path], {stdio:"inherit"});
+          const encoded = Buffer.from(fs.readFileSync(path,"utf8"),"utf8").toString("base64");
+          for (let i=0;i<encoded.length;i+=3000) console.log("AXIOM_FORMAT_CHUNK:"+encoded.slice(i,i+3000));
+          NODE
