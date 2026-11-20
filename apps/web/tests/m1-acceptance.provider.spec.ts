@@ -1,4 +1,4 @@
-import { expect, test, type BrowserContext, type Page, type PlaywrightTestArgs } from "@playwright/test";
+import { expect, test, type BrowserContext, type Page } from "@playwright/test";
 
 /**
  * M1 H4 / AUTH-01: genuine, explicitly authorized nonproduction provider test.
