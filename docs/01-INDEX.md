@@ -66,6 +66,14 @@ Only documents explicitly approved by the project owner belong in this section. 
 
 **Current access requirement:** The product's entry flow is **landing page → login page → authenticated web app**. Fellowship evaluators receive credentials privately and use the normal application. A public guest sandbox or judge-only demo page is **not** required.
 
+## Milestone 1 execution evidence (not a new design approval)
+
+| Document | Purpose | Status |
+|---|---|---|
+| [21-M1-ACCEPTANCE-LEDGER.md](21-M1-ACCEPTANCE-LEDGER.md) | Issue #20 requirement/evidence matrix, fail-closed provider verification, operational limitations and Windows PowerShell handoff | **Execution ledger — acceptance BLOCKED pending actual authorized provider testing** |
+
+This does not supersede the approved M1 contract or authorize a release.
+
 ## Technical Designs Still In Review and Active Decision Register
 
 **Draft** implementation designs still require final schema, model or selected infrastructure evidence. **The complete Edviro-source-derived design direction and ten-value Axiom palette are now approved**; the landing page should be built by reusing and adapting the clone's actual code. **Scoped approval** of MCP, source policies and capacity design does not certify their provider integration or tested performance. The active decision register is a governance record, not blanket approval of open ADRs.

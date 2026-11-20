@@ -1,0 +1,148 @@
+name: M1 real-provider security acceptance
+
+# Manual only: never run unreviewed PR code automatically with provider secrets.
+# Requires an owner-protected m1-nonproduction environment.
+on:
+  workflow_dispatch:
+    inputs:
+      expected_head_sha:
+        description: "Exact reviewed 40-character PR HEAD SHA to test"
+        required: true
+        type: string
+      nonproduction_authorized:
+        description: "I confirm an isolated authorized nonproduction Supabase project"
+        required: true
+        default: false
+        type: boolean
+
+permissions:
+  contents: read
+
+concurrency:
+  group: m1-provider-security-acceptance
+  cancel-in-progress: false
+
+jobs:
+  provider:
+    name: M1 / real-provider security acceptance
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    environment: m1-nonproduction
+    # Set this environment's required human reviewers BEFORE adding test secrets.
+    # No pull_request trigger, artifacts, HTML reports, traces, or media.
+    env:
+      CI: 'true'
+      M1_ACCEPTANCE_HEAD_SHA: ${{ inputs.expected_head_sha }}
+      M1_ACCEPTANCE_NONPRODUCTION: ${{ inputs.nonproduction_authorized && 'I_CONFIRM_NONPRODUCTION' || 'NOT_AUTHORIZED' }}
+      E2E_M1_ACCEPTANCE: '1'
+      E2E_WORKSPACE_API_READY: '1'
+      NEXT_PUBLIC_SUPABASE_URL: ${{ vars.M1_NONPRODUCTION_SUPABASE_URL }}
+      NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.M1_NONPRODUCTION_PUBLISHABLE_KEY }}
+      M1_ACCEPTANCE_ISSUER: ${{ vars.M1_NONPRODUCTION_ISSUER }}
+      AXIOM_AUTH_ISSUER: ${{ vars.M1_NONPRODUCTION_ISSUER }}
+      AXIOM_AUTH_JWKS_URL: ${{ vars.M1_NONPRODUCTION_JWKS_URL }}
+      AXIOM_AUTH_AUDIENCE: authenticated
+      NEXT_PUBLIC_API_BASE_URL: http://127.0.0.1:8000
+      AXIOM_DATABASE_URL: postgresql://axiom_runtime@127.0.0.1:55432/axiom_test
+      AXIOM_DATABASE_REQUIRED: 'true'
+      AXIOM_CORS_ORIGINS: http://127.0.0.1:3101
+      AXIOM_TEST_ADMIN_DATABASE_URL: postgresql://postgres@127.0.0.1:55432/axiom_test
+      AXIOM_MIGRATION_DATABASE_URL: postgresql://axiom_migrator@127.0.0.1:55432/axiom_test
+      AXIOM_TEST_RUNTIME_DATABASE_URL: postgresql://axiom_runtime@127.0.0.1:55432/axiom_test
+      E2E_SUPABASE_EMAIL: ${{ secrets.M1_NONPRODUCTION_EMAIL_A }}
+      E2E_SUPABASE_PASSWORD: ${{ secrets.M1_NONPRODUCTION_PASSWORD_A }}
+      E2E_SUPABASE_SECOND_EMAIL: ${{ secrets.M1_NONPRODUCTION_EMAIL_B }}
+      E2E_SUPABASE_SECOND_PASSWORD: ${{ secrets.M1_NONPRODUCTION_PASSWORD_B }}
+      E2E_SUPABASE_EVALUATOR_EMAIL: ${{ secrets.M1_NONPRODUCTION_EVALUATOR_EMAIL }}
+      E2E_SUPABASE_EVALUATOR_PASSWORD: ${{ secrets.M1_NONPRODUCTION_EVALUATOR_PASSWORD }}
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_DB: axiom_test
+          # Disposable CI-only container. Never enable trust in hosted databases.
+          POSTGRES_HOST_AUTH_METHOD: trust
+        ports:
+          - 55432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d axiom_test"
+          --health-interval 3s
+          --health-timeout 2s
+          --health-retries 15
+    steps:
+      - name: Checkout exact reviewed SHA without persisted credentials
+        uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - name: Install Python 3.12
+        uses: actions/setup-python@v7
+        with:
+          python-version: '3.12'
+      - name: Install Node.js 22
+        uses: actions/setup-node@v7
+        with:
+          node-version: '22'
+      - name: Fail closed before network access or secret-bearing tests
+        run: python ci/m1_acceptance.py preflight
+      - name: Install locked backend dependencies
+        working-directory: services/api
+        run: |
+          python -m pip install --disable-pip-version-check uv==0.10.0
+          uv sync --locked --all-groups
+      - name: Mandatory isolated real PostgreSQL migration and RLS security suite
+        working-directory: services/api
+        run: uv run --frozen python scripts/run_db_integration.py
+      - name: Install locked frontend and Chromium
+        working-directory: apps/web
+        run: |
+          npm ci --no-audit --no-fund
+          npx playwright install --with-deps chromium
+      - name: Execute genuine provider/browser/API/database acceptance without leaking output
+        shell: bash
+        run: |
+          set -euo pipefail
+          (
+            # The isolated migration check is finished. These privileged
+            # variables must not reach the API or its browser test child.
+            unset AXIOM_TEST_ADMIN_DATABASE_URL
+            unset AXIOM_MIGRATION_DATABASE_URL
+            unset AXIOM_TEST_RUNTIME_DATABASE_URL
+            cd services/api
+            # Never pass the administrator/migrator test URLs into the API runtime.
+            env -u AXIOM_TEST_ADMIN_DATABASE_URL \
+              -u AXIOM_MIGRATION_DATABASE_URL \
+              -u AXIOM_TEST_RUNTIME_DATABASE_URL \
+              uv run --frozen python -m app.api >/dev/null 2>&1 &
+            api_pid=$!
+            trap 'kill "$api_pid" 2>/dev/null || true' EXIT
+            cd ../..
+            # The server may need several seconds for imports and DB checks.
+            # Do not misreport a slow startup as failed provider acceptance.
+            ready=0
+            for attempt in $(seq 1 50); do
+              if ! kill -0 "$api_pid" 2>/dev/null; then
+                echo "M1 ACCEPTANCE BLOCKED: FastAPI exited before readiness" >&2
+                exit 1
+              fi
+              if curl --fail --silent --max-time 2 \
+                http://127.0.0.1:8000/api/v1/health/ready >/dev/null 2>&1; then
+                ready=1
+                break
+              fi
+              sleep 1
+            done
+            if [ "$ready" != 1 ]; then
+              echo "M1 ACCEPTANCE BLOCKED: FastAPI readiness timed out" >&2
+              exit 1
+            fi
+            # The runner independently verifies the ready response's DB state.
+            python ci/m1_acceptance.py run
+          )
+      - name: Record sanitized technical evidence (not M1 release approval)
+        if: success()
+        shell: bash
+        run: |
+          echo "### M1 nonproduction technical acceptance" >> "$GITHUB_STEP_SUMMARY"
+          echo "Tested commit: $GITHUB_SHA" >> "$GITHUB_STEP_SUMMARY"
+          echo "Executed: actual Supabase Auth, browser, FastAPI and isolated PostgreSQL/RLS." >> "$GITHUB_STEP_SUMMARY"
+          echo "NOT VERIFIED here: managed Supabase database/pooler parity, production HTTPS, qualified human security review." >> "$GITHUB_STEP_SUMMARY"

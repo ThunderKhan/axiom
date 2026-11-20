@@ -11,6 +11,7 @@ export default defineConfig({
   testIgnore: [
     "auth-provider.smoke.spec.ts",
     "workspace-provider.smoke.spec.ts",
+    "m1-acceptance.provider.spec.ts",
   ],
   fullyParallel: true,
   forbidOnly: Boolean(process.env.CI),
