@@ -62,6 +62,13 @@ def verified_head() -> str:
     return value
 
 
+def require_expected_head(env: Mapping[str, str], head: str) -> None:
+    """Reject a clean checkout at a different commit than the intended revision."""
+    expected = env.get("M1_ACCEPTANCE_HEAD_SHA", "")
+    if not SHA_PATTERN.fullmatch(expected) or head != expected:
+        raise AcceptanceBlocked("Tested commit does not equal the requested full PR head SHA")
+
+
 def require_clean_checkout(root: Path = ROOT) -> None:
     """Do not attribute provider execution to a commit with modified or untracked source."""
     try:
@@ -86,9 +93,7 @@ def preflight(env: Mapping[str, str], head: str) -> None:
     missing = [name for name in REQUIRED if not env.get(name)]
     if missing:
         raise AcceptanceBlocked("Missing required environment variable names: " + ", ".join(missing))
-    expected = env["M1_ACCEPTANCE_HEAD_SHA"]
-    if not SHA_PATTERN.fullmatch(expected) or head != expected:
-        raise AcceptanceBlocked("Tested commit does not equal the requested full PR head SHA")
+    require_expected_head(env, head)
     url = urlsplit(env["NEXT_PUBLIC_SUPABASE_URL"])
     if (
         url.scheme != "https"
@@ -244,6 +249,14 @@ def self_test() -> None:
         }
     )
     preflight(env, "a" * 40)
+    require_expected_head(env, "a" * 40)
+    for wrong in ("", "bad-sha", "b" * 40):
+        try:
+            require_expected_head({**env, "M1_ACCEPTANCE_HEAD_SHA": wrong}, "a" * 40)
+        except AcceptanceBlocked:
+            pass
+        else:
+            raise AssertionError("Missing, malformed or mismatched checkpoint SHA was accepted")
     cases = [
         ({k: v for k, v in env.items() if k != "E2E_SUPABASE_PASSWORD"}, "a" * 40),
         (env, "b" * 40),
@@ -359,6 +372,7 @@ def main() -> int:
             run_provider(os.environ, head=verified_head())
         elif mode == "verify-checkout":
             head = verified_head()
+            require_expected_head(os.environ, head)
             require_clean_checkout()
             print(f"PASS: clean tracked and ordinarily untracked checkout at SHA {head}.")
         else:
