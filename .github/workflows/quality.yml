@@ -81,39 +81,11 @@ jobs:
           AXIOM_MIGRATION_DATABASE_URL: postgresql://axiom_migrator@127.0.0.1:55432/axiom_test
           AXIOM_TEST_RUNTIME_DATABASE_URL: postgresql://axiom_runtime@127.0.0.1:55432/axiom_test
         run: uv run --frozen python scripts/run_db_integration.py
-      # Temporary, non-secret diagnostic for issue #29: identify checkout
-      # mutations after installs and isolated DB tests. Never print untracked
-      # paths; they may contain private names even in otherwise public CI.
-      - name: Diagnose provider checkout integrity without provider credentials
-        shell: bash
-        run: |
-          python - <<'PY'
-          import hashlib
-          import os
-          from pathlib import PurePath
-          import subprocess
-          output = subprocess.run(
-              ["git", "status", "--porcelain=v1", "-z", "--untracked-files=all",
-               "--ignore-submodules=none"],
-              check=True, capture_output=True,
-          ).stdout
-          records = [x for x in output.split(b"\0") if x]
-          print(f"M1_DIAGNOSTIC status_records={len(records)}")
-          for record in records:
-              if len(record) < 4:
-                  raise SystemExit("M1_DIAGNOSTIC malformed git status")
-              status = record[:2].decode("ascii", errors="replace")
-              path = record[3:]
-              if status == "??":
-                  name = PurePath(os.fsdecode(path)).suffix.lower()
-                  digest = hashlib.sha256(path).hexdigest()[:12]
-                  print(f"M1_DIAGNOSTIC untracked suffix={name!r} path_sha256_12={digest}")
-              else:
-                  # Tracked paths are already public repository metadata.
-                  tracked = os.fsdecode(path).encode("unicode_escape").decode("ascii")[:200]
-                  print(f"M1_DIAGNOSTIC tracked status={status!r} path={tracked!r}")
-          PY
+      - name: Verify clean checkout after dependency and isolated RLS checks
+        run: python ci/m1_acceptance.py verify-checkout
       - name: Mandatory Docker build, Compose and API/worker smoke
         run: python ci/docker_smoke.py
       - name: Mandatory M0 real web, browser, API and worker integration smoke
         run: python ci/integrated_smoke.py
+      - name: Verify clean checkout after real frontend and API smoke
+        run: python ci/m1_acceptance.py verify-checkout
