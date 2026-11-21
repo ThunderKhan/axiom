@@ -71,6 +71,7 @@ Only documents explicitly approved by the project owner belong in this section. 
 | Document | Purpose | Status |
 |---|---|---|
 | [21-M1-ACCEPTANCE-LEDGER.md](21-M1-ACCEPTANCE-LEDGER.md) | M1 acceptance evidence ledger; [real-provider run #44850664291](https://github.com/ThunderKhan/axiom/actions/runs/44850664291) passed on main `9e72d887`; [issue #29](https://github.com/ThunderKhan/axiom/issues/29) tracks remaining hosted DB/pooler parity and qualified human signoff | **Genuine Auth/browser/API acceptance PASS; hosted M1 schema absent; M1 signoff BLOCKED** |
+| [22-M1-HOSTED-DATABASE-PARITY-RUNBOOK.md](22-M1-HOSTED-DATABASE-PARITY-RUNBOOK.md) | Gated nonproduction role, actual Alembic migration, least-privileged runtime and Supavisor session/transaction tests; security review and release evidence | **OPERATOR PROCEDURE — NOT EXECUTED; no hosted parity claim** |
 
 This does not supersede the approved M1 contract or authorize a release.
 
