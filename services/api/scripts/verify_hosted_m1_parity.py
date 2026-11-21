@@ -26,7 +26,7 @@ CONFIRMATION = "I_CONFIRM_AXIOM_M1_NONPRODUCTION"
 URL_ENV = "AXIOM_HOSTED_TEST_DATABASE_URL"
 MODE_ENV = "AXIOM_HOSTED_TEST_POOLER_MODE"
 EXPECTED_HOST_ENV = "AXIOM_HOSTED_TEST_APPROVED_POOLER_HOST"
-HOST_PATTERN = re.compile(r"aws-[0-9]+-ap-south-1\\.pooler\\.supabase\\.com\\Z")
+HOST_PATTERN = re.compile(r"aws-[0-9]+-ap-south-1\.pooler\.supabase\.com\Z")
 
 
 class HostedParityBlocked(Exception):
