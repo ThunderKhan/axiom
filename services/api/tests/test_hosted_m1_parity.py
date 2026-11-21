@@ -5,17 +5,20 @@ These deliberately never open a socket, create a role or touch hosted state.
 
 from __future__ import annotations
 
+from importlib import import_module
+
 import pytest
 
-from scripts.verify_hosted_m1_parity import (
-    CONFIRMATION,
-    EXPECTED_HOST_ENV,
-    MODE_ENV,
-    PROJECT_REF,
-    URL_ENV,
-    HostedParityBlocked,
-    validate_target,
-)
+# The verifier is an operator script, not a shipped app package.
+# Load it as a module so offline tests exercise its real public entrypoints.
+parity = import_module("scripts.verify_hosted_m1_parity")
+CONFIRMATION = parity.CONFIRMATION
+EXPECTED_HOST_ENV = parity.EXPECTED_HOST_ENV
+MODE_ENV = parity.MODE_ENV
+PROJECT_REF = parity.PROJECT_REF
+URL_ENV = parity.URL_ENV
+HostedParityBlocked = parity.HostedParityBlocked
+validate_target = parity.validate_target
 
 
 RUNTIME_NAME = f"axiom_runtime.{PROJECT_REF}"
