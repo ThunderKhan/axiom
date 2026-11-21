@@ -73,10 +73,12 @@ export async function signOut(): Promise<never> {
     try {
       const supabase = await createServerAuthClient(true);
       const result = await supabase.auth.signOut();
-      if (result.error) remoteUnconfirmed = true;
-      // Ensure this browser loses its session even if provider-wide revoke failed.
-      const local = await supabase.auth.signOut({ scope: "local" });
-      if (local.error) remoteUnconfirmed = true;
+      if (result.error) {
+        remoteUnconfirmed = true;
+        // A successful global sign-out already clears the local session.
+        // Retry local-only cleanup only when global revocation was unconfirmed.
+        await supabase.auth.signOut({ scope: "local" });
+      }
     } catch {
       remoteUnconfirmed = true;
     }

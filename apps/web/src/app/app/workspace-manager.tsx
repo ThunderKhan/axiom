@@ -31,7 +31,10 @@ import {
   WorkspaceApiError,
 } from "../../lib/workspace-api";
 import { clearBrowserPrivateState } from "../../lib/private-state";
-import { subscribeToSignOut } from "../../lib/auth-sync";
+import {
+  subscribeToLocalSignOutStarted,
+  subscribeToSignOut,
+} from "../../lib/auth-sync";
 import { publicApiBaseUrl } from "../../lib/public-api";
 import { createBrowserAuthClient } from "../../lib/supabase/browser";
 
@@ -264,6 +267,7 @@ export function WorkspaceManager({
       if (!disposed) void load(requestedWorkspace);
     });
     const unsubscribe = subscribeToSignOut(invalidate);
+    const unsubscribeLocal = subscribeToLocalSignOutStarted(invalidate);
     const { data: listener } = auth.auth.onAuthStateChange((event, session) => {
       if (
         event === "SIGNED_OUT" ||
@@ -280,6 +284,7 @@ export function WorkspaceManager({
       createRequest.current?.abort();
       // Do not discard a pending attempt on a same-user URL/query change.
       unsubscribe();
+      unsubscribeLocal();
       listener.subscription.unsubscribe();
     };
   }, [auth, invalidate, load, requestedWorkspace, subject]);
