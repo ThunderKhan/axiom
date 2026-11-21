@@ -22,20 +22,31 @@ def _pg_url(raw: str) -> str:
     return parsed.set(drivername="postgresql+psycopg").render_as_string(hide_password=False)
 
 
+def _pg_connect_args(raw: str) -> dict[str, int | None]:
+    """Supavisor transaction mode does not support server prepared statements."""
+    url = make_url(raw)
+    args: dict[str, int | None] = {"connect_timeout": 3}
+    if url.port == 6543 and (url.host or "").endswith(".pooler.supabase.com"):
+        # Psycopg 3 otherwise auto-prepares frequently executed queries.
+        args["prepare_threshold"] = None
+    return args
+
+
 class Database:
     """One engine per API process, one short transaction per operation, never a global session."""
 
     def __init__(self, settings: RuntimeSettings) -> None:
         if settings.database_url is None:
             raise ValueError("A runtime database connection is required")
+        raw = settings.database_url.get_secret_value()
         self.engine: Engine = create_engine(
-            _pg_url(settings.database_url.get_secret_value()),
+            _pg_url(raw),
             pool_size=4,
             max_overflow=0,
             pool_timeout=2,
             pool_pre_ping=True,
             pool_reset_on_return="rollback",
-            connect_args={"connect_timeout": 3},
+            connect_args=_pg_connect_args(raw),
         )
 
     @contextmanager
