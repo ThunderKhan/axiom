@@ -19,7 +19,7 @@ let acknowledgedSignOutAt = 0;
 function storedSignOutAt(): number | null {
   try {
     const value = window.localStorage.getItem(SIGNOUT_MARKER_KEY);
-    if (!value || !/^\\d{13}$/.test(value)) return null;
+    if (!value || !/^\d{13}$/.test(value)) return null;
     const at = Number(value);
     return Number.isSafeInteger(at) ? at : null;
   } catch {
