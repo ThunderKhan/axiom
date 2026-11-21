@@ -203,7 +203,11 @@ describe("M1 H3 cross-tab sign-out messages", () => {
       unsubscribeLate = lateTab.subscribeToSignOut(() => {
         invalidations++;
       });
-      assert.equal(invalidations, 1, "Late-mounted tab must catch missed logout");
+      assert.equal(
+        invalidations,
+        1,
+        "Late-mounted tab must catch missed logout",
+      );
       unsubscribeLate();
       unsubscribeLate = () => {};
 
