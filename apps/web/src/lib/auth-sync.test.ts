@@ -145,6 +145,7 @@ describe("M1 H3 cross-tab sign-out messages", () => {
     const stop = subscribeToSignOut(() => {
       notices++;
     });
+    let reconnect = () => {};
     try {
       broadcastSignOut(); // This tab is signing out; ignore its own string.
       await new Promise((resolve) => setTimeout(resolve, 30));
@@ -156,7 +157,7 @@ describe("M1 H3 cross-tab sign-out messages", () => {
           3000,
         );
         // The existing subscription must still receive subsequent sign-outs.
-        const reconnect = subscribeToSignOut(() => {
+        reconnect = subscribeToSignOut(() => {
           clearTimeout(timeout);
           reconnect();
           resolve();
@@ -164,6 +165,8 @@ describe("M1 H3 cross-tab sign-out messages", () => {
         legacyTab.postMessage(SIGNED_OUT_MESSAGE);
       });
     } finally {
+      // Close the reconnect channel on timeout/rejection as well as success.
+      reconnect();
       stop();
       legacyTab.close();
     }
