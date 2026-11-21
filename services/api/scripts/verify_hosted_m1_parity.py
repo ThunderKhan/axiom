@@ -8,8 +8,10 @@ mocked database, privileged role or production project are accepted.
 from __future__ import annotations
 
 import os
+import re
 import sys
 from collections.abc import Mapping
+from pathlib import Path
 from uuid import uuid4
 
 from sqlalchemy import text
@@ -23,6 +25,8 @@ PROJECT_REF = "zmlgecokvbjdpuclvlqe"
 CONFIRMATION = "I_CONFIRM_AXIOM_M1_NONPRODUCTION"
 URL_ENV = "AXIOM_HOSTED_TEST_DATABASE_URL"
 MODE_ENV = "AXIOM_HOSTED_TEST_POOLER_MODE"
+EXPECTED_HOST_ENV = "AXIOM_HOSTED_TEST_APPROVED_POOLER_HOST"
+HOST_PATTERN = re.compile(r"aws-[0-9]+-ap-south-1\\.pooler\\.supabase\\.com\\Z")
 
 
 class HostedParityBlocked(Exception):
@@ -36,6 +40,9 @@ def validate_target(env: Mapping[str, str]) -> tuple[str, str]:
         raise HostedParityBlocked("libpq routing overrides are not allowed")
     raw = env.get(URL_ENV, "")
     mode = env.get(MODE_ENV, "")
+    expected_host = env.get(EXPECTED_HOST_ENV, "")
+    if not HOST_PATTERN.fullmatch(expected_host):
+        raise HostedParityBlocked("unapproved nonproduction Supavisor endpoint")
     if mode not in {"session", "transaction"}:
         raise HostedParityBlocked("explicit Supavisor pooler mode required")
     try:
@@ -49,10 +56,22 @@ def validate_target(env: Mapping[str, str]) -> tuple[str, str]:
         or url.username != f"axiom_runtime.{PROJECT_REF}"
         or url.port != (5432 if mode == "session" else 6543)
         or not isinstance(url.host, str)
-        or not url.host.endswith(".pooler.supabase.com")
-        or url.host == ".pooler.supabase.com"
-        or url.query.get("sslmode") not in {"require", "verify-ca", "verify-full"}
-        or any(key not in {"sslmode"} for key in url.query)
+        # Reject SQLAlchemy/libpq multi-host syntax *before* making a connection.
+        # Only the exact operator-approved Supavisor hostname is permitted.
+        or url.host != expected_host
+        or not HOST_PATTERN.fullmatch(url.host)
+        or url.query.get("sslmode") != "verify-full"
+        or any(key not in {"sslmode", "sslrootcert"} for key in url.query)
+        or (
+            "sslrootcert" in url.query
+            and (
+                not isinstance(url.query["sslrootcert"], str)
+                or (
+                    url.query["sslrootcert"] != "system"
+                    and not Path(url.query["sslrootcert"]).is_absolute()
+                )
+            )
+        )
     ):
         raise HostedParityBlocked("refused non-allowlisted pooler runtime URL")
     return raw, mode
