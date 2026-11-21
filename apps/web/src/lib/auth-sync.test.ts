@@ -4,6 +4,7 @@ import {
   AUTH_CHANNEL,
   LOCAL_SIGNOUT_STARTED,
   SIGNED_OUT_MESSAGE,
+  SIGNOUT_MARKER_KEY,
   broadcastSignOut,
   isSignOutMessage,
   notifyLocalSignOutStarted,
@@ -169,6 +170,102 @@ describe("M1 H3 cross-tab sign-out messages", () => {
       reconnect();
       stop();
       legacyTab.close();
+    }
+  });
+
+  it("invalidates a pre-existing document even if its listener mounts after logout", async () => {
+    // A server-rendered tab can display its private heading before React
+    // hydrates. A transient BroadcastChannel notification alone is not enough.
+    const previous = Object.getOwnPropertyDescriptor(globalThis, "window");
+    const values = new Map<string, string>();
+    const fakeWindow = Object.assign(new EventTarget(), {
+      localStorage: {
+        getItem: (key: string) => values.get(key) ?? null,
+        setItem: (key: string, value: string) => {
+          values.set(key, value);
+        },
+      },
+      performance: { timeOrigin: Date.now() - 60_000 },
+    });
+    Object.defineProperty(globalThis, "window", {
+      configurable: true,
+      value: fakeWindow,
+    });
+    let unsubscribeLate = () => {};
+    let unsubscribeFresh = () => {};
+    try {
+      const lateTab = (await import(
+        new URL("./auth-sync.ts?late-hydration", import.meta.url).href
+      )) as typeof import("./auth-sync.ts");
+      broadcastSignOut();
+      assert.match(values.get(SIGNOUT_MARKER_KEY) ?? "", /^\\d{13}$/);
+      let invalidations = 0;
+      unsubscribeLate = lateTab.subscribeToSignOut(() => {
+        invalidations++;
+      });
+      assert.equal(invalidations, 1, "Late-mounted tab must catch missed logout");
+      unsubscribeLate();
+      unsubscribeLate = () => {};
+
+      // A new login in the same document explicitly acknowledges that event.
+      lateTab.resetLocalSignOutStarted();
+      unsubscribeFresh = lateTab.subscribeToSignOut(() => {
+        invalidations++;
+      });
+      assert.equal(invalidations, 1, "Old logout must not cancel a new login");
+      unsubscribeFresh();
+      unsubscribeFresh = () => {};
+
+      // A later logout must be delivered to this newly signed-in tab.
+      fakeWindow.performance.timeOrigin = Date.now() - 60_000;
+      const next = Date.now() + 1;
+      values.set(SIGNOUT_MARKER_KEY, String(next));
+      unsubscribeFresh = lateTab.subscribeToSignOut(() => {
+        invalidations++;
+      });
+      assert.equal(invalidations, 2, "New logout must invalidate after login");
+    } finally {
+      unsubscribeLate();
+      unsubscribeFresh();
+      if (previous) Object.defineProperty(globalThis, "window", previous);
+      else Reflect.deleteProperty(globalThis, "window");
+    }
+  });
+
+  it("observes a storage event when a second tab misses BroadcastChannel", async () => {
+    const previous = Object.getOwnPropertyDescriptor(globalThis, "window");
+    const values = new Map<string, string>();
+    const fakeWindow = Object.assign(new EventTarget(), {
+      localStorage: {
+        getItem: (key: string) => values.get(key) ?? null,
+        setItem: (key: string, value: string) => values.set(key, value),
+      },
+      performance: { timeOrigin: Date.now() - 60_000 },
+    });
+    Object.defineProperty(globalThis, "window", {
+      configurable: true,
+      value: fakeWindow,
+    });
+    let stop = () => {};
+    try {
+      const otherTab = (await import(
+        new URL("./auth-sync.ts?storage-fallback", import.meta.url).href
+      )) as typeof import("./auth-sync.ts");
+      let invalidations = 0;
+      stop = otherTab.subscribeToSignOut(() => {
+        invalidations++;
+      });
+      values.set(SIGNOUT_MARKER_KEY, String(Date.now()));
+      const event = new Event("storage");
+      Object.defineProperty(event, "key", { value: SIGNOUT_MARKER_KEY });
+      fakeWindow.dispatchEvent(event);
+      assert.equal(invalidations, 1);
+      fakeWindow.dispatchEvent(event);
+      assert.equal(invalidations, 1, "Duplicate events must not repeat logout");
+    } finally {
+      stop();
+      if (previous) Object.defineProperty(globalThis, "window", previous);
+      else Reflect.deleteProperty(globalThis, "window");
     }
   });
 
