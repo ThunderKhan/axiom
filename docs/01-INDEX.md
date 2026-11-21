@@ -2,7 +2,7 @@
 
 **Project:** Axiom  
 **Repository:** [ThunderKhan/axiom](https://github.com/ThunderKhan/axiom)  
-**Last updated:** 20 November 2026 (M1 implementation harness merged; live provider acceptance remains blocked)  
+**Last updated:** 21 November 2026 (real-provider acceptance PASS; hosted database/RLS parity and human security signoff still blocked)  
 **Purpose:** Canonical map of product specifications, architectural decisions, and documentation authority for Axiom.
 
 ## Repository-Level Engineering Instructions
@@ -70,7 +70,7 @@ Only documents explicitly approved by the project owner belong in this section. 
 
 | Document | Purpose | Status |
 |---|---|---|
-| [21-M1-ACCEPTANCE-LEDGER.md](21-M1-ACCEPTANCE-LEDGER.md) | M1 acceptance evidence ledger and provider test procedures; [PR #28](https://github.com/ThunderKhan/axiom/pull/28) merged, [issue #20](https://github.com/ThunderKhan/axiom/issues/20) closed administratively; [issue #29](https://github.com/ThunderKhan/axiom/issues/29) tracks provider/hosted-DB/human review gates | **Execution ledger — acceptance BLOCKED; no live-provider evidence** |
+| [21-M1-ACCEPTANCE-LEDGER.md](21-M1-ACCEPTANCE-LEDGER.md) | M1 acceptance evidence ledger; [real-provider run #44850664291](https://github.com/ThunderKhan/axiom/actions/runs/44850664291) passed on main `9e72d887`; [issue #29](https://github.com/ThunderKhan/axiom/issues/29) tracks remaining hosted DB/pooler parity and qualified human signoff | **Genuine Auth/browser/API acceptance PASS; hosted M1 schema absent; M1 signoff BLOCKED** |
 
 This does not supersede the approved M1 contract or authorize a release.
 

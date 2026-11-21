@@ -4,38 +4,107 @@
 **Outstanding gate:** [#29](https://github.com/ThunderKhan/axiom/issues/29) | **Merged implementation:** [#20 / PR #28](https://github.com/ThunderKhan/axiom/pull/28) | **Work package:** WP-02 | **Governing policy:** AGENTS.md 1.1, ENGINEERING.md 1.1
 **Approved authority:** docs/20-M1-AUTH-WORKSPACE-CONTRACT.md, ADR-002
 **Starting main:** a55e0d1a2735d9b0669e78791840c2386002d20e
-**Recorded:** 20 November 2026. This is an execution ledger, not an approved new design.
+**Recorded:** 20 November 2026; **updated with live evidence:** 21 November 2026. This is an execution ledger, not an approved new design.
 
 All six prerequisite stages and the acceptance harness (PR #28) have
-merged into main. Existing tests use real isolated PostgreSQL 17 with
-locally signed asymmetric fixture JWTs; the real Supabase Auth suite
-was NOT run. On 20 November 2026 the owner explicitly authorized
-pausing only VSPH Supabase to free a zero-cost project slot. VSPH is
-verified INACTIVE (paused, not deleted). A new Axiom-only Free-tier
-project, `axiom-m1-auth-test` in ap-south-1, was created after a
-**$0/month project quote**, verified ACTIVE_HEALTHY with an empty
-public schema, an enabled modern publishable key and no Supabase
-security-advisor findings. No paid services were enabled.
-Real Auth users/JWKS signing validation, GitHub protected environment,
-provider execution, hosted database parity and qualified human review
-remain outstanding in issue #29. Milestone 1 remains incomplete.
+merged into main. On 20 November, real provider execution had not yet run.
+The owner authorized pausing only VSPH Supabase to free a zero-cost
+project slot; VSPH was paused, not deleted. A dedicated Axiom-only
+Free-tier project, `axiom-m1-auth-test` in ap-south-1, was created.
+The initial security-advisor check reported no findings. No paid
+services were enabled.
+
+**21 November update:** Genuine Supabase Auth/browser/API acceptance
+**PASSED** against an **isolated PostgreSQL 17 CI container**, not the
+managed Supabase database. Hosted database inspection found no `axiom`
+schema, M1 application tables, Alembic revision, application roles or
+RLS policies; the current security advisor warns that leaked-password
+protection is disabled. **Hosted schema/migration/RLS/pooler parity
+and independent qualified human security signoff remain outstanding.**
+Issue #29 remains open; Milestone 1 has not been signed off.
+
+## 21 November — real-provider pass and hosted Supabase read-only audit
+
+**Environment:** dedicated `axiom-m1-auth-test` Free-tier project
+(Mumbai, `ap-south-1`), healthy, PostgreSQL **17.12**. Read-only
+catalog queries through the Supabase connection; no hosted DDL,
+schema migration, database user creation, credential changes or
+billed services were performed.
+
+**Actual successful run:** [real-provider security acceptance
+#44850664291](https://github.com/ThunderKhan/axiom/actions/runs/44850664291)
+reported `PASS: 3 real-provider Playwright tests` at
+`9e72d8872d48c7aae54aebcf8abe7fc1ca465f6a`. The same
+`main` SHA passed [Quality #44850011295](https://github.com/ThunderKhan/axiom/actions/runs/44850011295)
+and [Governance #44850011270](https://github.com/ThunderKhan/axiom/actions/runs/44850011270).
+The workflow explicitly identifies its evidence as **real Supabase
+Auth + isolated FastAPI/PostgreSQL/RLS**, not a hosted database test.
+
+| Required hosted parity | Supabase catalog observation | Current status |
+|---|---|---|
+| Managed PostgreSQL version and project health | ACTIVE_HEALTHY, PostgreSQL 17.12 | VERIFIED |
+| `axiom` schema | Does not exist | BLOCKED |
+| `axiom.app_users`, `axiom.workspaces`, `axiom.workspace_create_idempotency` | All absent | BLOCKED |
+| `public.alembic_version` revision | Absent; Supabase-managed migration list also empty | BLOCKED |
+| Dedicated `axiom_migrator` and non-bypass `axiom_runtime` | Neither role exists | BLOCKED |
+| Seven `axiom` RLS policies and enabled RLS on three tables | No application policies/tables exist | BLOCKED |
+| Actual least-privileged FastAPI DB role + direct/pooler transaction reuse | Cannot test until schema, roles, private connection credentials and reviewed deployment exist | NOT VERIFIED |
+| Hosted pooler endpoint / mode and tenant isolation | SQL management query does not exercise the pooler | NOT VERIFIED |
+| Supabase security advisor | Leaked-password protection disabled (WARN) | REVIEW NEEDED |
+
+**Crucial separation:** `postgres` in the managed project has
+`BYPASSRLS`, while the approved API design requires a separate
+non-owner `axiom_runtime` with no `BYPASSRLS`. A successful SQL
+Editor/administrative query cannot prove ordinary runtime RLS.
+The approved `services/api/migrations/versions/m1_0001_schema.py`
+and `m1_0002_rls.py` require a dedicated migration-role owner and
+create the three tables plus seven policies. The repository's
+`services/api/tests/postgres_roles.sql` is explicitly **local
+disposable CI only**; never run it against hosted Supabase.
+
+**Remaining hosted acceptance, separately reviewed/authorized:**
+1. Approve the nonproduction database role/credential provisioning
+   procedure and a forward-only Alembic migration plan, with schema
+   ownership and `public.alembic_version` grants reviewed first.
+   Run through an authorized migration identity, **not** the runtime
+   principal. Do not implicitly enable a paid plan or use production.
+2. Verify hosted revision and seven RLS policies through catalog
+   queries, and verify `Database.ready()` under the actual
+   `axiom_runtime` login with no elevated roles or bypass.
+3. With two authorized ordinary identities, run real hosted
+   transaction-bound RLS `USING`/`WITH CHECK`, wrong-principal
+   and `SET LOCAL` reuse probes through the selected Supavisor
+   session/transaction pooler mode. Check prepared-statement and
+   transaction-pooler constraints for the chosen driver.
+4. Document host, mode and SHA **without passwords or connection
+   strings**. Assess the leaked-password-protection warning against
+   the Free-tier entitlement; do not change the setting without
+   owner review. Obtain **independent qualified human security
+   approval** of the JWT, session, RLS, pooler and CI boundary.
+5. Record verified evidence, reviewer identity/decision and
+   no-go exceptions here, then close [issue #29](https://github.com/ThunderKhan/axiom/issues/29)
+   **only after** all release acceptance requirements pass.
+
+**No release signoff:** The live Auth pass does not substitute for
+hosted database parity, deploy/HTTPS checks, operational readiness or
+human approval. Axiom M1 remains **INCOMPLETE VERIFICATION**.
 
 ## Requirements, implementation and actual evidence boundary
 
 | ID | Implementation / test | Verified and missing |
 |---|---|---|
-| M1-AUTH-01 | FastAPI JwtVerifier, Supabase SSR login and bootstrap; test_auth.py, isolated workspace HTTP tests | Fixture JWT and real local DB verified in earlier CI; genuine Supabase login NOT VERIFIED |
+| M1-AUTH-01 | FastAPI JwtVerifier, Supabase SSR login and bootstrap; test_auth.py, isolated workspace HTTP tests | Genuine Supabase login + API acceptance PASSED at 9e72d887; DB for this run was isolated PostgreSQL, not hosted |
 | M1-AUTH-02 | App-user status, suspension and blocked bootstrap | Isolated PG tested; provider deletion/revocation NOT VERIFIED |
-| M1-JWKS-01 | 300s bounded local JWKS, unknown kid/rotation/outage fixture tests | Fixture tested; actual provider signing mode and rotation NOT VERIFIED |
+| M1-JWKS-01 | 300s bounded local JWKS, unknown kid/rotation/outage fixture tests | Genuine JWT/JWKS positive acceptance PASSED; live signing-key rotation/outage scenario NOT VERIFIED |
 | M1-DB-01 | Alembic m1_0001_schema / m1_0002_rls, drift, repeat and refusal of unsafe downgrade | Isolated PG tested; managed Supabase DB NOT VERIFIED |
 | M1-RLS-01 | Nonowner axiom_runtime, RLS USING/WITH CHECK, pool and transaction principal | Isolated PG tested; hosted pooler NOT VERIFIED |
 | M1-RLS-02 | Explicit owner predicates under privileged migrator role | Isolated test_privileged_rls_bypass_is_not_app_authorization tested |
-| M1-API-01 | Six FastAPI endpoints, status/DTO/404 equivalence tests | Fixture JWT + PG tested; live authenticated API NOT VERIFIED |
+| M1-API-01 | Six FastAPI endpoints, status/DTO/404 equivalence tests | Live authenticated API/tenant denial PASSED with real Supabase identity + isolated PostgreSQL |
 | M1-API-02 | 25h idempotency, concurrency/replay/restart/expiry and optimistic PATCH | Isolated PG tested; real uncertain network bounds NOT VERIFIED |
-| M1-WEB-01 | Next.js auth and workspace picker, 12 prior anonymous Chromium tests | Live A1/A2/B1 ordinary login NOT VERIFIED |
-| M1-WEB-02 | Browser subject-scoped preference and stale async generation | Deterministic tests only; live cross-account timing NOT VERIFIED |
-| M1-OPS-01 | Runtime/role configuration and separate protected provider harness | Dedicated nonproduction Free project exists; genuine Auth users/signing, protected CI environment, hosted pooler, HTTPS and evaluator NOT VERIFIED |
-| M1-CI-01 | Three existing required jobs and M0 real Docker/browser smoke | PR #28 head 89d8953 and merge commit 93794ba: required checks PASS; real provider gate NOT RUN |
+| M1-WEB-01 | Next.js auth and workspace picker, 12 prior anonymous Chromium tests | Three genuine provider browser/API test cases PASSED at 9e72d887, including A1/A2/B1 and sign-out flows |
+| M1-WEB-02 | Browser subject-scoped preference and stale async generation | Live browser cross-account isolation / cross-tab signout PASSED in protected provider acceptance |
+| M1-OPS-01 | Runtime/role configuration and separate protected provider harness | Protected provider workflow PASSED; no managed Axiom tables/roles/policies exist; hosted DB/pooler, deployed HTTPS and evaluator operation NOT VERIFIED |
+| M1-CI-01 | Required Quality/Governance, Docker/browser smoke and protected provider gate | Quality #44850011295, Governance #44850011270 and provider #44850664291 ALL PASS on main 9e72d887 |
 
 The new provider-only Playwright test obtains **two independent genuine
 Supabase-authenticated browser sessions** and the user bearer actually sent
@@ -81,10 +150,11 @@ Local DB evidence does not establish managed Supabase pooler parity.
   m1-nonproduction GitHub Environment, explicit consent input,
   exact SHA, ephemeral real PostgreSQL and RLS suite, live provider
   browser acceptance and no token-bearing report uploads.
-  **The workflow and GitHub Environment are NOT verified or configured
-  as a required status on main.** Never add secrets to an unprotected
-  environment. There is no pull_request trigger that exposes secrets
-  to unreviewed PR code.
+  **The manual protected workflow has been run successfully at the
+  documented main SHA.** Its reviewer-rule configuration has not been
+  independently audited and it is not established as a required
+  status on main. Never add secrets to an unprotected environment.
+  There is no pull_request trigger exposing secrets to unreviewed PR code.
 
 A successful manual technical gate **still does not prove** hosted
 PostgreSQL parity, deployed HTTPS/HSTS, global token revocation,
@@ -136,7 +206,8 @@ An authorized operator must complete these steps:
    the workflow's PostgreSQL database is an isolated CI container.
    Obtain qualified human security signoff before M1 acceptance.
 
-No live provider or hosted DB migration test has yet run.
+Real-provider acceptance passed on 21 November 2026. No hosted application
+schema migration or hosted pooler/RLS acceptance test has yet run.
 
 ## Windows PowerShell — reproducible local testing
 
@@ -304,9 +375,12 @@ From repository root on Linux/WSL2 (quality_gate uses fcntl):
     python ci/m1_acceptance.py self-test
 
 The PostgreSQL integration uses Terminal A's explicit test URLs.
-Quality/Governance CI must pass at exact PR SHA. The separate manual
-M1 provider workflow cannot be declared passed without authorized
-provider credentials, actual execution and independent security review.
+Quality/Governance CI must pass at exact PR SHA. The manual M1 provider
+workflow can be recorded as a **technical PASS** only with authorized
+credentials and actual successful execution on that SHA. That technical
+result does **not** authorize M1 acceptance: hosted database/RLS/pooler
+parity and independent qualified human security approval are distinct,
+mandatory gates.
 
 ### Deferred operational verification
 
@@ -346,16 +420,14 @@ accepted merely because local-only checks pass.
 
 ## Final disposition
 
-**M1 ACCEPTANCE BLOCKED / INCOMPLETE VERIFICATION:** [PR #28](https://github.com/ThunderKhan/axiom/pull/28)
-merged into main at [93794bae](https://github.com/ThunderKhan/axiom/commit/93794bae7de4c030b512e9bf3692258926372241).
-[Post-merge Quality](https://github.com/ThunderKhan/axiom/actions/runs/44655822190)
-and [Governance](https://github.com/ThunderKhan/axiom/actions/runs/44655822283)
-checks PASS. A dedicated nonproduction Axiom Supabase project now exists
-on the Free tier, but genuine provider test execution, hosted RLS/pooler
-parity and qualified human signoff are NOT VERIFIED. The protected GitHub
-environment is not configured and provider acceptance is not currently a
-default branch-protection requirement.
-Managed deployment security and qualified human security approval remain
-pending. Issue #20 was closed administratively; [issue #29](https://github.com/ThunderKhan/axiom/issues/29)
-remains OPEN under Milestone 1. No production deployment, migration or M2
-authorization is implied by this ledger.
+**M1 ACCEPTANCE BLOCKED / INCOMPLETE VERIFICATION:** All three required
+[Quality](https://github.com/ThunderKhan/axiom/actions/runs/44850011295),
+[Governance](https://github.com/ThunderKhan/axiom/actions/runs/44850011270)
+and [real-provider acceptance](https://github.com/ThunderKhan/axiom/actions/runs/44850664291)
+workflows **PASS** at `9e72d8872d48c7aae54aebcf8abe7fc1ca465f6a`.
+However, the managed Supabase project has **no Axiom application schema,
+runtime roles, migrations or RLS policies**, and hosted pooler parity
+has not been exercised. Human security review and final explicit approval
+are also outstanding. Issue #29 remains OPEN; do not claim deployed,
+hosted database parity or release readiness. No production, paid service
+or hosted database mutation was performed by the 21 November audit.
