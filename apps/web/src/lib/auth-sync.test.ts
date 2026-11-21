@@ -198,7 +198,7 @@ describe("M1 H3 cross-tab sign-out messages", () => {
         new URL("./auth-sync.ts?late-hydration", import.meta.url).href
       )) as typeof import("./auth-sync.ts");
       broadcastSignOut();
-      assert.match(values.get(SIGNOUT_MARKER_KEY) ?? "", /^\\d{13}$/);
+      assert.match(values.get(SIGNOUT_MARKER_KEY) ?? "", /^\d{13}$/);
       let invalidations = 0;
       unsubscribeLate = lateTab.subscribeToSignOut(() => {
         invalidations++;
