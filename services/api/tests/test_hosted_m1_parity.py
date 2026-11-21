@@ -61,8 +61,11 @@ def test_matching_nonproduction_pooler_and_runtime_role(mode: str) -> None:
             URL_ENV,
             f"postgresql://{RUNTIME_NAME}:pass@{POOLER_HOST}:6543/postgres?sslmode=require",
         ),
-        (URL_ENV, f"postgresql://axiom_runtime:pass@{POOLER_HOST}:6543/"
-         "postgres?sslmode=verify-full"),
+        (
+            URL_ENV,
+            f"postgresql://axiom_runtime:pass@{POOLER_HOST}:6543/"
+            "postgres?sslmode=verify-full",
+        ),
         (
             URL_ENV,
             f"postgresql://postgres.project:pass@{POOLER_HOST}:6543/"
@@ -83,8 +86,11 @@ def test_matching_nonproduction_pooler_and_runtime_role(mode: str) -> None:
             f"postgresql://{RUNTIME_NAME}@{POOLER_HOST}:6543/"
             "postgres?sslmode=verify-full",
         ),
-        (URL_ENV, f"postgresql://{RUNTIME_NAME}:pass@host.invalid:6543/"
-            "postgres?sslmode=verify-full"),
+        (
+            URL_ENV,
+            f"postgresql://{RUNTIME_NAME}:pass@host.invalid:6543/"
+            "postgres?sslmode=verify-full",
+        ),
         (
             URL_ENV,
             f"postgresql://{RUNTIME_NAME}:pass@aws-0-ap-south-1.pooler.supabase.com:6543/"
