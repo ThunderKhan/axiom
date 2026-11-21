@@ -17,12 +17,15 @@ from scripts.verify_hosted_m1_parity import (
 )
 
 
+RUNTIME_NAME = f"axiom_runtime.{PROJECT_REF}"
+
+
 def safe_env(mode: str = "transaction") -> dict[str, str]:
     return {
         "AXIOM_HOSTED_TEST_CONFIRMATION": CONFIRMATION,
         MODE_ENV: mode,
         URL_ENV: (
-            f"postgresql://axiom_runtime.{PROJECT_REF}:dummy-test-pass"
+            f"postgresql://{RUNTIME_NAME}:dummy-test-pass"
             "@region.pooler.supabase.com:"
             f"{6543 if mode == 'transaction' else 5432}/postgres?sslmode=require"
         ),
@@ -44,12 +47,24 @@ def test_matching_nonproduction_pooler_and_runtime_role(mode: str) -> None:
         (URL_ENV, "postgresql://axiom_runtime:pass@db.fake.supabase.co:5432/postgres"),
         (URL_ENV, "postgresql://postgres.project:pass@region.pooler.supabase.com:6543/postgres"),
         (URL_ENV, "postgresql://axiom_runtime.wrong:pass@region.pooler.supabase.com:6543/postgres"),
-        (URL_ENV, "postgresql://axiom_runtime.zmlgecokvbjdpuclvlqe:pass@region.pooler.supabase.com:5432/postgres"),
-        (URL_ENV, "postgresql://axiom_runtime.zmlgecokvbjdpuclvlqe@region.pooler.supabase.com:6543/postgres"),
-        (URL_ENV, "postgresql://axiom_runtime.zmlgecokvbjdpuclvlqe:pass@host.invalid:6543/postgres"),
-        (URL_ENV, "postgresql://axiom_runtime.zmlgecokvbjdpuclvlqe:pass@region.pooler.supabase.com:6543/other?sslmode=require"),
-        (URL_ENV, "postgresql://axiom_runtime.zmlgecokvbjdpuclvlqe:pass@region.pooler.supabase.com:6543/postgres?sslmode=disable"),
-        (URL_ENV, "postgresql://axiom_runtime.zmlgecokvbjdpuclvlqe:pass@region.pooler.supabase.com:6543/postgres?sslmode=require&options=-csearch_path=public"),
+        (URL_ENV, f"postgresql://{RUNTIME_NAME}:pass@region.pooler.supabase.com:5432/postgres"),
+        (URL_ENV, f"postgresql://{RUNTIME_NAME}@region.pooler.supabase.com:6543/postgres"),
+        (URL_ENV, f"postgresql://{RUNTIME_NAME}:pass@host.invalid:6543/postgres"),
+        (
+            URL_ENV,
+            f"postgresql://{RUNTIME_NAME}:pass@region.pooler.supabase.com:6543/"
+            "other?sslmode=require",
+        ),
+        (
+            URL_ENV,
+            f"postgresql://{RUNTIME_NAME}:pass@region.pooler.supabase.com:6543/"
+            "postgres?sslmode=disable",
+        ),
+        (
+            URL_ENV,
+            f"postgresql://{RUNTIME_NAME}:pass@region.pooler.supabase.com:6543/"
+            "postgres?sslmode=require&options=-csearch_path=public",
+        ),
     ],
 )
 def test_refuse_unapproved_credential_routing(name: str, value: str) -> None:
