@@ -89,30 +89,40 @@ def check_isolation(db: Database) -> None:
             )
             conn.execute(text("INSERT INTO axiom.app_users(id) VALUES (:id)"), {"id": alice})
             conn.execute(
-                text("INSERT INTO axiom.workspaces(id, owner_user_id, name) "
-                     "VALUES (:id, :owner, 'M1 ephemeral verification')"),
+                text(
+                    "INSERT INTO axiom.workspaces(id, owner_user_id, name) "
+                    "VALUES (:id, :owner, 'M1 ephemeral verification')"
+                ),
                 {"id": workspace, "owner": alice},
             )
-            if conn.scalar(
-                text("SELECT count(*) FROM axiom.workspaces WHERE id=:id"),
-                {"id": workspace},
-            ) != 1:
+            if (
+                conn.scalar(
+                    text("SELECT count(*) FROM axiom.workspaces WHERE id=:id"),
+                    {"id": workspace},
+                )
+                != 1
+            ):
                 raise HostedParityBlocked("owner cannot see its row")
             conn.execute(
                 text("SELECT set_config('app.current_user_id', :subject, true)"),
                 {"subject": str(bob)},
             )
             conn.execute(text("INSERT INTO axiom.app_users(id) VALUES (:id)"), {"id": bob})
-            if conn.scalar(
-                text("SELECT count(*) FROM axiom.workspaces WHERE id=:id"),
-                {"id": workspace},
-            ) != 0:
+            if (
+                conn.scalar(
+                    text("SELECT count(*) FROM axiom.workspaces WHERE id=:id"),
+                    {"id": workspace},
+                )
+                != 0
+            ):
                 raise HostedParityBlocked("foreign workspace visible to second subject")
             savepoint = conn.begin_nested()
             try:
                 conn.execute(
-                    text("INSERT INTO axiom.workspaces(id, owner_user_id, name) "
-                         "VALUES (:id, :owner, 'Forbidden')"),
+                    text(
+                        "INSERT INTO axiom.workspaces(id, owner_user_id, name) "
+                        "VALUES (:id, :owner, 'Forbidden')"
+                    ),
                     {"id": uuid4(), "owner": alice},
                 )
             except SQLAlchemyError as exc:
@@ -124,10 +134,13 @@ def check_isolation(db: Database) -> None:
             else:
                 savepoint.rollback()
                 raise HostedParityBlocked("foreign-owner write unexpectedly succeeded")
-            if conn.execute(
-                text("UPDATE axiom.workspaces SET name='Forbidden' WHERE id=:id"),
-                {"id": workspace},
-            ).rowcount != 0:
+            if (
+                conn.execute(
+                    text("UPDATE axiom.workspaces SET name='Forbidden' WHERE id=:id"),
+                    {"id": workspace},
+                ).rowcount
+                != 0
+            ):
                 raise HostedParityBlocked("foreign-owner update unexpectedly succeeded")
         finally:
             # Even on failed checks, ephemeral users/workspaces are never committed.
@@ -146,8 +159,10 @@ def main(env: Mapping[str, str]) -> int:
         with db.engine.connect() as conn:
             role = conn.scalar(text("SELECT current_user"))
             attrs = conn.execute(
-                text("SELECT rolsuper, rolbypassrls, rolcreatedb, rolcreaterole "
-                     "FROM pg_roles WHERE rolname=current_user"),
+                text(
+                    "SELECT rolsuper, rolbypassrls, rolcreatedb, rolcreaterole "
+                    "FROM pg_roles WHERE rolname=current_user"
+                ),
             ).one_or_none()
             if role != "axiom_runtime" or attrs is None or any(attrs):
                 raise HostedParityBlocked("runtime login is privileged or incorrect")
