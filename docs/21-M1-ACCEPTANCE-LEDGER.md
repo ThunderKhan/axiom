@@ -375,9 +375,12 @@ From repository root on Linux/WSL2 (quality_gate uses fcntl):
     python ci/m1_acceptance.py self-test
 
 The PostgreSQL integration uses Terminal A's explicit test URLs.
-Quality/Governance CI must pass at exact PR SHA. The separate manual
-M1 provider workflow cannot be declared passed without authorized
-provider credentials, actual execution and independent security review.
+Quality/Governance CI must pass at exact PR SHA. The manual M1 provider
+workflow can be recorded as a **technical PASS** only with authorized
+credentials and actual successful execution on that SHA. That technical
+result does **not** authorize M1 acceptance: hosted database/RLS/pooler
+parity and independent qualified human security approval are distinct,
+mandatory gates.
 
 ### Deferred operational verification
 
