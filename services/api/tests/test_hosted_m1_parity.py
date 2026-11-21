@@ -6,6 +6,7 @@ These deliberately never open a socket, create a role or touch hosted state.
 from __future__ import annotations
 
 import pytest
+
 from scripts.verify_hosted_m1_parity import (
     CONFIRMATION,
     HostedParityBlocked,
