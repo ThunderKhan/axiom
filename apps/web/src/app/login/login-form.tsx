@@ -38,7 +38,16 @@ export function LoginForm({ configured }: { configured: boolean }) {
   }, [state.message]);
 
   return (
-    <form action={action} className="auth-form" noValidate={false}>
+    <form
+      action={action}
+      className="auth-form"
+      noValidate={false}
+      onSubmit={() => {
+        // A different tab may have signed out after this form first mounted.
+        // Starting a fresh login acknowledges that older logout marker.
+        resetLocalSignOutStarted();
+      }}
+    >
       <input type="hidden" name="returnTo" value="/app" />
       <label htmlFor="account-email">Email address</label>
       <input
