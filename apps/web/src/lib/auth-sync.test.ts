@@ -7,6 +7,7 @@ import {
   broadcastSignOut,
   isSignOutMessage,
   notifyLocalSignOutStarted,
+  resetLocalSignOutStarted,
   subscribeToLocalSignOutStarted,
   subscribeToSignOut,
 } from "./auth-sync.ts";
@@ -127,6 +128,37 @@ describe("M1 H3 cross-tab sign-out messages", () => {
         }, 3000);
         stop = modernTab.subscribeToSignOut(() => {
           clearTimeout(timeout);
+          resolve();
+        });
+        legacyTab.postMessage(SIGNED_OUT_MESSAGE);
+      });
+    } finally {
+      stop();
+      legacyTab.close();
+    }
+  });
+
+  it("re-enables legacy logout handling when login is visited again", async () => {
+    // In the app the login form resets a module retained by soft navigation.
+    const legacyTab = new BroadcastChannel(AUTH_CHANNEL);
+    let notices = 0;
+    const stop = subscribeToSignOut(() => {
+      notices++;
+    });
+    try {
+      broadcastSignOut(); // This tab is signing out; ignore its own string.
+      await new Promise((resolve) => setTimeout(resolve, 30));
+      assert.equal(notices, 0);
+      resetLocalSignOutStarted(); // LoginForm mounts before the next login.
+      await new Promise<void>((resolve, reject) => {
+        const timeout = setTimeout(
+          () => reject(new Error("Legacy logout was not restored after login")),
+          3000,
+        );
+        // The existing subscription must still receive subsequent sign-outs.
+        const reconnect = subscribeToSignOut(() => {
+          clearTimeout(timeout);
+          reconnect();
           resolve();
         });
         legacyTab.postMessage(SIGNED_OUT_MESSAGE);
