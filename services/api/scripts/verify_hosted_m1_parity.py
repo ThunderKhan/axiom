@@ -96,8 +96,10 @@ def check_isolation(db: Database) -> None:
                          "VALUES (:id, :owner, 'Forbidden')"),
                     {"id": uuid4(), "owner": alice},
                 )
-            except SQLAlchemyError:
+            except SQLAlchemyError as exc:
                 savepoint.rollback()
+                if getattr(getattr(exc, "orig", None), "sqlstate", None) != "42501":
+                    raise HostedParityBlocked("foreign write failed for an unexpected reason") from None
             else:
                 savepoint.rollback()
                 raise HostedParityBlocked("foreign-owner write unexpectedly succeeded")
