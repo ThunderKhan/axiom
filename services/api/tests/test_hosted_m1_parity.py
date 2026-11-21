@@ -69,9 +69,7 @@ def test_matching_nonproduction_pooler_and_runtime_role(mode: str) -> None:
         ),
     ],
 )
-def test_refuse_unapproved_credential_routing(
-    name: str, before: str, after: str
-) -> None:
+def test_refuse_unapproved_credential_routing(name: str, before: str, after: str) -> None:
     env = safe_env()
     # A negative test must change exactly one guard on an otherwise valid URL.
     assert env[name].count(before) == 1
