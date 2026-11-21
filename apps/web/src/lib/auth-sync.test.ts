@@ -55,6 +55,8 @@ describe("M1 H3 cross-tab sign-out messages", () => {
       new URL("./auth-sync.ts?different-tab", import.meta.url).href
     )) as typeof import("./auth-sync.ts");
     let sameTabNotifications = 0;
+    let otherTabNotifications = 0;
+    let unsubscribeOther = () => {};
     const unsubscribeSender = subscribeToSignOut(() => {
       sameTabNotifications++;
     });
@@ -66,15 +68,72 @@ describe("M1 H3 cross-tab sign-out messages", () => {
           reject(new Error("Cross-tab logout notification was not delivered"));
         }, 3000);
         stop = otherTab.subscribeToSignOut(() => {
+          otherTabNotifications++;
           clearTimeout(timeout);
-          stop();
           resolve();
         });
+        unsubscribeOther = stop;
         broadcastSignOut();
       });
+      // Let the second (legacy) message be processed before checking duplicates.
+      await new Promise((resolve) => setTimeout(resolve, 30));
+      assert.equal(otherTabNotifications, 1);
       assert.equal(sameTabNotifications, 0);
     } finally {
+      unsubscribeOther();
       unsubscribeSender();
+    }
+  });
+
+  it("notifies legacy tabs with the original string while suppressing self-redirect", async () => {
+    // Legacy tabs only recognize the literal string, not the tagged envelope.
+    const legacyTab = new BroadcastChannel(AUTH_CHANNEL);
+    let ownTabNotifications = 0;
+    const stopOwn = subscribeToSignOut(() => {
+      ownTabNotifications++;
+    });
+    try {
+      await new Promise<void>((resolve, reject) => {
+        const timeout = setTimeout(
+          () => reject(new Error("Legacy tab missed sign-out notification")),
+          3000,
+        );
+        legacyTab.onmessage = (event: MessageEvent<unknown>) => {
+          if (!isSignOutMessage(event.data)) return;
+          clearTimeout(timeout);
+          resolve();
+        };
+        broadcastSignOut();
+      });
+      assert.equal(ownTabNotifications, 0);
+    } finally {
+      legacyTab.close();
+      stopOwn();
+    }
+  });
+
+  it("accepts legacy sign-out strings from older tabs in a new tab", async () => {
+    // Give the modern receiver its own module state and sender identity.
+    const modernTab = (await import(
+      new URL("./auth-sync.ts?legacy-receiver", import.meta.url).href
+    )) as typeof import("./auth-sync.ts");
+    const legacyTab = new BroadcastChannel(AUTH_CHANNEL);
+    let stop = () => {};
+    try {
+      await new Promise<void>((resolve, reject) => {
+        const timeout = setTimeout(() => {
+          stop();
+          reject(new Error("Modern tab missed legacy sign-out notification"));
+        }, 3000);
+        stop = modernTab.subscribeToSignOut(() => {
+          clearTimeout(timeout);
+          resolve();
+        });
+        legacyTab.postMessage(SIGNED_OUT_MESSAGE);
+      });
+    } finally {
+      stop();
+      legacyTab.close();
     }
   });
 
