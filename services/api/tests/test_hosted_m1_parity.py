@@ -46,71 +46,36 @@ def test_matching_nonproduction_pooler_and_runtime_role(mode: str) -> None:
 
 
 @pytest.mark.parametrize(
-    ("name", "value"),
+    ("name", "before", "after"),
     [
-        ("AXIOM_HOSTED_TEST_CONFIRMATION", "no"),
-        (MODE_ENV, "direct"),
-        (EXPECTED_HOST_ENV, "attacker.example"),
-        (EXPECTED_HOST_ENV, "aws-1-ap-south-1.pooler.supabase.com"),
+        ("AXIOM_HOSTED_TEST_CONFIRMATION", CONFIRMATION, "no"),
+        (MODE_ENV, "transaction", "direct"),
+        (EXPECTED_HOST_ENV, POOLER_HOST, "attacker.example"),
+        (EXPECTED_HOST_ENV, POOLER_HOST, "aws-1-ap-south-1.pooler.supabase.com"),
+        (URL_ENV, POOLER_HOST, f"attacker.example,{POOLER_HOST}"),
+        (URL_ENV, "sslmode=verify-full", "sslmode=require"),
+        (URL_ENV, RUNTIME_NAME, "axiom_runtime"),
+        (URL_ENV, RUNTIME_NAME, "postgres.project"),
+        (URL_ENV, RUNTIME_NAME, "axiom_runtime.wrong"),
+        (URL_ENV, ":6543/", ":5432/"),
+        (URL_ENV, ":dummy-test-pass@", "@"),
+        (URL_ENV, POOLER_HOST, "host.invalid"),
+        (URL_ENV, "/postgres?", "/other?"),
+        (URL_ENV, "sslmode=verify-full", "sslmode=disable"),
         (
             URL_ENV,
-            f"postgresql://{RUNTIME_NAME}:pass@attacker.example,{POOLER_HOST}:6543/"
-            "postgres?sslmode=verify-full",
-        ),
-        (
-            URL_ENV,
-            f"postgresql://{RUNTIME_NAME}:pass@{POOLER_HOST}:6543/postgres?sslmode=require",
-        ),
-        (
-            URL_ENV,
-            f"postgresql://axiom_runtime:pass@{POOLER_HOST}:6543/"
-            "postgres?sslmode=verify-full",
-        ),
-        (
-            URL_ENV,
-            f"postgresql://postgres.project:pass@{POOLER_HOST}:6543/"
-            "postgres?sslmode=verify-full",
-        ),
-        (
-            URL_ENV,
-            f"postgresql://axiom_runtime.wrong:pass@{POOLER_HOST}:6543/"
-            "postgres?sslmode=verify-full",
-        ),
-        (
-            URL_ENV,
-            f"postgresql://{RUNTIME_NAME}:pass@{POOLER_HOST}:5432/"
-            "postgres?sslmode=verify-full",
-        ),
-        (
-            URL_ENV,
-            f"postgresql://{RUNTIME_NAME}@{POOLER_HOST}:6543/"
-            "postgres?sslmode=verify-full",
-        ),
-        (
-            URL_ENV,
-            f"postgresql://{RUNTIME_NAME}:pass@host.invalid:6543/"
-            "postgres?sslmode=verify-full",
-        ),
-        (
-            URL_ENV,
-            f"postgresql://{RUNTIME_NAME}:pass@aws-0-ap-south-1.pooler.supabase.com:6543/"
-            "other?sslmode=verify-full",
-        ),
-        (
-            URL_ENV,
-            f"postgresql://{RUNTIME_NAME}:pass@aws-0-ap-south-1.pooler.supabase.com:6543/"
-            "postgres?sslmode=disable",
-        ),
-        (
-            URL_ENV,
-            f"postgresql://{RUNTIME_NAME}:pass@aws-0-ap-south-1.pooler.supabase.com:6543/"
-            "postgres?sslmode=verify-full&options=-csearch_path=public",
+            "sslmode=verify-full",
+            "sslmode=verify-full&options=-csearch_path=public",
         ),
     ],
 )
-def test_refuse_unapproved_credential_routing(name: str, value: str) -> None:
+def test_refuse_unapproved_credential_routing(
+    name: str, before: str, after: str
+) -> None:
     env = safe_env()
-    env[name] = value
+    # A negative test must change exactly one guard on an otherwise valid URL.
+    assert env[name].count(before) == 1
+    env[name] = env[name].replace(before, after, 1)
     with pytest.raises(HostedParityBlocked):
         validate_target(env)
 
