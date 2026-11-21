@@ -220,13 +220,22 @@ describe("M1 H3 cross-tab sign-out messages", () => {
       unsubscribeFresh();
       unsubscribeFresh = () => {};
 
-      // A later logout must be delivered to this newly signed-in tab.
-      fakeWindow.performance.timeOrigin = Date.now() - 60_000;
-      const next = Date.now() + 1;
-      values.set(SIGNOUT_MARKER_KEY, String(next));
+      // The form can stay open while an unrelated tab signs out again.
+      // Its new login submission must acknowledge the latest marker, rather
+      // than the marker that existed when LoginForm originally mounted.
+      const whileFormOpen = Date.now() + 1;
+      values.set(SIGNOUT_MARKER_KEY, String(whileFormOpen));
+      lateTab.resetLocalSignOutStarted(); // LoginForm onSubmit boundary
       unsubscribeFresh = lateTab.subscribeToSignOut(() => {
         invalidations++;
       });
+      assert.equal(invalidations, 1, "New login must not inherit prior logout");
+
+      // A later signout must still invalidate that newly signed-in tab.
+      values.set(SIGNOUT_MARKER_KEY, String(whileFormOpen + 1));
+      const event = new Event("storage");
+      Object.defineProperty(event, "key", { value: SIGNOUT_MARKER_KEY });
+      fakeWindow.dispatchEvent(event);
       assert.equal(invalidations, 2, "New logout must invalidate after login");
     } finally {
       unsubscribeLate();
