@@ -63,6 +63,11 @@ export function subscribeToSignOut(callback: () => void): () => void {
 }
 
 /** Cancel this tab's private requests immediately, without redirecting its form. */
+/** A new login attempt re-enables legacy notifications after a soft navigation. */
+export function resetLocalSignOutStarted(): void {
+  localSignOutStarted = false;
+}
+
 export function notifyLocalSignOutStarted(): void {
   localSignOutStarted = true;
   window.dispatchEvent(new Event(LOCAL_SIGNOUT_STARTED));
