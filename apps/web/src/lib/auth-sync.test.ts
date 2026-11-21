@@ -231,6 +231,8 @@ describe("M1 H3 cross-tab sign-out messages", () => {
     } finally {
       unsubscribeLate();
       unsubscribeFresh();
+      // Undo the simulated sender's signing-out flag before the next test.
+      resetLocalSignOutStarted();
       if (previous) Object.defineProperty(globalThis, "window", previous);
       else Reflect.deleteProperty(globalThis, "window");
     }
