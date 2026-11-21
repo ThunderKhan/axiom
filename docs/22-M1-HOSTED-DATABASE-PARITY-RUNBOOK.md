@@ -54,7 +54,7 @@ GRANT USAGE, CREATE ON SCHEMA public TO axiom_migrator;
 ```
 
 As an authorized DBA, use `psql`'s **interactive**
-`\\password axiom_migrator` and `\\password axiom_runtime` commands
+`\password axiom_migrator` and `\password axiom_runtime` commands
 to set different, strong passwords without embedding cleartext passwords
 in scripts or command history. Role passwords must be configured
 before making either connection; no temporary trust-auth shortcut.
