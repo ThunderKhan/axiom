@@ -2,6 +2,7 @@
 
 import { useActionState, useEffect, useRef, useState } from "react";
 import { useFormStatus } from "react-dom";
+import { resetLocalSignOutStarted } from "../../lib/auth-sync";
 import { clearBrowserPrivateState } from "../../lib/private-state";
 import { signIn, type LoginState } from "./actions";
 
@@ -27,6 +28,9 @@ export function LoginForm({ configured }: { configured: boolean }) {
   // Public login is the safe landing for expired, revoked and missing sessions.
   // Remove only app-private keys, even when this tab missed a logout broadcast.
   useEffect(() => {
+    // Next.js may navigate here without reloading the module after sign-out.
+    // A subsequent login must accept legacy cross-tab logout messages again.
+    resetLocalSignOutStarted();
     clearBrowserPrivateState();
   }, []);
   useEffect(() => {
