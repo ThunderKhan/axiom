@@ -118,8 +118,16 @@ Use the Connect panel to obtain a separate private
 `AXIOM_HOSTED_TEST_DATABASE_URL` for the project's
 `axiom_runtime` login. Supavisor uses a pooler-specific login name
 (`axiom_runtime.<project-ref>`). Check the actual host and mode in
-Supabase, not a guessed URL. TLS with `sslmode=require` or stronger
-is mandatory.
+Supabase, not a guessed URL. The verifier permits **only one**
+operator-approved hostname matching `aws-<pool-number>-ap-south-1.pooler.supabase.com`;
+multi-host libpq syntax (including commas) is rejected. Require
+**`sslmode=verify-full`**, never `require` or `verify-ca` alone.
+Configure a trusted CA root **before** connecting, using the certificate
+bundle supplied/approved for the project (e.g. private `sslrootcert`
+path in the URL, or the trusted default libpq root file). If the root
+is missing or the hostname does not match the server certificate,
+the connection must **fail closed**. Do not disable certificate
+verification to get a green result.
 
 Run the shipped verifier separately in both supported modes, setting:
 
@@ -127,7 +135,10 @@ Run the shipped verifier separately in both supported modes, setting:
 - `AXIOM_HOSTED_TEST_POOLER_MODE=session` for the real session
   pooler endpoint (`5432`), then `transaction` for the real transaction
   pooler endpoint (`6543`);
-- `AXIOM_HOSTED_TEST_DATABASE_URL` to the matching secret URL.
+- `AXIOM_HOSTED_TEST_DATABASE_URL` to the matching secret URL;
+- `AXIOM_HOSTED_TEST_APPROVED_POOLER_HOST` to the single exact hostname
+  chosen from this project's Supabase Connect panel (no IPs,
+  commas, additional hosts or guessed names).
 
 ```sh
 cd services/api
