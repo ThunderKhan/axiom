@@ -9,10 +9,10 @@ import pytest
 
 from scripts.verify_hosted_m1_parity import (
     CONFIRMATION,
+    HostedParityBlocked,
     MODE_ENV,
     PROJECT_REF,
     URL_ENV,
-    HostedParityBlocked,
     validate_target,
 )
 
