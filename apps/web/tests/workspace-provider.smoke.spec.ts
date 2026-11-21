@@ -93,10 +93,22 @@ test("two authorized users create and isolate workspaces", async ({
   await expect(
     page.getByRole("heading", { name: "Work from the right context." }),
   ).toBeVisible();
-  await expect(page.locator(".workspace-active strong")).not.toHaveText(nameA);
+  // A forbidden deep link must resolve to an explicit, empty selection.
+  // A negative text matcher on a missing <strong> times out instead of
+  // establishing isolation. The foreign workspace must never be selectable.
+  await expect(page.locator(".workspace-active")).toContainText(
+    "Nothing selected.",
+  );
+  await expect(page.locator(".workspace-active strong")).toHaveCount(0);
   await expect(
     page.getByRole("button", { name: new RegExp(nameA) }),
   ).toHaveCount(0);
+  await expect(
+    page.getByRole("button", { name: new RegExp(nameB) }),
+  ).toHaveCount(0);
+  await expect(
+    page.getByRole("button", { name: new RegExp(nameOther) }),
+  ).toBeVisible();
   await page.getByRole("button", { name: "Sign out" }).click();
   await expect(page).toHaveURL(/\/login\?notice=signed-out/);
 });

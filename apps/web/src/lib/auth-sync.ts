@@ -2,6 +2,9 @@
 export const AUTH_CHANNEL = "axiom:auth";
 export const SIGNED_OUT_MESSAGE = "signed-out";
 export const LOCAL_SIGNOUT_STARTED = "axiom:auth:local-signout-started";
+// This is only a non-secret event timestamp, never an auth token or identity.
+// It lets an already-open document catch a logout missed before hydration.
+export const SIGNOUT_MARKER_KEY = "axiom:auth:last-signout";
 
 // Each browser tab has its own module instance. Other BroadcastChannel objects
 // in the sender's *same tab* receive posts too, so tag each sender and ignore
@@ -11,6 +14,28 @@ const TAB_SENDER = crypto.randomUUID();
 // compatibility string once it starts signing out, so its server-action
 // redirect is not replaced with the session-expired navigation.
 let localSignOutStarted = false;
+let acknowledgedSignOutAt = 0;
+
+function storedSignOutAt(): number | null {
+  try {
+    const value = window.localStorage.getItem(SIGNOUT_MARKER_KEY);
+    if (!value || !/^\d{13}$/.test(value)) return null;
+    const at = Number(value);
+    return Number.isSafeInteger(at) ? at : null;
+  } catch {
+    return null;
+  }
+}
+
+function missedSignOutSinceDocumentOpened(): boolean {
+  if (typeof window === "undefined" || localSignOutStarted) return false;
+  const at = storedSignOutAt();
+  return (
+    at !== null &&
+    at > window.performance.timeOrigin &&
+    at > acknowledgedSignOutAt
+  );
+}
 
 export function isSignOutMessage(value: unknown): boolean {
   return value === SIGNED_OUT_MESSAGE;
@@ -32,6 +57,13 @@ function isOtherTabSignOutMessage(value: unknown): boolean {
 export function broadcastSignOut(): void {
   localSignOutStarted = true;
   try {
+    // A BroadcastChannel event can be missed if a server-rendered second tab
+    // hydrates after sign-out. Other tabs also see the storage event promptly.
+    window.localStorage.setItem(SIGNOUT_MARKER_KEY, String(Date.now()));
+  } catch {
+    // BroadcastChannel and visibility-based revalidation still apply.
+  }
+  try {
     const channel = new BroadcastChannel(AUTH_CHANNEL);
     // New tabs use the tagged message; already-open legacy tabs require the
     // original string. Post tagged first so new receivers can de-duplicate.
@@ -45,26 +77,46 @@ export function broadcastSignOut(): void {
 }
 
 export function subscribeToSignOut(callback: () => void): () => void {
+  let notified = false;
+  const notifyOnce = () => {
+    if (notified || localSignOutStarted) return;
+    notified = true;
+    callback();
+  };
+  let channel: BroadcastChannel | null = null;
   try {
-    const channel = new BroadcastChannel(AUTH_CHANNEL);
-    let notified = false;
+    channel = new BroadcastChannel(AUTH_CHANNEL);
     channel.onmessage = (event: MessageEvent<unknown>) => {
-      // The dual-protocol broadcast must not trigger duplicate invalidations.
-      if (!notified && isOtherTabSignOutMessage(event.data)) {
-        notified = true;
-        callback();
-      }
+      if (isOtherTabSignOutMessage(event.data)) notifyOnce();
     };
-    return () => channel.close();
   } catch {
     console.warn("Axiom: cross-tab logout subscription unavailable");
-    return () => {};
   }
+
+  const onStorage = (event: StorageEvent) => {
+    if (event.key === SIGNOUT_MARKER_KEY && missedSignOutSinceDocumentOpened())
+      notifyOnce();
+  };
+  if (typeof window !== "undefined") {
+    // Install the listener before checking the durable marker so an event
+    // between registration and hydration cannot be lost.
+    window.addEventListener("storage", onStorage);
+    if (missedSignOutSinceDocumentOpened()) notifyOnce();
+  }
+
+  return () => {
+    channel?.close();
+    if (typeof window !== "undefined")
+      window.removeEventListener("storage", onStorage);
+  };
 }
 
 /** Cancel this tab's private requests immediately, without redirecting its form. */
 /** A new login attempt re-enables legacy notifications after a soft navigation. */
 export function resetLocalSignOutStarted(): void {
+  // A new login acknowledges the previous event; do not treat it as a logout
+  // for the newly authenticated session reached via Next soft navigation.
+  acknowledgedSignOutAt = storedSignOutAt() ?? 0;
   localSignOutStarted = false;
 }
 
