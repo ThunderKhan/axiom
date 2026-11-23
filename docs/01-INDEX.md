@@ -83,6 +83,12 @@ This amendment supersedes only the listed **R0 deadline/breadth targets** in the
 
 This does not supersede the approved M1 contract or authorize a release.
 
+## WP-03 implementation contract (engineering evidence only)
+
+| Document | Purpose | Status |
+| --- | --- | --- |
+| [24-WP03-PROFILE-CONTRACT.md](24-WP03-PROFILE-CONTRACT.md) | Versioned onboarding draft/profile API, M2 RLS migration, test and hosted-M1 compatibility boundary | **Implementation in review; not yet independently verified or deployed** |
+
 ## Technical Designs Still In Review and Active Decision Register
 
 **Draft** implementation designs still require final schema, model or selected infrastructure evidence. **The complete Edviro-source-derived design direction and ten-value Axiom palette are now approved**; the landing page should be built by reusing and adapting the clone's actual code. **Scoped approval** of MCP, source policies and capacity design does not certify their provider integration or tested performance. The active decision register is a governance record, not blanket approval of open ADRs.
