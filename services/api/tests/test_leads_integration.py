@@ -70,9 +70,9 @@ def test_manual_lead_survives_update_dedupe_and_foreign_workspace_denial(
     replay = leads.create(owner, own_id, payload=sample(), key=key)
     assert replay["id"] == lead_id
     assert replay["already_exists"] is True
-    assert leads.create(
-        owner, own_id, payload=sample(), key="next-" + uuid4().hex
-    )["id"] == lead_id  # URL dedupe even with a fresh request key.
+    assert (
+        leads.create(owner, own_id, payload=sample(), key="next-" + uuid4().hex)["id"] == lead_id
+    )  # URL dedupe even with a fresh request key.
     with pytest.raises(IdempotencyConflict):
         leads.create(owner, own_id, payload=sample(note="different"), key=key)
 
@@ -175,8 +175,7 @@ def test_composite_fk_and_runtime_columns_resist_cross_workspace_mutation(
         with database.transaction(owner) as session:
             session.execute(
                 text(
-                    "UPDATE axiom.leads SET source_url='https://example.org/altered' "
-                    "WHERE id=:id"
+                    "UPDATE axiom.leads SET source_url='https://example.org/altered' WHERE id=:id"
                 ),
                 {"id": lead_id},
             )
