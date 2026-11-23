@@ -25,6 +25,10 @@ class InvalidLeadInput(ValueError):
     """Reject inconsistent follow-up transitions or invalid request parameters."""
 
 
+class LeadAlreadySaved(Exception):
+    """A second distinct request tried to save an already-owned source URL."""
+
+
 def _payload(lead: Lead) -> dict[str, object]:
     return {
         "id": lead.id,
@@ -140,6 +144,10 @@ class LeadStore:
                             Lead.source_url == payload.source_url,
                         )
                     )
+                    if existing is not None:
+                        # A new key was NOT successfully accepted; never pretend
+                        # it was recorded for future idempotency comparisons.
+                        raise LeadAlreadySaved()
                 if existing is None:
                     raise RuntimeError("Conflicting lead is not visible to verified owner")
                 if existing.archived_at is not None:
