@@ -279,9 +279,13 @@ export function ProfileWizard({
                   ? " · Optional"
                   : " · Required for confirmation"}
               </p>
-              <label htmlFor="profile-answer">
-                {questionLabel(question, currentStage)}
-              </label>
+              {question.key === "stage" ? (
+                <h4>{questionLabel(question, currentStage)}</h4>
+              ) : (
+                <label htmlFor="profile-answer">
+                  {questionLabel(question, currentStage)}
+                </label>
+              )}
               <p className="profile-hint">{question.why}</p>
               {question.key === "stage" ? (
                 <fieldset className="profile-stage-options">
