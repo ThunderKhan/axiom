@@ -146,7 +146,10 @@ def test_composite_fk_and_runtime_columns_resist_cross_workspace_mutation(
     owner, outsider = actor(), actor()
     own_id, other_id = workspace(workspaces, owner), workspace(workspaces, outsider)
     lead = leads.create(
-        owner, own_id, payload=sample(source_url="https://example.org/more"), key="key-" + uuid4().hex
+        owner,
+        own_id,
+        payload=sample(source_url="https://example.org/more"),
+        key="key-" + uuid4().hex,
     )
     lead_id = lead["id"]
     with database.transaction(outsider) as session:
@@ -171,7 +174,10 @@ def test_composite_fk_and_runtime_columns_resist_cross_workspace_mutation(
     with pytest.raises(DBAPIError) as exc:
         with database.transaction(owner) as session:
             session.execute(
-                text("UPDATE axiom.leads SET source_url='https://example.org/altered' WHERE id=:id"),
+                text(
+                    "UPDATE axiom.leads SET source_url='https://example.org/altered' "
+                    "WHERE id=:id"
+                ),
                 {"id": lead_id},
             )
     assert getattr(exc.value.orig, "sqlstate", None) == "42501"
