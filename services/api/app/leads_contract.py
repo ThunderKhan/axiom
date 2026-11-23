@@ -42,17 +42,31 @@ def _validate_url(value: str) -> str:
         or any(ord(character) < 33 or ord(character) == 127 for character in value)
     ):
         raise ValueError("A valid public HTTPS citation is required")
-    if hostname == "localhost" or hostname.endswith(
+    normalized_host = hostname.rstrip(".").lower()
+    if normalized_host == "localhost" or normalized_host.endswith(
         (".localhost", ".local", ".internal", ".test", ".invalid")
     ):
         raise ValueError("Private source authorities are not valid citations")
     try:
-        literal = ipaddress.ip_address(hostname)
-    except ValueError:
+        literal = ipaddress.ip_address(normalized_host)
+    except ValueError as exc:
+        if re.fullmatch(r"[0-9.]+", normalized_host):
+            raise ValueError("Noncanonical numeric source addresses are not valid") from exc
         literal = None
     if literal is not None and not literal.is_global:
         raise ValueError("Private addresses are not valid citations")
     return value
+
+
+def _parse_timestamp(value: object) -> datetime | None:
+    if value is None or isinstance(value, datetime):
+        return value
+    if not isinstance(value, str) or len(value) > 40:
+        raise ValueError("A timezone-aware ISO 8601 timestamp is required")
+    try:
+        return datetime.fromisoformat(value.replace("Z", "+00:00"))
+    except ValueError as exc:
+        raise ValueError("Invalid timestamp format") from exc
 
 
 def _safe_text(value: str) -> str:
@@ -91,6 +105,11 @@ class CreateLead(StrictBody):
     def bounded_text(cls, value: str) -> str:
         return _safe_text(value)
 
+    @field_validator("follow_up_at", mode="before")
+    @classmethod
+    def parse_timestamp(cls, value: object) -> datetime | None:
+        return _parse_timestamp(value)
+
     @field_validator("follow_up_at")
     @classmethod
     def aware_timestamp(cls, value: datetime | None) -> datetime | None:
@@ -117,6 +136,11 @@ class PatchLead(StrictBody):
     @classmethod
     def bounded_text(cls, value: str | None) -> str | None:
         return _safe_text(value) if value is not None else None
+
+    @field_validator("follow_up_at", mode="before")
+    @classmethod
+    def parse_timestamp(cls, value: object) -> datetime | None:
+        return _parse_timestamp(value)
 
     @field_validator("follow_up_at")
     @classmethod
