@@ -132,11 +132,11 @@ def create_app(settings: RuntimeSettings | None = None) -> FastAPI:
 
     application.add_exception_handler(InvalidWorkspaceInput, invalid_domain_input)
     application.add_exception_handler(InvalidLeadInput, invalid_domain_input)
+    application.add_exception_handler(InvalidCursor, invalid_domain_input)
 
     @application.exception_handler(LeadAlreadySaved)
     def duplicate_lead(_request: Request, _exc: LeadAlreadySaved) -> JSONResponse:
         return api_error("LEAD_ALREADY_SAVED", 409, "Source URL is already saved.")
-    application.add_exception_handler(InvalidCursor, invalid_domain_input)
 
     @application.exception_handler(RequestValidationError)
     def invalid_http_input(_request: Request, _exc: RequestValidationError) -> JSONResponse:
