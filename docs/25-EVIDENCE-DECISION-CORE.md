@@ -12,3 +12,7 @@ The pure engine produces four verdicts: Pursue, Research further, Skip, Insuffic
 ## Independent review corrections
 
 Usable evidence URLs now require an actual HTTPS authority, without embedded control/whitespace, invalid ports or userinfo. An idea-stage proposed capability is recorded as an *unverified hypothesis* in each relationship and report item, never silently counted as an already supported shipped feature. A separate `hypothetical_need_ids` field and stable hypothesis reason code survive a mixed investigation containing unknown or explicitly missing needs. Additional negative tests cover malformed citations and mixed-state verdicts. These changes remain pure domain logic, not provider access or a verified real research journey.
+
+## Full-term provenance matching correction
+
+A substring coincidence is not a valid source locator: “SQL” appearing as the trailing letters of “NoSQL” is rejected. The lexical contract uses case-folded, whitespace-normalized full-term boundaries for both requirement→locator and locator→excerpt. This is an intentionally conservative *syntactic* guard; it does **not** prove semantic equivalence or factual truth, which require separate source and human checks.

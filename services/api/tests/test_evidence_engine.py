@@ -154,3 +154,22 @@ def test_hypothetical_coverage_survives_other_unknown_or_missing_needs() -> None
 def test_unusable_source_url_rejected_even_without_network_fetch(url: str) -> None:
     with pytest.raises(EvidenceInputError):
         Source("s", url, "Need work", datetime.now(UTC), "seeded")
+
+
+def test_lexical_source_support_rejects_sql_inside_nosql() -> None:
+    text = source("We need NoSQL support, not SQL.")
+    # The locator must refer to a full term, and the requirement to a
+    # full term within that locator, not a suffix of an unrelated word.
+    wrong = Need("need-sql", "SQL", "hn-123", "NoSQL", "buying")
+    with pytest.raises(EvidenceInputError, match="locator"):
+        assess((text,), (wrong,), (Capability("SQL", "available"),), launched=True)
+    whole = Need("need-nosql", "NoSQL", "hn-123", "NoSQL", "buying")
+    assert assess(
+        (text,), (whole,), (Capability("NoSQL", "available"),), launched=True
+    ).verdict == Verdict.PURSUE
+    # Hyphen punctuation may separate terms without combining adjacent words.
+    phrase = source("Customers need SQL-based exports")
+    explicit = Need("need-sql-2", "SQL", "hn-123", "SQL", "seeking_solution")
+    assert assess(
+        (phrase,), (explicit,), (Capability("SQL", "available"),), launched=True
+    ).verdict == Verdict.PURSUE

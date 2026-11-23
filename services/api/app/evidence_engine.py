@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import re
 from dataclasses import dataclass
 from datetime import datetime
 from enum import StrEnum
@@ -101,6 +102,16 @@ def _key(value: str) -> str:
     return " ".join(value.casefold().split())
 
 
+def _contains_full_term(text: str, term: str) -> bool:
+    normalized = _key(term)
+    if not normalized:
+        return False
+    return re.search(
+        r"(?<!\\w)" + re.escape(normalized) + r"(?!\\w)",
+        _key(text),
+    ) is not None
+
+
 def assess(
     sources: tuple[Source, ...],
     needs: tuple[Need, ...],
@@ -134,8 +145,8 @@ def assess(
             raise EvidenceInputError("Unknown intent")
         if (
             not need.locator.strip()
-            or _key(need.locator) not in _key(source.excerpt)
-            or _key(need.requirement) not in _key(need.locator)
+            or not _contains_full_term(source.excerpt, need.locator)
+            or not _contains_full_term(need.locator, need.requirement)
         ):
             raise EvidenceInputError("Requirement lacks actual source locator")
     if not needs:
