@@ -207,7 +207,10 @@ describe("authenticated CRM API client", () => {
         subject,
         async () => token,
         async () =>
-          Response.json({ error: { code, debug: "secret-contract-value-8374" } }, { status }),
+          Response.json(
+            { error: { code, debug: "secret-contract-value-8374" } },
+            { status },
+          ),
       );
       await assert.rejects(
         api.read(workspace, leadId, signal),
