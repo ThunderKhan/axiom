@@ -58,7 +58,7 @@ def upgrade() -> None:
             "stage IN ('spotted', 'qualified', 'contacted', 'closed_lost')",
             name="ck_leads_stage",
         ),
-        sa.CheckConstraint("char_length(title) BETWEEN 1 AND 180", name="ck_leads_title"),
+        sa.CheckConstraint("char_length(title) BETWEEN 1 AND 180 AND btrim(title) <> ''", name="ck_leads_title"),
         sa.CheckConstraint("char_length(source_url) <= 2048", name="ck_leads_source_url"),
         sa.CheckConstraint(
             "char_length(source_excerpt) BETWEEN 1 AND 500", name="ck_leads_excerpt"
@@ -66,6 +66,9 @@ def upgrade() -> None:
         sa.CheckConstraint("char_length(note) <= 2000", name="ck_leads_note"),
         sa.CheckConstraint("char_length(unsent_draft) <= 4000", name="ck_leads_draft"),
         sa.CheckConstraint("version >= 1", name="ck_leads_version"),
+        sa.CheckConstraint(
+            "NOT follow_up_done OR follow_up_at IS NOT NULL", name="ck_leads_followup_state"
+        ),
         sa.CheckConstraint("source_origin = 'user_provided'", name="ck_leads_origin"),
         sa.CheckConstraint(
             "char_length(create_key) BETWEEN 8 AND 128 "
