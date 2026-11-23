@@ -164,9 +164,7 @@ def assess(
             report.append(f"{need.requirement}: explicitly missing.")
         elif cap.status == "proposed" and launched:
             unknown.append(need.id)
-            links.append(
-                Relationship(source.id, need.id, cap.name, "unverified", "Not shipped")
-            )
+            links.append(Relationship(source.id, need.id, cap.name, "unverified", "Not shipped"))
             report.append(f"{need.requirement}: proposed but not available.")
         else:
             supported.append(need.id)
@@ -207,11 +205,7 @@ def assess(
         compatibility = "supported"
     else:
         verdict = Verdict.RESEARCH
-        codes = (
-            ("IDEA_STAGE_HYPOTHESIS",)
-            if not launched
-            else ("NO_CLEAR_SOLUTION_INTENT",)
-        )
+        codes = ("IDEA_STAGE_HYPOTHESIS",) if not launched else ("NO_CLEAR_SOLUTION_INTENT",)
         compatibility = "supported"
     if any(by_source[need.source_id].origin == "seeded" for need in needs):
         codes = (*codes, "INCLUDES_SEEDED_EXAMPLE")
