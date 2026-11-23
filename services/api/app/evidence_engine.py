@@ -102,8 +102,8 @@ def assess(
         or len(by_capability) != len(capabilities)
     ):
         raise EvidenceInputError("Duplicate identities")
-    for cap in capabilities:
-        if not cap.name.strip() or cap.status not in (
+    for declared_capability in capabilities:
+        if not declared_capability.name.strip() or declared_capability.status not in (
             "available",
             "proposed",
             "missing",
