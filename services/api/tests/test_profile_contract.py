@@ -71,3 +71,11 @@ def test_all_individually_allowed_answer_lengths_do_not_hit_hidden_limit() -> No
     profile = ProfileAnswers.model_validate(answers)
     assert sum(len(value) for value in answers.values()) > 11000
     assert profile.confirmable()
+
+
+def test_nul_character_rejected_before_postgresql_jsonb_insert() -> None:
+    with pytest.raises(ValidationError, match="NUL"):
+        ProfileAnswers.model_validate({"name": "Test\\u0000" .replace("\\u0000", "\x00")})
+    with pytest.raises(ValidationError, match="NUL"):
+        ProfileAnswers.model_validate({"problem": "A" + chr(0) + "B"})
+

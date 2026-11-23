@@ -1,5 +1,6 @@
 import {
   emptyProfileAnswers,
+  profileQuestions,
   type ProfileAnswers,
 } from "./profile-questions.ts";
 import { isWorkspaceId } from "./workspace-contract.ts";
@@ -50,14 +51,19 @@ function parseAnswers(value: unknown): ProfileAnswers {
   const stage = value.stage;
   if (stage !== null && stage !== "idea" && stage !== "live")
     throw new InvalidProfileResponse();
-  const required = Object.keys(emptyProfileAnswers).filter(
-    (key) => key !== "stage",
+  const required = profileQuestions.filter(
+    (question) => question.key !== "stage",
   );
   if (
     Object.keys(value).length !== Object.keys(emptyProfileAnswers).length ||
-    required.some(
-      (key) => typeof value[key] !== "string" || value[key].length > 2048,
-    )
+    required.some((question) => {
+      const answer = value[question.key];
+      return (
+        typeof answer !== "string" ||
+        answer.includes("\u0000") ||
+        [...answer].length > (question.maxLength ?? 2048)
+      );
+    })
   ) {
     throw new InvalidProfileResponse();
   }

@@ -28,6 +28,13 @@ class ProfileAnswers(BaseModel):
     desired_signals: str = Field(default="", max_length=1000)
     restrictions: str = Field(default="", max_length=1000)
 
+    @field_validator("*")
+    @classmethod
+    def no_nul_in_jsonb(cls, value: object) -> object:
+        if isinstance(value, str) and "\x00" in value:
+            raise ValueError("Answers cannot contain NUL characters")
+        return value
+
     @field_validator("website_url")
     @classmethod
     def valid_unfetched_site(cls, value: str) -> str:

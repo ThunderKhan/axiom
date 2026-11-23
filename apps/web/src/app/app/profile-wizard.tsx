@@ -6,6 +6,7 @@ import {
   emptyProfileAnswers,
   profileQuestions,
   questionLabel,
+  profileInputError,
   type ProfileAnswers,
   type Stage,
   type TextAnswerKey,
@@ -29,6 +30,8 @@ function statusMessage(error: unknown): string {
   if (error instanceof ProfileApiError) {
     if (error.code === "VERSION_CONFLICT")
       return "This profile was changed in another request. Refresh the profile before continuing.";
+    if (error.code === "VALIDATION_FAILED")
+      return "Check the website prefix, answer lengths and invalid characters before saving.";
     if (error.code === "PROFILE_INCOMPLETE")
       return "Confirm a product stage, name, problem, audience and capabilities.";
     if (error.status === 401 || error.status === 403)
@@ -146,6 +149,11 @@ export function ProfileWizard({
 
   const save = async (exit: boolean) => {
     if (!state || writing.current) return;
+    const invalid = profileInputError(answers);
+    if (invalid) {
+      setMessage(invalid);
+      return;
+    }
     writing.current = true;
     setBusy(true);
     const generation = sequence.current;
@@ -177,6 +185,11 @@ export function ProfileWizard({
       setMessage(
         "Confirm the product stage, name, problem, audience and capabilities.",
       );
+      return;
+    }
+    const invalid = profileInputError(answers);
+    if (invalid) {
+      setMessage(invalid);
       return;
     }
     writing.current = true;

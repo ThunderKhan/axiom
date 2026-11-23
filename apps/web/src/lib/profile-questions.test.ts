@@ -5,6 +5,7 @@ import {
   emptyProfileAnswers,
   profileQuestions,
   questionLabel,
+  profileInputError,
 } from "./profile-questions.ts";
 import { InvalidProfileResponse, parseProfileState } from "./profile-api.ts";
 
@@ -64,6 +65,27 @@ test("profile transport refuses malformed or contradictory responses", () => {
         ...valid,
         answers: { ...valid.answers, user_id: "foreign" },
       }),
+    InvalidProfileResponse,
+  );
+});
+
+test("profile validates website scheme, server-aligned Unicode and invalid control text", () => {
+  assert.match(profileInputError({ ...emptyProfileAnswers, website_url: "example.org" }) ?? "", /https:\/\//);
+  assert.equal(profileInputError({ ...emptyProfileAnswers, website_url: "https://example.org" }), null);
+  assert.match(profileInputError({ ...emptyProfileAnswers, name: "a\u0000b" }) ?? "", /invalid character/);
+  const valid = {
+    draft_revision: 1,
+    draft_step: 3,
+    answers: { ...emptyProfileAnswers, problem: "😀".repeat(1100) },
+    confirmed_revision: 0,
+    confirmed: null,
+  };
+  assert.equal(parseProfileState(valid).answers?.problem, valid.answers.problem);
+  assert.throws(
+    () => parseProfileState({
+      ...valid,
+      answers: { ...valid.answers, problem: "😀".repeat(2001) },
+    }),
     InvalidProfileResponse,
   );
 });

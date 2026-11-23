@@ -26,3 +26,7 @@ The selected workspace shows a stage-aware one-question-at-a-time editor, 15 bou
 ## Review-driven correctness changes (23 November)
 
 A saved interview draft now also commits the current 0–14 question position atomically with its answers and optimistic revision, and restores that step on next sign-in. Inputs are disabled during save/confirm to prevent unpersisted edits being mistaken for success. The hidden 11,000-character aggregate limit was removed: the fifteen typed fields already have fixed, independently enforced field limits totaling a bounded payload. This avoids rejecting valid input after the founder follows each displayed maximum. These are functional corrections to Codex's review findings, not relaxed authorization or skipped tests.
+
+## Additional independent review remedies
+
+The browser validates URL scheme and individual Unicode-code-point field limits before save/confirm and provides an actionable API-validation error, while retaining unverified website provenance. All answers reject embedded NUL before PostgreSQL JSONB encoding; this is a deterministic 422 validation error rather than a retryable database outage. TypeScript response validation counts Unicode code points like Python and respects each declared field maximum.

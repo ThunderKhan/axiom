@@ -165,6 +165,24 @@ export const profileQuestions: readonly Question[] = [
   },
 ];
 
+export function profileInputError(answers: ProfileAnswers): string | null {
+  if (
+    answers.website_url !== "" &&
+    !answers.website_url.startsWith("https://") &&
+    !answers.website_url.startsWith("http://")
+  ) {
+    return "Website must begin with https:// or http://, or be left blank.";
+  }
+  if (profileQuestions.some((question) => {
+    if (question.key === "stage") return false;
+    const value = answers[question.key];
+    return value.includes("\u0000") || [...value].length > (question.maxLength ?? 2048);
+  })) {
+    return "One or more answers are longer than the permitted field limit or contain an invalid character.";
+  }
+  return null;
+}
+
 export function canConfirmProfile(answers: ProfileAnswers): boolean {
   return (
     answers.stage !== null &&
