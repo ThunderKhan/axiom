@@ -79,8 +79,7 @@ def upgrade() -> None:
             name="ck_leads_create_key",
         ),
         sa.CheckConstraint(
-            "char_length(create_fingerprint) = 64 "
-            "AND create_fingerprint ~ '^[0-9a-f]+$'",
+            "char_length(create_fingerprint) = 64 AND create_fingerprint ~ '^[0-9a-f]+$'",
             name="ck_leads_fingerprint",
         ),
         sa.UniqueConstraint("workspace_id", "id", name="uq_leads_workspace_id"),
@@ -120,9 +119,7 @@ def upgrade() -> None:
             "event_type IN ('created', 'updated', 'archived')",
             name="ck_lead_events_type",
         ),
-        sa.CheckConstraint(
-            "jsonb_typeof(changed_fields) = 'array'", name="ck_lead_events_changes"
-        ),
+        sa.CheckConstraint("jsonb_typeof(changed_fields) = 'array'", name="ck_lead_events_changes"),
         schema="axiom",
     )
     op.create_index(
