@@ -389,3 +389,8 @@ These are deliberately **not** fixed in a product PRD:
 ---
 
 **Approval record:** Founder approved the PRD on 18 November 2026 with authenticated-only evaluator access. The **landing page → login page → web app** is the single product entry flow. All R0 objectives remain recorded; any scope reduction requires explicit review and must never be presented as completed work.
+## 23 November 2026 — Approved R0 submission cutline (SC-2026-11-23)
+
+After the 22 November integrated-saved-opportunity checkpoint was missed, the owner approved a constrained November 26 execution plan recorded in [23-NOVEMBER-26-SCOPE-CUTLINE.md](23-NOVEMBER-26-SCOPE-CUTLINE.md). **This explicitly changes the former R0 November 26 expansion targets**: third-plus live source families, advanced generative onboarding/personalization, advanced CRM reminders/export/orchestration, broad competitor/graph expansion, richer scenario AI optimization, and additional MCP tools are deferred to a post-submission backlog. Their implementation must not be claimed in the fellowship submission.
+
+**Unchanged P0:** the genuine authenticated, tenant-isolated, source-backed, persisted founder journey, two permitted source-family target with honest limitation handling, basic graph/report and four verdicts, baseline plus two saved scenarios, five real authenticated MCP tools, two HTTP domain operations, deployed/evaluator/browser security evidence, and all truthfulness rules. Missing P0 implementation or verification is **not** waived or release-accepted by this cutline. Existing schedule dates remain historical targets, not completion evidence.

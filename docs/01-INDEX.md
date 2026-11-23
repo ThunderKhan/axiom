@@ -2,7 +2,7 @@
 
 **Project:** Axiom  
 **Repository:** [ThunderKhan/axiom](https://github.com/ThunderKhan/axiom)  
-**Last updated:** 21 November 2026 (real-provider acceptance PASS; hosted database/RLS parity and human security signoff still blocked)  
+**Last updated:** 23 November 2026 (submission recovery cutline approved; M1 hosted database and human signoff still blocked)  
 **Purpose:** Canonical map of product specifications, architectural decisions, and documentation authority for Axiom.
 
 ## Repository-Level Engineering Instructions
@@ -65,6 +65,14 @@ Only documents explicitly approved by the project owner belong in this section. 
 | [`20-M1-AUTH-WORKSPACE-CONTRACT.md`](20-M1-AUTH-WORKSPACE-CONTRACT.md) | Owner-approved **M1-only** identity, sessions, JWT/JWKS, application-user/workspace schema, RLS/runtime-role strategy, exact six API DTOs and AUTH-01 evidence gates; [decision record #21](https://github.com/ThunderKhan/axiom/issues/21) and independent [M1 gate #14](https://github.com/ThunderKhan/axiom/issues/14) | **Approved architecture baseline — M1 only; implementation and provider verification pending** |
 
 **Current access requirement:** The product's entry flow is **landing page → login page → authenticated web app**. Fellowship evaluators receive credentials privately and use the normal application. A public guest sandbox or judge-only demo page is **not** required.
+
+## November 26 submission scope-change decision
+
+| Document | Purpose | Status |
+| --- | --- | --- |
+| [23-NOVEMBER-26-SCOPE-CUTLINE.md](23-NOVEMBER-26-SCOPE-CUTLINE.md) | Owner-approved 23 November recovery plan; explicit R0 breadth reductions, P0 preserved, post-submission backlog, honest release/verification gates | **Approved SC-2026-11-23; implementation not implied** |
+
+This amendment supersedes only the listed **R0 deadline/breadth targets** in the 18 November PRD/MVP. The P0 security, functional and evidence gates remain intact; missing verification remains a blocker.
 
 ## Milestone 1 execution evidence (not a new design approval)
 
