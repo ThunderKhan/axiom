@@ -190,7 +190,10 @@ class Lead(Base):
             "stage IN ('spotted', 'qualified', 'contacted', 'closed_lost')",
             name="ck_leads_stage",
         ),
-        CheckConstraint("char_length(title) BETWEEN 1 AND 180 AND btrim(title) <> ''", name="ck_leads_title"),
+        CheckConstraint(
+            "char_length(title) BETWEEN 1 AND 180 AND btrim(title) <> ''",
+            name="ck_leads_title",
+        ),
         CheckConstraint("char_length(source_url) <= 2048", name="ck_leads_source_url"),
         CheckConstraint("char_length(source_excerpt) BETWEEN 1 AND 500", name="ck_leads_excerpt"),
         CheckConstraint("char_length(note) <= 2000", name="ck_leads_note"),
