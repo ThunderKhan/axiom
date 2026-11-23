@@ -37,6 +37,7 @@ import {
 } from "../../lib/auth-sync";
 import { publicApiBaseUrl } from "../../lib/public-api";
 import { createBrowserAuthClient } from "../../lib/supabase/browser";
+import { ProfileWizard } from "./profile-wizard";
 
 type ReadyView = {
   kind: "ready";
@@ -514,9 +515,13 @@ export function WorkspaceManager({
                   <strong>{view.selected.name}</strong>
                   <p>Verified owner access · Workspace ID {view.selected.id}</p>
                   <p className="workspace-limit">
-                    Workspace context is ready. Product onboarding and
-                    opportunities follow in later milestones.
+                    Workspace context is verified. Complete your product profile below before future research.
                   </p>
+                  <ProfileWizard
+                    key={view.selected.id}
+                    subject={subject}
+                    workspaceId={view.selected.id}
+                  />
                 </>
               ) : (
                 <p>

@@ -393,3 +393,7 @@ docker compose -f infra/compose.db-test.yml down (without -v).
 No Windows-machine or real-provider testing is claimed by the Linux CI runs.
 Workspace selector and full browser-to-provider-to-API acceptance remain
 Issues #19 and #20, and qualified human security acceptance remains required.
+
+## WP-03 profile persistence (implementation in review)
+
+Migration `m2_0001_profiles` follows `m1_0002_rls` and creates private RLS-protected `product_profiles` drafts and append-only `profile_versions`. The runtime role is allowed only owner-scoped operations and cannot update/delete confirmed versions. `GET /api/v1/workspaces/{id}/profile`, `PUT /api/v1/workspaces/{id}/profile/draft` and `POST /api/v1/workspaces/{id}/profile/confirm` require real JWT authentication, verified app-user activation, owner checks and optimistic `expected_revision`. Wrong-user and replay cases are verified in guarded isolated PostgreSQL tests; hosted migration and security signoff remain separate.

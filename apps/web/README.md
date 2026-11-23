@@ -365,3 +365,7 @@ git pull --ff-only origin main. To update an existing checked-out feature
 branch after saving work, use git pull --ff-only origin
 feat/19-workspace-selection-ui. Browser-to-Supabase-to-FastAPI-to-RLS live
 acceptance remains issue #20; qualified human security review is required.
+
+## WP-03 versioned profile draft (implementation in review)
+
+A selected authorized workspace renders the deterministic 15-question idea/live onboarding card. Drafts are saved and resumed through the authenticated FastAPI `/api/v1/workspaces/{id}/profile` endpoints; confirmation creates an immutable numbered profile snapshot. No browser-only draft store or automated URL extraction is used. This is not a claim of provider-hosted migration/deployment verification or finished discovery/CRM.

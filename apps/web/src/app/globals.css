@@ -593,3 +593,98 @@ input:focus-visible,
     scroll-behavior: auto;
   }
 }
+
+
+/* WP-03: one-question-at-a-time founder-declared, versioned profile. */
+.profile-wizard {
+  margin-block: 1.25rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--line);
+}
+
+.profile-wizard-heading,
+.profile-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.profile-wizard h3,
+.profile-wizard h4 {
+  margin: 0 0 0.65rem;
+}
+
+.profile-step,
+.profile-review,
+.profile-saved {
+  display: grid;
+  gap: 0.75rem;
+  margin-top: 1rem;
+}
+
+.profile-progress,
+.profile-hint {
+  color: var(--text);
+  font-size: 0.85rem;
+}
+
+.profile-step > label {
+  font-weight: 700;
+}
+
+.profile-step textarea {
+  width: 100%;
+  min-width: 0;
+  resize: vertical;
+  padding: 0.75rem;
+  border: 1px solid var(--muted);
+  border-radius: 11px;
+  background: var(--bg);
+  color: var(--ink);
+  font: inherit;
+}
+
+.profile-stage-options {
+  display: grid;
+  gap: 0.5rem;
+  border: 0;
+  padding: 0;
+}
+
+.profile-stage-options label {
+  display: flex;
+  align-items: start;
+  gap: 0.5rem;
+  font-size: 0.88rem;
+}
+
+.profile-review dl {
+  display: grid;
+  gap: 0.5rem;
+  margin: 0;
+}
+
+.profile-review dl > div {
+  padding-block: 0.5rem;
+  border-bottom: 1px solid var(--line);
+}
+
+.profile-review dt {
+  color: var(--text);
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+
+.profile-review dd {
+  margin: 0.4rem 0 0;
+  overflow-wrap: anywhere;
+  white-space: pre-wrap;
+  font-size: 0.9rem;
+}
+
+.workspace-section :is(textarea, input):focus-visible {
+  outline: 3px solid var(--green);
+  outline-offset: 3px;
+}

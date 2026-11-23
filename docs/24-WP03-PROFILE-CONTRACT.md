@@ -1,6 +1,6 @@
 # WP-03 — Versioned profile contract (23 November 2026)
 
-**Status: feature branch implementation; real-DB and hosted acceptance pending.**  
+**Status: WP-03 implementation in review; browser and real-DB verification pending.**  
 **Requirements:** FR-02 / MVP-03 / UF-03. **Architecture:** ADR-002 (Supabase Auth, FastAPI-only domain writes, transaction-local PostgreSQL principal, RLS).
 
 ## Surface
@@ -18,3 +18,7 @@ Migration \`m2_0001_profiles\` builds the 1:1 \`product_profiles\` workspace dra
 ## Verification
 
 Run Python type/style/unit tests, guarded isolated PostgreSQL migrations and RLS integration with wrong-user read/write, stale revision, immutable version, backend unprivileged DDL denial, then browser login/refresh/resume. No claim of provider-hosted parity or a complete P0 onboarding journey without actual passing evidence and UI integration.
+
+## Browser integration
+
+The selected workspace shows a stage-aware one-question-at-a-time editor, 15 bounded question families, Back/Skip, explicit draft save/resume, human review, and confirmed version state. All drafts/confirmations call the FastAPI boundary with current Supabase access tokens after verifying the same signed-in subject. No browser storage persists private answers; lost write responses require inspection rather than an automatic duplicate. The public app must still pass real-provider/DB browser tests before this is called a verified journey.
