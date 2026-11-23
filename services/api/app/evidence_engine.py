@@ -106,10 +106,13 @@ def _contains_full_term(text: str, term: str) -> bool:
     normalized = _key(term)
     if not normalized:
         return False
-    return re.search(
-        r"(?<!\w)" + re.escape(normalized) + r"(?!\w)",
-        _key(text),
-    ) is not None
+    return (
+        re.search(
+            r"(?<!\w)" + re.escape(normalized) + r"(?!\w)",
+            _key(text),
+        )
+        is not None
+    )
 
 
 def assess(
@@ -202,9 +205,7 @@ def assess(
                     "Hypothetical idea-stage coverage; proposed, not shipped",
                 )
             )
-            report.append(
-                f"{need.requirement}: hypothetical coverage only; feature not shipped."
-            )
+            report.append(f"{need.requirement}: hypothetical coverage only; feature not shipped.")
         elif cap.status == "proposed" and launched:
             unknown.append(need.id)
             links.append(Relationship(source.id, need.id, cap.name, "unverified", "Not shipped"))

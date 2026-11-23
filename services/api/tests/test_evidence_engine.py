@@ -130,7 +130,8 @@ def test_hypothetical_coverage_survives_other_unknown_or_missing_needs() -> None
     assert "IDEA_STAGE_HYPOTHESIS" in mixed.reason_codes
     assert mixed.compatibility == "partial"
     assert any(
-        link.need_id == "need-1" and link.relation == "unverified"
+        link.need_id == "need-1"
+        and link.relation == "unverified"
         and "Hypothetical" in link.explanation
         for link in mixed.relationships
     )
@@ -147,9 +148,15 @@ def test_hypothetical_coverage_survives_other_unknown_or_missing_needs() -> None
 
 @pytest.mark.parametrize(
     "url",
-    ["https://", "https://?q=1", "https://example.com:invalid",
-     "https://name:pass@example.com", "https://not a host.com",
-     "https://example.org" + chr(10) + "other", "http://example.org"],
+    [
+        "https://",
+        "https://?q=1",
+        "https://example.com:invalid",
+        "https://name:pass@example.com",
+        "https://not a host.com",
+        "https://example.org" + chr(10) + "other",
+        "http://example.org",
+    ],
 )
 def test_unusable_source_url_rejected_even_without_network_fetch(url: str) -> None:
     with pytest.raises(EvidenceInputError):
@@ -164,12 +171,14 @@ def test_lexical_source_support_rejects_sql_inside_nosql() -> None:
     with pytest.raises(EvidenceInputError, match="locator"):
         assess((text,), (wrong,), (Capability("SQL", "available"),), launched=True)
     whole = Need("need-nosql", "NoSQL", "hn-123", "NoSQL", "buying")
-    assert assess(
-        (text,), (whole,), (Capability("NoSQL", "available"),), launched=True
-    ).verdict == Verdict.PURSUE
+    assert (
+        assess((text,), (whole,), (Capability("NoSQL", "available"),), launched=True).verdict
+        == Verdict.PURSUE
+    )
     # Hyphen punctuation may separate terms without combining adjacent words.
     phrase = source("Customers need SQL-based exports")
     explicit = Need("need-sql-2", "SQL", "hn-123", "SQL", "seeking_solution")
-    assert assess(
-        (phrase,), (explicit,), (Capability("SQL", "available"),), launched=True
-    ).verdict == Verdict.PURSUE
+    assert (
+        assess((phrase,), (explicit,), (Capability("SQL", "available"),), launched=True).verdict
+        == Verdict.PURSUE
+    )
