@@ -8,11 +8,11 @@ from uuid import UUID
 from sqlalchemy import (
     BigInteger,
     CheckConstraint,
-    SmallInteger,
     DateTime,
     ForeignKey,
     Index,
     MetaData,
+    SmallInteger,
     String,
     Text,
     UniqueConstraint,

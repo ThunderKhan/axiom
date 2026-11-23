@@ -89,7 +89,8 @@ def upgrade() -> None:
     )
     op.execute("GRANT SELECT ON axiom.product_profiles TO axiom_runtime")
     op.execute(
-        "GRANT INSERT (workspace_id, draft_revision, draft_step, confirmed_revision, draft_answers) "
+        "GRANT INSERT (workspace_id, draft_revision, draft_step, "
+        "confirmed_revision, draft_answers) "
         "ON axiom.product_profiles TO axiom_runtime"
     )
     op.execute(
