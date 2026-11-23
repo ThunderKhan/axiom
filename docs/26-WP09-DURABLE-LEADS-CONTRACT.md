@@ -5,13 +5,13 @@
 
 ## Implemented backend boundary
 
-- Authenticated `POST /api/v1/workspaces/{workspace_id}/leads` with a validated `Idempotency-Key` (8–128 ASCII token), returning 201 on first save or 200 with `already_exists=true` for a matching retry or duplicate manual URL.
+- Authenticated `POST /api/v1/workspaces/{workspace_id}/leads` with a validated `Idempotency-Key` (8–128 ASCII token), returning 201 on first save or 200 with `already_exists=true` for a matching idempotency-key retry. A different key with the same source URL is rejected with an explicit `LEAD_ALREADY_SAVED` 409, not a false successful replay.
 - Workspace-scoped `GET /leads` (bounded listing with stage/title filters), `GET /leads/{lead_id}`, version-guarded `PATCH /leads/{lead_id}`, `DELETE /leads/{lead_id}?expected_version=N` (logical archive), and `GET /leads/{lead_id}/activity` (up to 100 recent events).
 - Stage choices: `spotted`, `qualified`, `contacted`, `closed_lost`. **Contacted is a founder-recorded state, not evidence of a sent message.**
 - Notes, follow-up due date/time with timezone, completion state, and human-editable **unsent** draft. This module has no email, DM, social-posting or delivery code.
 - **Only manually supplied HTTPS URLs and excerpts are accepted.** Each record is persistently labeled `source_origin=user_provided`. This is **not** a verified live-source result, provider permission, scraped document, or evidence-engine assessment.
 - Saves and activity metadata insert atomically in a PostgreSQL transaction. Event payloads include changed field names, not duplicated private note/draft contents.
-- Duplicate request key with a different validated payload produces a typed 409. Reusing a URL cannot silently create another lead. Edits use `expected_version`; stale writes return 409. Archived records remain under retention review and are excluded from standard list/read endpoints.
+- Duplicate request key with a different validated payload produces a typed 409. Reusing a URL with a new key returns a conflict rather than silently creating another lead. Edits use `expected_version`; stale writes return 409. Archived records remain under retention review and are excluded from standard list/read endpoints.
 
 ## Persistence and authorization
 
