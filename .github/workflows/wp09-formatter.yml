@@ -1,0 +1,47 @@
+# Temporary isolated, no-write-back formatter evidence. Delete before merge.
+name: Temporary WP09 pinned formatter
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - "services/api/**"
+      - ".github/workflows/wp09-formatter.yml"
+permissions:
+  contents: read
+jobs:
+  format:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+      - name: Format and lint in disposable CI runner
+        working-directory: services/api
+        run: |
+          python -m pip install --disable-pip-version-check uv==0.10.0
+          uv sync --frozen
+          uv run --frozen ruff check --fix app/leads_contract.py app/leads_store.py app/leads_http.py app/models.py app/database.py app/main.py migrations/versions/m3_0001_leads.py tests/test_leads_contract.py tests/test_leads_integration.py tests/test_api.py tests/test_database_integration.py
+          uv run --frozen ruff format app/leads_contract.py app/leads_store.py app/leads_http.py app/models.py app/database.py app/main.py migrations/versions/m3_0001_leads.py tests/test_leads_contract.py tests/test_leads_integration.py tests/test_api.py tests/test_database_integration.py
+          uv run --frozen ruff check app/leads_contract.py app/leads_store.py app/leads_http.py app/models.py app/database.py app/main.py migrations/versions/m3_0001_leads.py tests/test_leads_contract.py tests/test_leads_integration.py tests/test_api.py tests/test_database_integration.py
+      - name: Export exact formatted bytes for author review
+        run: |
+          for file in \
+            services/api/app/leads_contract.py \
+            services/api/app/leads_store.py \
+            services/api/app/leads_http.py \
+            services/api/app/models.py \
+            services/api/app/database.py \
+            services/api/app/main.py \
+            services/api/migrations/versions/m3_0001_leads.py \
+            services/api/tests/test_leads_contract.py \
+            services/api/tests/test_leads_integration.py \
+            services/api/tests/test_api.py \
+            services/api/tests/test_database_integration.py; do
+            echo "AXIOM_WP09_BEGIN:$file"
+            base64 -w0 "$file"
+            echo ""
+            echo "AXIOM_WP09_END:$file"
+          done
