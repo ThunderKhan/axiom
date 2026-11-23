@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import ipaddress
 import re
 from datetime import datetime
 from typing import Literal
@@ -41,6 +42,16 @@ def _validate_url(value: str) -> str:
         or any(ord(character) < 33 or ord(character) == 127 for character in value)
     ):
         raise ValueError("A valid public HTTPS citation is required")
+    if hostname == "localhost" or hostname.endswith(
+        (".localhost", ".local", ".internal", ".test", ".invalid")
+    ):
+        raise ValueError("Private source authorities are not valid citations")
+    try:
+        literal = ipaddress.ip_address(hostname)
+    except ValueError:
+        literal = None
+    if literal is not None and not literal.is_global:
+        raise ValueError("Private addresses are not valid citations")
     return value
 
 
