@@ -58,7 +58,10 @@ def upgrade() -> None:
             "stage IN ('spotted', 'qualified', 'contacted', 'closed_lost')",
             name="ck_leads_stage",
         ),
-        sa.CheckConstraint("char_length(title) BETWEEN 1 AND 180 AND btrim(title) <> ''", name="ck_leads_title"),
+        sa.CheckConstraint(
+            "char_length(title) BETWEEN 1 AND 180 AND btrim(title) <> ''",
+            name="ck_leads_title",
+        ),
         sa.CheckConstraint("char_length(source_url) <= 2048", name="ck_leads_source_url"),
         sa.CheckConstraint(
             "char_length(source_excerpt) BETWEEN 1 AND 500", name="ck_leads_excerpt"
