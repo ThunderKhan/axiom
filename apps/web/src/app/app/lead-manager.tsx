@@ -16,6 +16,7 @@ import {
 } from "../../lib/lead-api";
 import {
   normalizeLeadText,
+  resolveFollowUpInstant,
   leadStages,
   type Lead,
   type LeadEvent,
@@ -72,7 +73,8 @@ function LeadDetail({
 }) {
   const [stage, setStage] = useState<LeadStage>(lead.stage);
   const [note, setNote] = useState(lead.note);
-  const [followUp, setFollowUp] = useState(toLocalInput(lead.follow_up_at));
+  const initialFollowUpLocal = toLocalInput(lead.follow_up_at);
+  const [followUp, setFollowUp] = useState(initialFollowUpLocal);
   const [completed, setCompleted] = useState(lead.follow_up_done);
   const [draft, setDraft] = useState(lead.unsent_draft);
   const [history, setHistory] = useState<LeadEvent[] | null>(null);
@@ -99,7 +101,11 @@ function LeadDetail({
         expected_version: lead.version,
         stage,
         note: normalizeLeadText(note, 2000),
-        follow_up_at: followUp ? new Date(followUp).toISOString() : null,
+        follow_up_at: resolveFollowUpInstant(
+          lead.follow_up_at,
+          initialFollowUpLocal,
+          followUp,
+        ),
         follow_up_done: followUp ? completed : false,
         unsent_draft: normalizeLeadText(draft, 4000),
       };
@@ -206,7 +212,7 @@ function LeadDetail({
         <textarea
           id="lead-note"
           rows={3}
-          maxLength={2000}
+         
           value={note}
           onChange={(event) => setNote(event.target.value)}
           disabled={busy}
@@ -237,7 +243,7 @@ function LeadDetail({
         <textarea
           id="lead-draft"
           rows={5}
-          maxLength={4000}
+         
           value={draft}
           onChange={(event) => setDraft(event.target.value)}
           disabled={busy}
@@ -543,7 +549,7 @@ export function LeadManager({
             <input
               id="crm-title"
               required
-              maxLength={180}
+             
               value={title}
               disabled={creating || uncertain}
               onChange={(event) => setTitle(event.target.value)}
@@ -565,7 +571,7 @@ export function LeadManager({
             <textarea
               id="crm-excerpt"
               required
-              maxLength={500}
+             
               rows={3}
               value={excerpt}
               disabled={creating || uncertain}
