@@ -7,9 +7,11 @@ from uuid import UUID
 
 from sqlalchemy import (
     BigInteger,
+    Boolean,
     CheckConstraint,
     DateTime,
     ForeignKey,
+    ForeignKeyConstraint,
     Index,
     MetaData,
     SmallInteger,
@@ -24,7 +26,7 @@ from sqlalchemy.dialects.postgresql import UUID as PgUUID
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 
 SCHEMA = "axiom"
-HEAD_REVISION = "m2_0001_profiles"
+HEAD_REVISION = "m3_0001_leads"
 # PostgreSQL's U& literal enumerates Python str.strip() whitespace codepoints.
 _TRIM = (
     r"U&'\0009\000A\000B\000C\000D\001C\001D\001E\001F\0020\0085\0"
@@ -177,3 +179,122 @@ class ProfileVersion(Base):
     confirmed_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), nullable=False, server_default=func.now()
     )
+
+
+class Lead(Base):
+    """One workspace-owned, idempotent manual-source opportunity, never a verified live signal."""
+
+    __tablename__ = "leads"
+    __table_args__ = (
+        CheckConstraint(
+            "stage IN ('spotted', 'qualified', 'contacted', 'closed_lost')",
+            name="ck_leads_stage",
+        ),
+        CheckConstraint(
+            "char_length(title) BETWEEN 1 AND 180 AND btrim(title) <> ''",
+            name="ck_leads_title",
+        ),
+        CheckConstraint("char_length(source_url) <= 2048", name="ck_leads_source_url"),
+        CheckConstraint("char_length(source_excerpt) BETWEEN 1 AND 500", name="ck_leads_excerpt"),
+        CheckConstraint("char_length(note) <= 2000", name="ck_leads_note"),
+        CheckConstraint("char_length(unsent_draft) <= 4000", name="ck_leads_draft"),
+        CheckConstraint("version >= 1", name="ck_leads_version"),
+        CheckConstraint(
+            "NOT follow_up_done OR follow_up_at IS NOT NULL", name="ck_leads_followup_state"
+        ),
+        CheckConstraint("source_origin = 'user_provided'", name="ck_leads_origin"),
+        CheckConstraint(
+            "char_length(create_key) BETWEEN 8 AND 128 "
+            "AND create_key ~ '^[A-Za-z0-9][A-Za-z0-9_-]*$'",
+            name="ck_leads_create_key",
+        ),
+        CheckConstraint(
+            "char_length(create_fingerprint) = 64 AND create_fingerprint ~ '^[0-9a-f]+$'",
+            name="ck_leads_fingerprint",
+        ),
+        UniqueConstraint("workspace_id", "id", name="uq_leads_workspace_id"),
+        UniqueConstraint("workspace_id", "create_key", name="uq_leads_workspace_create_key"),
+        UniqueConstraint("workspace_id", "source_url", name="uq_leads_workspace_source"),
+    )
+
+    id: Mapped[UUID] = mapped_column(PgUUID(as_uuid=True), primary_key=True)
+    workspace_id: Mapped[UUID] = mapped_column(
+        PgUUID(as_uuid=True),
+        ForeignKey("axiom.workspaces.id", ondelete="RESTRICT"),
+        nullable=False,
+    )
+    title: Mapped[str] = mapped_column(Text, nullable=False)
+    source_url: Mapped[str] = mapped_column(Text, nullable=False)
+    source_excerpt: Mapped[str] = mapped_column(Text, nullable=False)
+    source_origin: Mapped[str] = mapped_column(
+        String(30), nullable=False, server_default=text("'user_provided'")
+    )
+    stage: Mapped[str] = mapped_column(String(20), nullable=False, server_default=text("'spotted'"))
+    note: Mapped[str] = mapped_column(Text, nullable=False, server_default=text("''"))
+    follow_up_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    follow_up_done: Mapped[bool] = mapped_column(
+        Boolean, nullable=False, server_default=text("false")
+    )
+    unsent_draft: Mapped[str] = mapped_column(Text, nullable=False, server_default=text("''"))
+    create_key: Mapped[str] = mapped_column(String(128), nullable=False)
+    create_fingerprint: Mapped[str] = mapped_column(String(64), nullable=False)
+    version: Mapped[int] = mapped_column(BigInteger, nullable=False, server_default=text("1"))
+    archived_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, server_default=func.now()
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, server_default=func.now()
+    )
+
+
+Index(
+    "ix_leads_workspace_stage_updated",
+    Lead.workspace_id,
+    Lead.stage,
+    Lead.updated_at.desc(),
+)
+
+
+class LeadEvent(Base):
+    """Append-only metadata history, never copies of private notes or drafts."""
+
+    __tablename__ = "lead_events"
+    __table_args__ = (
+        ForeignKeyConstraint(
+            ["workspace_id", "lead_id"],
+            ["axiom.leads.workspace_id", "axiom.leads.id"],
+            ondelete="RESTRICT",
+            name="fk_lead_events_workspace_lead",
+        ),
+        CheckConstraint(
+            "event_type IN ('created', 'updated', 'archived')",
+            name="ck_lead_events_type",
+        ),
+        CheckConstraint(
+            "jsonb_typeof(changed_fields) = 'array'",
+            name="ck_lead_events_changes",
+        ),
+    )
+
+    id: Mapped[UUID] = mapped_column(PgUUID(as_uuid=True), primary_key=True)
+    workspace_id: Mapped[UUID] = mapped_column(PgUUID(as_uuid=True), nullable=False)
+    lead_id: Mapped[UUID] = mapped_column(PgUUID(as_uuid=True), nullable=False)
+    actor_id: Mapped[UUID] = mapped_column(
+        PgUUID(as_uuid=True),
+        ForeignKey("axiom.app_users.id", ondelete="RESTRICT"),
+        nullable=False,
+    )
+    event_type: Mapped[str] = mapped_column(String(20), nullable=False)
+    changed_fields: Mapped[list[str]] = mapped_column(JSONB, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, server_default=func.now()
+    )
+
+
+Index(
+    "ix_lead_events_workspace_lead_created",
+    LeadEvent.workspace_id,
+    LeadEvent.lead_id,
+    LeadEvent.created_at.desc(),
+)

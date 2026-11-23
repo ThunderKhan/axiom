@@ -101,6 +101,12 @@ This does not supersede the approved M1 contract or authorize a release.
 | --- | --- | --- |
 | [25-EVIDENCE-DECISION-CORE.md](25-EVIDENCE-DECISION-CORE.md) | Deterministic four-verdict source-linked domain evaluation and tests | **Implementation in review; no live-source or graph UI acceptance** |
 
+## WP-09 CRM backend implementation reference (not deployed P0 acceptance)
+
+| Document | Purpose | Status |
+| --- | --- | --- |
+| [26-WP09-DURABLE-LEADS-CONTRACT.md](26-WP09-DURABLE-LEADS-CONTRACT.md) | Workspace-scoped idempotent saved leads, stage/notes/follow-up/draft, immutable activity history, RLS and test/release gaps | **Backend implementation in review; browser, live evidence, managed DB and E2E pending** |
+
 ## Technical Designs Still In Review and Active Decision Register
 
 **Draft** implementation designs still require final schema, model or selected infrastructure evidence. **The complete Edviro-source-derived design direction and ten-value Axiom palette are now approved**; the landing page should be built by reusing and adapting the clone's actual code. **Scoped approval** of MCP, source policies and capacity design does not certify their provider integration or tested performance. The active decision register is a governance record, not blanket approval of open ADRs.
