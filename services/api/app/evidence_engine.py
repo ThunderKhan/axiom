@@ -107,7 +107,7 @@ def _contains_full_term(text: str, term: str) -> bool:
     if not normalized:
         return False
     return re.search(
-        r"(?<!\\w)" + re.escape(normalized) + r"(?!\\w)",
+        r"(?<!\w)" + re.escape(normalized) + r"(?!\w)",
         _key(text),
     ) is not None
 
