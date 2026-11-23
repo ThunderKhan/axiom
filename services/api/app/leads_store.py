@@ -19,6 +19,7 @@ from app.profile_store import ProfileStore
 from app.workspace_store import IdempotencyConflict, VersionConflict, WorkspaceNotFound
 
 MAX_VERSION = 9223372036854775807
+LeadHistoryRows = list[dict[str, object]]
 
 
 class InvalidLeadInput(ValueError):
@@ -238,7 +239,9 @@ class LeadStore:
             for field, value in values.items():
                 setattr(lead, field, value)
             lead.version += 1
-            lead.updated_at = session.scalar(select(func.clock_timestamp()))
+            timestamp = session.scalar(select(func.clock_timestamp()))
+            assert timestamp is not None
+            lead.updated_at = timestamp
             self._event(session, principal, lead, "updated", sorted(values))
             session.flush()
             return _payload(lead)
@@ -278,7 +281,7 @@ class LeadStore:
 
     def history(
         self, principal: VerifiedPrincipal, workspace_id: UUID, lead_id: UUID
-    ) -> list[dict[str, object]]:
+    ) -> LeadHistoryRows:
         with self.database.transaction(principal) as session:
             self._owned(session, principal, workspace_id)
             self._lead(session, workspace_id, lead_id)
