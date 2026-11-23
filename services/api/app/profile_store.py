@@ -38,7 +38,9 @@ class ProfileStore:
             raise WorkspaceNotFound()
 
     @staticmethod
-    def _state(session: Session, workspace_id: UUID, profile: ProductProfile | None) -> dict[str, object]:
+    def _state(
+        session: Session, workspace_id: UUID, profile: ProductProfile | None
+    ) -> dict[str, object]:
         if profile is None:
             return {
                 "draft_revision": 0,

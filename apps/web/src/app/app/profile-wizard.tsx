@@ -103,7 +103,9 @@ export function ProfileWizard({
       const next = await api.read(workspaceId, controller.signal);
       if (sequence.current !== generation) return;
       setState(next);
-      setAnswers(next.answers ?? next.confirmed?.answers ?? emptyProfileAnswers);
+      setAnswers(
+        next.answers ?? next.confirmed?.answers ?? emptyProfileAnswers,
+      );
       setMode(next.confirmed ? "saved" : "interview");
       setStep(0);
       setView("ready");
@@ -171,7 +173,9 @@ export function ProfileWizard({
   const confirm = async () => {
     if (!state || writing.current) return;
     if (!canConfirmProfile(answers)) {
-      setMessage("Confirm the product stage, name, problem, audience and capabilities.");
+      setMessage(
+        "Confirm the product stage, name, problem, audience and capabilities.",
+      );
       return;
     }
     writing.current = true;
@@ -197,7 +201,11 @@ export function ProfileWizard({
       if (generation !== sequence.current) return;
       setState(next);
       setMode("saved");
-      setMessage("Founder-confirmed profile version " + next.confirmed_revision + " saved.");
+      setMessage(
+        "Founder-confirmed profile version " +
+          next.confirmed_revision +
+          " saved.",
+      );
     } catch (error) {
       if (generation === sequence.current) setMessage(statusMessage(error));
     } finally {
@@ -226,7 +234,11 @@ export function ProfileWizard({
       {view === "blocked" && (
         <div role="alert">
           <p>{message}</p>
-          <button className="workspace-secondary" type="button" onClick={() => void load()}>
+          <button
+            className="workspace-secondary"
+            type="button"
+            onClick={() => void load()}
+          >
             Check access again
           </button>
         </div>
@@ -237,7 +249,8 @@ export function ProfileWizard({
             <div className="profile-saved">
               <p>
                 {state.confirmed
-                  ? "Confirmed founder declaration: " + state.confirmed.answers.name
+                  ? "Confirmed founder declaration: " +
+                    state.confirmed.answers.name
                   : "Your onboarding draft is saved. It has not been confirmed."}
               </p>
               <p>
@@ -253,16 +266,22 @@ export function ProfileWizard({
                   setMessage("");
                 }}
               >
-                {state.confirmed ? "Review or edit profile" : "Resume questions"}
+                {state.confirmed
+                  ? "Review or edit profile"
+                  : "Resume questions"}
               </button>
             </div>
           ) : mode === "interview" ? (
             <div className="profile-step">
               <p className="profile-progress">
                 Question {step + 1} of {profileQuestions.length}
-                {question.optional ? " · Optional" : " · Required for confirmation"}
+                {question.optional
+                  ? " · Optional"
+                  : " · Required for confirmation"}
               </p>
-              <label htmlFor="profile-answer">{questionLabel(question, currentStage)}</label>
+              <label htmlFor="profile-answer">
+                {questionLabel(question, currentStage)}
+              </label>
               <p className="profile-hint">{question.why}</p>
               {question.key === "stage" ? (
                 <fieldset className="profile-stage-options">
@@ -272,7 +291,9 @@ export function ProfileWizard({
                       type="radio"
                       name="product-stage"
                       checked={answers.stage === "idea"}
-                      onChange={() => setAnswers((value) => ({ ...value, stage: "idea" }))}
+                      onChange={() =>
+                        setAnswers((value) => ({ ...value, stage: "idea" }))
+                      }
                     />
                     Idea-stage — proposed capabilities
                   </label>
@@ -281,7 +302,9 @@ export function ProfileWizard({
                       type="radio"
                       name="product-stage"
                       checked={answers.stage === "live"}
-                      onChange={() => setAnswers((value) => ({ ...value, stage: "live" }))}
+                      onChange={() =>
+                        setAnswers((value) => ({ ...value, stage: "live" }))
+                      }
                     />
                     Live product — existing capabilities
                   </label>
@@ -289,13 +312,24 @@ export function ProfileWizard({
               ) : (
                 <textarea
                   id="profile-answer"
-                  rows={question.key === "problem" || question.key === "capabilities" ? 4 : 2}
+                  rows={
+                    question.key === "problem" ||
+                    question.key === "capabilities"
+                      ? 4
+                      : 2
+                  }
                   maxLength={question.maxLength}
-                  placeholder={question.placeholder ?? "Your answer, or leave blank if unknown"}
+                  placeholder={
+                    question.placeholder ??
+                    "Your answer, or leave blank if unknown"
+                  }
                   value={answers[question.key] ?? ""}
                   onChange={(event) => {
                     const key = question.key as TextAnswerKey;
-                    setAnswers((value) => ({ ...value, [key]: event.target.value }));
+                    setAnswers((value) => ({
+                      ...value,
+                      [key]: event.target.value,
+                    }));
                   }}
                 />
               )}
@@ -313,7 +347,11 @@ export function ProfileWizard({
                     className="workspace-secondary"
                     type="button"
                     disabled={busy}
-                    onClick={() => setStep((value) => Math.min(value + 1, profileQuestions.length - 1))}
+                    onClick={() =>
+                      setStep((value) =>
+                        Math.min(value + 1, profileQuestions.length - 1),
+                      )
+                    }
                   >
                     Skip
                   </button>
@@ -321,13 +359,17 @@ export function ProfileWizard({
                 <button
                   className="workspace-primary"
                   type="button"
-                  disabled={busy || (question.key === "stage" && answers.stage === null)}
+                  disabled={
+                    busy || (question.key === "stage" && answers.stage === null)
+                  }
                   onClick={() => {
                     if (step === profileQuestions.length - 1) setMode("review");
                     else setStep((value) => value + 1);
                   }}
                 >
-                  {step === profileQuestions.length - 1 ? "Review answers" : "Next"}
+                  {step === profileQuestions.length - 1
+                    ? "Review answers"
+                    : "Next"}
                 </button>
               </div>
               <button
@@ -342,7 +384,9 @@ export function ProfileWizard({
           ) : (
             <div className="profile-review">
               <h4>Confirm your founder declarations</h4>
-              <p>Nothing here is automatically verified by a website or AI model.</p>
+              <p>
+                Nothing here is automatically verified by a website or AI model.
+              </p>
               <dl>
                 {profileQuestions.map((item) => (
                   <div key={item.key}>
@@ -371,7 +415,11 @@ export function ProfileWizard({
               </div>
             </div>
           )}
-          {message && <p className="workspace-notice" role="status">{message}</p>}
+          {message && (
+            <p className="workspace-notice" role="status">
+              {message}
+            </p>
+          )}
         </>
       )}
     </section>

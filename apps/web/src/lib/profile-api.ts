@@ -53,9 +53,7 @@ function parseAnswers(value: unknown): ProfileAnswers {
   if (
     Object.keys(value).length !== Object.keys(emptyProfileAnswers).length ||
     required.some(
-      (key) =>
-        typeof value[key] !== "string" ||
-        value[key].length > 2048,
+      (key) => typeof value[key] !== "string" || value[key].length > 2048,
     )
   ) {
     throw new InvalidProfileResponse();

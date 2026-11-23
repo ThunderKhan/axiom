@@ -45,7 +45,9 @@ def upgrade() -> None:
         ),
         sa.CheckConstraint("draft_revision >= 0", name="ck_profile_draft_revision"),
         sa.CheckConstraint("confirmed_revision >= 0", name="ck_profile_confirmed_revision"),
-        sa.CheckConstraint("jsonb_typeof(draft_answers) = 'object'", name="ck_profile_draft_object"),
+        sa.CheckConstraint(
+            "jsonb_typeof(draft_answers) = 'object'", name="ck_profile_draft_object"
+        ),
         schema="axiom",
     )
     op.create_table(
@@ -64,7 +66,9 @@ def upgrade() -> None:
         ),
         sa.CheckConstraint("revision >= 1", name="ck_profile_version_revision"),
         sa.CheckConstraint("jsonb_typeof(answers) = 'object'", name="ck_profile_version_object"),
-        sa.UniqueConstraint("workspace_id", "revision", name="uq_profile_version_workspace_revision"),
+        sa.UniqueConstraint(
+            "workspace_id", "revision", name="uq_profile_version_workspace_revision"
+        ),
         schema="axiom",
     )
     for table in ("product_profiles", "profile_versions"):

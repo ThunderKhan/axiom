@@ -139,8 +139,12 @@ class ProductProfile(Base):
         ForeignKey("axiom.workspaces.id", ondelete="RESTRICT"),
         primary_key=True,
     )
-    draft_revision: Mapped[int] = mapped_column(BigInteger, nullable=False, server_default=text("0"))
-    confirmed_revision: Mapped[int] = mapped_column(BigInteger, nullable=False, server_default=text("0"))
+    draft_revision: Mapped[int] = mapped_column(
+        BigInteger, nullable=False, server_default=text("0")
+    )
+    confirmed_revision: Mapped[int] = mapped_column(
+        BigInteger, nullable=False, server_default=text("0")
+    )
     draft_answers: Mapped[dict[str, object]] = mapped_column(
         JSONB, nullable=False, server_default=text("'{}'::jsonb")
     )

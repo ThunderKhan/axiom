@@ -6,7 +6,7 @@ from datetime import datetime
 from typing import Annotated
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, Request
+from fastapi import APIRouter, Depends
 from pydantic import BaseModel, Field
 
 from app.auth import VerifiedPrincipal, get_verified_principal
@@ -39,7 +39,9 @@ class ProfileStateDTO(BaseModel):
     confirmed: ConfirmedProfileDTO | None
 
 
-def get_profile_store(workspaces: Annotated[WorkspaceStore, Depends(get_workspace_store)]) -> ProfileStore:
+def get_profile_store(
+    workspaces: Annotated[WorkspaceStore, Depends(get_workspace_store)],
+) -> ProfileStore:
     return ProfileStore(workspaces.database)
 
 
@@ -71,8 +73,7 @@ def save_draft(
 ) -> ProfileStateDTO:
     return ProfileStateDTO.model_validate(
         store.save(
-            principal, workspace_id, answers=body.answers,
-            expected_revision=body.expected_revision
+            principal, workspace_id, answers=body.answers, expected_revision=body.expected_revision
         )
     )
 

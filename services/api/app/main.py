@@ -16,11 +16,11 @@ from sqlalchemy.exc import SQLAlchemyError
 
 from app.auth import AuthFailure, JwtVerifier
 from app.database import Database
+from app.profile_http import router as profile_router
+from app.profile_store import ProfileIncomplete
 from app.settings import RuntimeSettings, load_settings
 from app.workspace_cursor import InvalidCursor
 from app.workspace_http import ApiFailure, router
-from app.profile_http import router as profile_router
-from app.profile_store import ProfileIncomplete
 from app.workspace_store import (
     AccountDisabled,
     IdempotencyConflict,

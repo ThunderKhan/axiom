@@ -515,7 +515,8 @@ export function WorkspaceManager({
                   <strong>{view.selected.name}</strong>
                   <p>Verified owner access · Workspace ID {view.selected.id}</p>
                   <p className="workspace-limit">
-                    Workspace context is verified. Complete your product profile below before future research.
+                    Workspace context is verified. Complete your product profile
+                    below before future research.
                   </p>
                   <ProfileWizard
                     key={view.selected.id}

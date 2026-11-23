@@ -46,7 +46,8 @@ def _answers(name: str, *, stage: str = "idea") -> ProfileAnswers:
             "stage": stage,
             "problem": "Researchers cannot find enough evidence",
             "audience": "Founders",
-            "capabilities": "Proposed sourced comparisons" if stage == "idea"
+            "capabilities": "Proposed sourced comparisons"
+            if stage == "idea"
             else "Existing customer research reports",
             "website_url": "https://example.org",
         }
@@ -72,7 +73,9 @@ def test_resumable_profile_is_owner_scoped_and_versions_are_immutable(database: 
     with pytest.raises(WorkspaceNotFound):
         profiles.save(bob, alice_id, answers=_answers("Bad"), expected_revision=0)
 
-    first = profiles.save(alice, alice_id, answers=ProfileAnswers(name="Incomplete"), expected_revision=0)
+    first = profiles.save(
+        alice, alice_id, answers=ProfileAnswers(name="Incomplete"), expected_revision=0
+    )
     assert first["draft_revision"] == 1
     with pytest.raises(ProfileIncomplete):
         profiles.confirm(alice, alice_id, expected_revision=1)
@@ -89,7 +92,9 @@ def test_resumable_profile_is_owner_scoped_and_versions_are_immutable(database: 
     with pytest.raises(VersionConflict):
         profiles.confirm(alice, alice_id, expected_revision=2)
 
-    next_draft = profiles.save(alice, alice_id, answers=_answers("Live", stage="live"), expected_revision=3)
+    next_draft = profiles.save(
+        alice, alice_id, answers=_answers("Live", stage="live"), expected_revision=3
+    )
     assert next_draft["confirmed"]["id"] == immutable_id
     assert next_draft["confirmed"]["answers"]["name"] == "Idea"
     newer = profiles.confirm(alice, alice_id, expected_revision=4)
