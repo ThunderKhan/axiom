@@ -169,10 +169,14 @@ export function createLeadApi(
     ): Promise<Lead & { already_exists: boolean }> {
       if (!/^[A-Za-z0-9][A-Za-z0-9_-]{7,127}$/.test(key))
         throw new InvalidLeadResponse();
-      return parseCreatedLead(
-        await send(pathFor(workspaceId), "POST", signal, payload, key),
-        workspaceId,
-      );
+      const response = await send(pathFor(workspaceId), "POST", signal, payload, key);
+      try {
+        return parseCreatedLead(response, workspaceId);
+      } catch (error) {
+        if (error instanceof InvalidLeadResponse)
+          throw new LeadApiError("NETWORK_UNCERTAIN", 0);
+        throw error;
+      }
     },
     async update(
       workspaceId: string,
@@ -180,12 +184,16 @@ export function createLeadApi(
       payload: LeadEdit,
       signal: AbortSignal,
     ): Promise<Lead> {
-      const item = parseLead(
-        await send(pathFor(workspaceId, leadId), "PATCH", signal, payload),
-        workspaceId,
-      );
-      if (item.id !== leadId) throw new InvalidLeadResponse();
-      return item;
+      const response = await send(pathFor(workspaceId, leadId), "PATCH", signal, payload);
+      try {
+        const item = parseLead(response, workspaceId);
+        if (item.id !== leadId) throw new InvalidLeadResponse();
+        return item;
+      } catch (error) {
+        if (error instanceof InvalidLeadResponse)
+          throw new LeadApiError("NETWORK_UNCERTAIN", 0);
+        throw error;
+      }
     },
     async archive(
       workspaceId: string,
