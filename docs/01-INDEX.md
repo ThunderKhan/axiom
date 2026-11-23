@@ -83,6 +83,12 @@ This amendment supersedes only the listed **R0 deadline/breadth targets** in the
 
 This does not supersede the approved M1 contract or authorize a release.
 
+## WP-05/07 implementation reference (not P0 acceptance)
+
+| Document | Purpose | Status |
+| --- | --- | --- |
+| [25-EVIDENCE-DECISION-CORE.md](25-EVIDENCE-DECISION-CORE.md) | Deterministic four-verdict source-linked domain evaluation and tests | **Implementation in review; no live-source or graph UI acceptance** |
+
 ## Technical Designs Still In Review and Active Decision Register
 
 **Draft** implementation designs still require final schema, model or selected infrastructure evidence. **The complete Edviro-source-derived design direction and ten-value Axiom palette are now approved**; the landing page should be built by reusing and adapting the clone's actual code. **Scoped approval** of MCP, source policies and capacity design does not certify their provider integration or tested performance. The active decision register is a governance record, not blanket approval of open ADRs.
