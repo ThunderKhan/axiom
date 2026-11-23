@@ -249,6 +249,7 @@ export function LeadManager({
   const [excerpt, setExcerpt] = useState("");
   const [creating, setCreating] = useState(false);
   const [uncertain, setUncertain] = useState(false);
+  const [inspectedUncertain, setInspectedUncertain] = useState(false);
   const saving = useRef(false);
   const pendingKey = useRef<string | null>(null);
   const active = useRef<AbortController | null>(null);
@@ -283,6 +284,7 @@ export function LeadManager({
       if (controller.signal.aborted) return;
       setItems(records);
       setState("ready");
+      if (pendingKey.current) setInspectedUncertain(true);
       setNotice(
         records.length === 100
           ? "Showing the most recent 100 leads. Older records require API filters."
@@ -338,6 +340,7 @@ export function LeadManager({
     }
     const key = crypto.randomUUID();
     pendingKey.current = key;
+    setInspectedUncertain(false);
     saving.current = true;
     setCreating(true);
     setNotice("");
@@ -451,8 +454,10 @@ export function LeadManager({
                 <button type="button" className="workspace-secondary"
                   onClick={() => void load()}>Inspect saved leads</button>
                 <button type="button" className="workspace-secondary"
+                  disabled={!inspectedUncertain}
                   onClick={() => {
                     setUncertain(false);
+                    setInspectedUncertain(false);
                     pendingKey.current = null;
                     setNotice("Start a separate attempt only after checking for duplicates.");
                   }}>I inspected; allow a separate attempt</button>
