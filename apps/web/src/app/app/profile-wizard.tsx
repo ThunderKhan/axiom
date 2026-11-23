@@ -339,7 +339,6 @@ export function ProfileWizard({
                       ? 4
                       : 2
                   }
-                  maxLength={question.maxLength}
                   placeholder={
                     question.placeholder ??
                     "Your answer, or leave blank if unknown"
@@ -347,10 +346,16 @@ export function ProfileWizard({
                   value={answers[question.key] ?? ""}
                   disabled={busy}
                   onChange={(event) => {
+                    const nextValue = event.target.value;
+                    if ([...nextValue].length > (question.maxLength ?? 2048)) {
+                      setMessage("This answer exceeds the permitted field length.");
+                      return;
+                    }
                     const key = question.key as TextAnswerKey;
+                    setMessage("");
                     setAnswers((value) => ({
                       ...value,
-                      [key]: event.target.value,
+                      [key]: nextValue,
                     }));
                   }}
                 />
