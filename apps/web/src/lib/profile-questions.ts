@@ -173,11 +173,16 @@ export function profileInputError(answers: ProfileAnswers): string | null {
   ) {
     return "Website must begin with https:// or http://, or be left blank.";
   }
-  if (profileQuestions.some((question) => {
-    if (question.key === "stage") return false;
-    const value = answers[question.key];
-    return value.includes("\u0000") || [...value].length > (question.maxLength ?? 2048);
-  })) {
+  if (
+    profileQuestions.some((question) => {
+      if (question.key === "stage") return false;
+      const value = answers[question.key];
+      return (
+        value.includes("\u0000") ||
+        [...value].length > (question.maxLength ?? 2048)
+      );
+    })
+  ) {
     return "One or more answers are longer than the permitted field limit or contain an invalid character.";
   }
   return null;

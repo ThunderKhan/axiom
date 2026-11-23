@@ -75,7 +75,6 @@ def test_all_individually_allowed_answer_lengths_do_not_hit_hidden_limit() -> No
 
 def test_nul_character_rejected_before_postgresql_jsonb_insert() -> None:
     with pytest.raises(ValidationError, match="NUL"):
-        ProfileAnswers.model_validate({"name": "Test\\u0000" .replace("\\u0000", "\x00")})
+        ProfileAnswers.model_validate({"name": "Test\\u0000".replace("\\u0000", "\x00")})
     with pytest.raises(ValidationError, match="NUL"):
         ProfileAnswers.model_validate({"problem": "A" + chr(0) + "B"})
-

@@ -70,9 +70,22 @@ test("profile transport refuses malformed or contradictory responses", () => {
 });
 
 test("profile validates website scheme, server-aligned Unicode and invalid control text", () => {
-  assert.match(profileInputError({ ...emptyProfileAnswers, website_url: "example.org" }) ?? "", /https:\/\//);
-  assert.equal(profileInputError({ ...emptyProfileAnswers, website_url: "https://example.org" }), null);
-  assert.match(profileInputError({ ...emptyProfileAnswers, name: "a\u0000b" }) ?? "", /invalid character/);
+  assert.match(
+    profileInputError({ ...emptyProfileAnswers, website_url: "example.org" }) ??
+      "",
+    /https:\/\//,
+  );
+  assert.equal(
+    profileInputError({
+      ...emptyProfileAnswers,
+      website_url: "https://example.org",
+    }),
+    null,
+  );
+  assert.match(
+    profileInputError({ ...emptyProfileAnswers, name: "a\u0000b" }) ?? "",
+    /invalid character/,
+  );
   const valid = {
     draft_revision: 1,
     draft_step: 3,
@@ -80,12 +93,16 @@ test("profile validates website scheme, server-aligned Unicode and invalid contr
     confirmed_revision: 0,
     confirmed: null,
   };
-  assert.equal(parseProfileState(valid).answers?.problem, valid.answers.problem);
+  assert.equal(
+    parseProfileState(valid).answers?.problem,
+    valid.answers.problem,
+  );
   assert.throws(
-    () => parseProfileState({
-      ...valid,
-      answers: { ...valid.answers, problem: "😀".repeat(2001) },
-    }),
+    () =>
+      parseProfileState({
+        ...valid,
+        answers: { ...valid.answers, problem: "😀".repeat(2001) },
+      }),
     InvalidProfileResponse,
   );
 });

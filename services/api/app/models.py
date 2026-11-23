@@ -144,9 +144,7 @@ class ProductProfile(Base):
     draft_revision: Mapped[int] = mapped_column(
         BigInteger, nullable=False, server_default=text("0")
     )
-    draft_step: Mapped[int] = mapped_column(
-        SmallInteger, nullable=False, server_default=text("0")
-    )
+    draft_step: Mapped[int] = mapped_column(SmallInteger, nullable=False, server_default=text("0"))
     confirmed_revision: Mapped[int] = mapped_column(
         BigInteger, nullable=False, server_default=text("0")
     )
