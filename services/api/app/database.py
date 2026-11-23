@@ -71,7 +71,7 @@ class Database:
                     return False
                 role_safe = conn.scalar(
                     text(
-                        """SELECT count(*) = 5 AND bool_and(
+                        """SELECT count(*) = 7 AND bool_and(
                             NOT r.rolsuper AND NOT r.rolbypassrls
                             AND NOT r.rolcreatedb AND NOT r.rolcreaterole
                             AND NOT has_schema_privilege(current_user, 'axiom', 'CREATE')
@@ -87,7 +87,8 @@ class Database:
                          WHERE r.rolname = current_user AND n.nspname = 'axiom'
                            AND c.relname IN (
                                'app_users', 'workspaces', 'workspace_create_idempotency',
-                               'product_profiles', 'profile_versions'
+                               'product_profiles', 'profile_versions',
+                               'leads', 'lead_events'
                            )
                            AND c.relkind = 'r'"""
                     )
@@ -98,7 +99,7 @@ class Database:
                     text(
                         """SELECT
                             (SELECT count(*) FROM pg_policies
-                             WHERE schemaname = 'axiom') = 12
+                             WHERE schemaname = 'axiom') = 17
                             AND NOT EXISTS (
                                 SELECT 1 FROM (
                                     VALUES
@@ -115,7 +116,12 @@ class Database:
                                     ('product_profiles', 'product_profiles_own_insert', 'INSERT'),
                                     ('product_profiles', 'product_profiles_own_update', 'UPDATE'),
                                     ('profile_versions', 'profile_versions_own_read', 'SELECT'),
-                                    ('profile_versions', 'profile_versions_own_insert', 'INSERT')
+                                    ('profile_versions', 'profile_versions_own_insert', 'INSERT'),
+                                    ('leads', 'leads_own_read', 'SELECT'),
+                                    ('leads', 'leads_own_insert', 'INSERT'),
+                                    ('leads', 'leads_own_update', 'UPDATE'),
+                                    ('lead_events', 'lead_events_own_read', 'SELECT'),
+                                    ('lead_events', 'lead_events_own_insert', 'INSERT')
                                 ) AS required(table_name, policy_name, command)
                                 LEFT JOIN pg_policies p
                                   ON p.schemaname = 'axiom'
@@ -187,7 +193,33 @@ class Database:
                                 ('profile_versions', 'id', 'INSERT'),
                                 ('profile_versions', 'workspace_id', 'INSERT'),
                                 ('profile_versions', 'revision', 'INSERT'),
-                                ('profile_versions', 'answers', 'INSERT')
+                                ('profile_versions', 'answers', 'INSERT'),
+                                ('leads', 'id', 'INSERT'),
+                                ('leads', 'workspace_id', 'INSERT'),
+                                ('leads', 'title', 'INSERT'),
+                                ('leads', 'source_url', 'INSERT'),
+                                ('leads', 'source_excerpt', 'INSERT'),
+                                ('leads', 'stage', 'INSERT'),
+                                ('leads', 'note', 'INSERT'),
+                                ('leads', 'follow_up_at', 'INSERT'),
+                                ('leads', 'follow_up_done', 'INSERT'),
+                                ('leads', 'unsent_draft', 'INSERT'),
+                                ('leads', 'create_key', 'INSERT'),
+                                ('leads', 'create_fingerprint', 'INSERT'),
+                                ('leads', 'stage', 'UPDATE'),
+                                ('leads', 'note', 'UPDATE'),
+                                ('leads', 'follow_up_at', 'UPDATE'),
+                                ('leads', 'follow_up_done', 'UPDATE'),
+                                ('leads', 'unsent_draft', 'UPDATE'),
+                                ('leads', 'archived_at', 'UPDATE'),
+                                ('leads', 'version', 'UPDATE'),
+                                ('leads', 'updated_at', 'UPDATE'),
+                                ('lead_events', 'id', 'INSERT'),
+                                ('lead_events', 'workspace_id', 'INSERT'),
+                                ('lead_events', 'lead_id', 'INSERT'),
+                                ('lead_events', 'actor_id', 'INSERT'),
+                                ('lead_events', 'event_type', 'INSERT'),
+                                ('lead_events', 'changed_fields', 'INSERT')
                                 ) AS required(table_name, column_name, action)
                             )
                             AND has_table_privilege(
@@ -195,6 +227,21 @@ class Database:
                             )
                             AND has_table_privilege(
                                 current_user, 'axiom.profile_versions', 'SELECT'
+                            )
+                            AND has_table_privilege(
+                                current_user, 'axiom.leads', 'SELECT'
+                            )
+                            AND has_table_privilege(
+                                current_user, 'axiom.lead_events', 'SELECT'
+                            )
+                            AND NOT has_table_privilege(
+                                current_user, 'axiom.lead_events', 'UPDATE'
+                            )
+                            AND NOT has_table_privilege(
+                                current_user, 'axiom.lead_events', 'DELETE'
+                            )
+                            AND NOT has_table_privilege(
+                                current_user, 'axiom.leads', 'DELETE'
                             )
                             AND NOT has_table_privilege(
                                 current_user, 'axiom.profile_versions', 'UPDATE'
