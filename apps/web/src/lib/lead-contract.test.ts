@@ -82,8 +82,28 @@ describe("CRM response and provenance integrity", () => {
 
   it("denies forged event history and invalid response collections", () => {
     for (const data of [
-      { items: [{ id: other, actor_id: workspace, event_type: "sent", changed_fields: [], created_at: saved.created_at }] },
-      { items: [{ id: other, actor_id: workspace, event_type: "created", changed_fields: "all", created_at: saved.created_at }] },
+      {
+        items: [
+          {
+            id: other,
+            actor_id: workspace,
+            event_type: "sent",
+            changed_fields: [],
+            created_at: saved.created_at,
+          },
+        ],
+      },
+      {
+        items: [
+          {
+            id: other,
+            actor_id: workspace,
+            event_type: "created",
+            changed_fields: "all",
+            created_at: saved.created_at,
+          },
+        ],
+      },
       { items: null },
       { items: new Array(101).fill(saved) },
     ])
