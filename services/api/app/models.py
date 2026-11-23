@@ -209,8 +209,7 @@ class Lead(Base):
             name="ck_leads_create_key",
         ),
         CheckConstraint(
-            "char_length(create_fingerprint) = 64 "
-            "AND create_fingerprint ~ '^[0-9a-f]+$'",
+            "char_length(create_fingerprint) = 64 AND create_fingerprint ~ '^[0-9a-f]+$'",
             name="ck_leads_fingerprint",
         ),
         UniqueConstraint("workspace_id", "id", name="uq_leads_workspace_id"),
@@ -230,22 +229,16 @@ class Lead(Base):
     source_origin: Mapped[str] = mapped_column(
         String(30), nullable=False, server_default=text("'user_provided'")
     )
-    stage: Mapped[str] = mapped_column(
-        String(20), nullable=False, server_default=text("'spotted'")
-    )
+    stage: Mapped[str] = mapped_column(String(20), nullable=False, server_default=text("'spotted'"))
     note: Mapped[str] = mapped_column(Text, nullable=False, server_default=text("''"))
     follow_up_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     follow_up_done: Mapped[bool] = mapped_column(
         Boolean, nullable=False, server_default=text("false")
     )
-    unsent_draft: Mapped[str] = mapped_column(
-        Text, nullable=False, server_default=text("''")
-    )
+    unsent_draft: Mapped[str] = mapped_column(Text, nullable=False, server_default=text("''"))
     create_key: Mapped[str] = mapped_column(String(128), nullable=False)
     create_fingerprint: Mapped[str] = mapped_column(String(64), nullable=False)
-    version: Mapped[int] = mapped_column(
-        BigInteger, nullable=False, server_default=text("1")
-    )
+    version: Mapped[int] = mapped_column(BigInteger, nullable=False, server_default=text("1"))
     archived_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), nullable=False, server_default=func.now()
