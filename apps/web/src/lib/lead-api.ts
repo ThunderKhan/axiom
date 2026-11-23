@@ -99,7 +99,8 @@ export function createLeadApi(
     let response: Response;
     try {
       const token = await getToken(subject);
-      if (!token || signal.aborted) throw new LeadApiError("AUTH_REQUIRED", 401);
+      if (!token || signal.aborted)
+        throw new LeadApiError("AUTH_REQUIRED", 401);
       const headers: Record<string, string> = {
         Authorization: "Bearer " + token,
         Accept: "application/json",
@@ -130,14 +131,16 @@ export function createLeadApi(
       data = JSON.parse(text) as unknown;
     } catch {
       if (response.ok) {
-        if (method !== "GET")
-          throw new LeadApiError("NETWORK_UNCERTAIN", 0);
+        if (method !== "GET") throw new LeadApiError("NETWORK_UNCERTAIN", 0);
         throw new InvalidLeadResponse();
       }
       // The HTTP status remains authoritative when an error is malformed.
     }
     if (!response.ok) {
-      throw new LeadApiError(serverCode(data, response.status), response.status);
+      throw new LeadApiError(
+        serverCode(data, response.status),
+        response.status,
+      );
     }
     return data;
   }
@@ -169,7 +172,13 @@ export function createLeadApi(
     ): Promise<Lead & { already_exists: boolean }> {
       if (!/^[A-Za-z0-9][A-Za-z0-9_-]{7,127}$/.test(key))
         throw new InvalidLeadResponse();
-      const response = await send(pathFor(workspaceId), "POST", signal, payload, key);
+      const response = await send(
+        pathFor(workspaceId),
+        "POST",
+        signal,
+        payload,
+        key,
+      );
       try {
         return parseCreatedLead(response, workspaceId);
       } catch (error) {
@@ -184,7 +193,12 @@ export function createLeadApi(
       payload: LeadEdit,
       signal: AbortSignal,
     ): Promise<Lead> {
-      const response = await send(pathFor(workspaceId, leadId), "PATCH", signal, payload);
+      const response = await send(
+        pathFor(workspaceId, leadId),
+        "PATCH",
+        signal,
+        payload,
+      );
       try {
         const item = parseLead(response, workspaceId);
         if (item.id !== leadId) throw new InvalidLeadResponse();
