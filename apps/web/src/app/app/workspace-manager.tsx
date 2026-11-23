@@ -457,7 +457,8 @@ export function WorkspaceManager({
         </div>
       )}
       {view.kind === "ready" && (
-        <div className="workspace-grid">
+        <>
+          <div className="workspace-grid">
           <div className="workspace-card">
             <div className="workspace-card-heading">
               <h2>
@@ -522,11 +523,6 @@ export function WorkspaceManager({
                   </p>
                   <ProfileWizard
                     key={view.selected.id}
-                    subject={subject}
-                    workspaceId={view.selected.id}
-                  />
-                  <LeadManager
-                    key={"crm-" + view.selected.id}
                     subject={subject}
                     workspaceId={view.selected.id}
                   />
@@ -622,7 +618,14 @@ export function WorkspaceManager({
               </button>
             </form>
           </div>
-        </div>
+          {view.selected && (
+            <LeadManager
+              key={"crm-" + view.selected.id}
+              subject={subject}
+              workspaceId={view.selected.id}
+            />
+          )}
+        </>
       )}
     </section>
   );
