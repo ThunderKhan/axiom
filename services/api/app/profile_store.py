@@ -108,7 +108,7 @@ class ProfileStore:
                 raise VersionConflict()
             profile.draft_answers = answers.model_dump(mode="json")
             profile.draft_revision += 1
-            profile.updated_at = session.scalar(select(func.clock_timestamp()))
+            profile.updated_at = session.execute(select(func.clock_timestamp())).scalar_one()
             session.flush()
             return self._state(session, workspace_id, profile)
 
@@ -143,6 +143,6 @@ class ProfileStore:
             profile.confirmed_revision += 1
             # Prevent re-confirming after a lost POST response using the old revision.
             profile.draft_revision += 1
-            profile.updated_at = session.scalar(select(func.clock_timestamp()))
+            profile.updated_at = session.execute(select(func.clock_timestamp())).scalar_one()
             session.flush()
             return self._state(session, workspace_id, profile)
