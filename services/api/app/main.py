@@ -16,6 +16,8 @@ from sqlalchemy.exc import SQLAlchemyError
 
 from app.auth import AuthFailure, JwtVerifier
 from app.database import Database
+from app.profile_http import router as profile_router
+from app.profile_store import ProfileIncomplete
 from app.settings import RuntimeSettings, load_settings
 from app.workspace_cursor import InvalidCursor
 from app.workspace_http import ApiFailure, router
@@ -60,7 +62,7 @@ def create_app(settings: RuntimeSettings | None = None) -> FastAPI:
     application.add_middleware(
         CORSMiddleware,
         allow_origins=resolved.cors_origins.split(","),
-        allow_methods=["GET", "POST", "PATCH"],
+        allow_methods=["GET", "POST", "PATCH", "PUT"],
         allow_headers=["Authorization", "Content-Type", "Idempotency-Key"],
         allow_credentials=False,
     )
@@ -111,6 +113,10 @@ def create_app(settings: RuntimeSettings | None = None) -> FastAPI:
     def workspace_not_found(_request: Request, _exc: WorkspaceNotFound) -> JSONResponse:
         return api_error("NOT_FOUND", 404, "Workspace not found.")
 
+    @application.exception_handler(ProfileIncomplete)
+    def incomplete_profile(_request: Request, _exc: ProfileIncomplete) -> JSONResponse:
+        return api_error("PROFILE_INCOMPLETE", 422, "Complete the required profile fields.")
+
     @application.exception_handler(VersionConflict)
     def version_conflict(_request: Request, _exc: VersionConflict) -> JSONResponse:
         return api_error("VERSION_CONFLICT", 409, "Workspace version conflict.")
@@ -135,6 +141,7 @@ def create_app(settings: RuntimeSettings | None = None) -> FastAPI:
         return api_error("DATABASE_UNAVAILABLE", 503, "Database unavailable.", retryable=True)
 
     application.include_router(router)
+    application.include_router(profile_router)
 
     @application.get("/api/v1/health/live", response_model=Liveness, tags=["health"])
     def liveness() -> Liveness:

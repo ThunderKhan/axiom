@@ -71,7 +71,7 @@ class Database:
                     return False
                 role_safe = conn.scalar(
                     text(
-                        """SELECT count(*) = 3 AND bool_and(
+                        """SELECT count(*) = 5 AND bool_and(
                             NOT r.rolsuper AND NOT r.rolbypassrls
                             AND NOT r.rolcreatedb AND NOT r.rolcreaterole
                             AND NOT has_schema_privilege(current_user, 'axiom', 'CREATE')
@@ -86,7 +86,8 @@ class Database:
                          CROSS JOIN pg_roles r
                          WHERE r.rolname = current_user AND n.nspname = 'axiom'
                            AND c.relname IN (
-                               'app_users', 'workspaces', 'workspace_create_idempotency'
+                               'app_users', 'workspaces', 'workspace_create_idempotency',
+                               'product_profiles', 'profile_versions'
                            )
                            AND c.relkind = 'r'"""
                     )
@@ -97,7 +98,7 @@ class Database:
                     text(
                         """SELECT
                             (SELECT count(*) FROM pg_policies
-                             WHERE schemaname = 'axiom') = 7
+                             WHERE schemaname = 'axiom') = 12
                             AND NOT EXISTS (
                                 SELECT 1 FROM (
                                     VALUES
@@ -109,7 +110,12 @@ class Database:
                                     ('workspace_create_idempotency',
                                      'workspace_create_idempotency_own_read', 'SELECT'),
                                     ('workspace_create_idempotency',
-                                     'workspace_create_idempotency_own_insert', 'INSERT')
+                                     'workspace_create_idempotency_own_insert', 'INSERT'),
+                                    ('product_profiles', 'product_profiles_own_read', 'SELECT'),
+                                    ('product_profiles', 'product_profiles_own_insert', 'INSERT'),
+                                    ('product_profiles', 'product_profiles_own_update', 'UPDATE'),
+                                    ('profile_versions', 'profile_versions_own_read', 'SELECT'),
+                                    ('profile_versions', 'profile_versions_own_insert', 'INSERT')
                                 ) AS required(table_name, policy_name, command)
                                 LEFT JOIN pg_policies p
                                   ON p.schemaname = 'axiom'
@@ -167,8 +173,34 @@ class Database:
                                     ('workspace_create_idempotency', 'fingerprint', 'INSERT'),
                                     ('workspace_create_idempotency', 'response_status', 'INSERT'),
                                     ('workspace_create_idempotency', 'response_body', 'INSERT'),
-                                    ('workspace_create_idempotency', 'expires_at', 'INSERT')
+                                    ('workspace_create_idempotency', 'expires_at', 'INSERT'),
+                                ('product_profiles', 'workspace_id', 'INSERT'),
+                                ('product_profiles', 'draft_revision', 'INSERT'),
+                                ('product_profiles', 'draft_step', 'INSERT'),
+                                ('product_profiles', 'confirmed_revision', 'INSERT'),
+                                ('product_profiles', 'draft_answers', 'INSERT'),
+                                ('product_profiles', 'draft_revision', 'UPDATE'),
+                                ('product_profiles', 'draft_step', 'UPDATE'),
+                                ('product_profiles', 'confirmed_revision', 'UPDATE'),
+                                ('product_profiles', 'draft_answers', 'UPDATE'),
+                                ('product_profiles', 'updated_at', 'UPDATE'),
+                                ('profile_versions', 'id', 'INSERT'),
+                                ('profile_versions', 'workspace_id', 'INSERT'),
+                                ('profile_versions', 'revision', 'INSERT'),
+                                ('profile_versions', 'answers', 'INSERT')
                                 ) AS required(table_name, column_name, action)
+                            )
+                            AND has_table_privilege(
+                                current_user, 'axiom.product_profiles', 'SELECT'
+                            )
+                            AND has_table_privilege(
+                                current_user, 'axiom.profile_versions', 'SELECT'
+                            )
+                            AND NOT has_table_privilege(
+                                current_user, 'axiom.profile_versions', 'UPDATE'
+                            )
+                            AND NOT has_table_privilege(
+                                current_user, 'axiom.profile_versions', 'DELETE'
                             )
                             AND NOT has_table_privilege(
                                 current_user, 'axiom.workspaces', 'DELETE'

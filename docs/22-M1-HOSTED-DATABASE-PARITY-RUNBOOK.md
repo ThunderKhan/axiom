@@ -92,17 +92,22 @@ uv run --frozen alembic upgrade head
 uv run --frozen alembic check
 ```
 
-These are the repository's existing, version-controlled migrations:
-`m1_0001_schema` (three M1 tables) and `m1_0002_rls` (seven
-owner-scoped policies, least-privilege runtime grants). Alembic must
-create its real `public.alembic_version`; **never insert or fake
-`version_num` manually** or replay copied DDL and call it a migration.
+These are the repository's version-controlled migration chain on the
+WP-03 branch: `m1_0001_schema` (three M1 tables),
+`m1_0002_rls` (seven M1 policies and minimum runtime grants), followed
+by `m2_0001_profiles` (two profile tables and five additional owner-scoped
+policies/grants). **The Nov 21 M1 evidence was collected at the older
+three-table/seven-policy revision; it is historical, not a current-head pass.**
+Alembic must create/update its real `public.alembic_version`; **never
+insert or fake `version_num` manually** or replay copied DDL and call
+it a migration.
 
 Verify, via **read-only** SQL, that:
-- revision equals `m1_0002_rls`;
-- exactly the three intended `axiom` tables exist and have RLS enabled;
-- exactly seven reviewed policies target `axiom_runtime` and include
-  the intended `USING`/`WITH CHECK` clauses;
+- revision equals the **exact current code head `m2_0001_profiles`** after
+  WP-03 merges (do not accept stale `m1_0002_rls` as release-ready);
+- exactly **five** reviewed `axiom` application tables exist with RLS enabled;
+- exactly **twelve** reviewed owner-scoped policies target `axiom_runtime`
+  and include correct `USING`/`WITH CHECK` clauses;
 - `axiom.current_subject()` exists, is `SECURITY INVOKER`, and is
   granted only as approved;
 - runtime can read only necessary tables and insert/update the
@@ -184,3 +189,7 @@ deployment risks. Update `docs/21-M1-ACCEPTANCE-LEDGER.md`, secure
 the operator evidence, and close [issue #29](https://github.com/ThunderKhan/axiom/issues/29)
 only if all mandated acceptance gates pass. Otherwise label M1
 **INCOMPLETE VERIFICATION** or **REQUIRES HUMAN REVIEW**.
+
+## WP-03 / M2 compatibility addendum — 23 November 2026
+
+The held M1 hosted-DB gate [issue #29](https://github.com/ThunderKhan/axiom/issues/29) cannot be considered complete by inspecting only the old three M1 tables: the next integrated revision introduces two profile tables and five additional owner-scoped RLS policies. After WP-03 is merged, run **ordered genuine Alembic upgrade head as the dedicated migration identity** only after private credentials/backup/qualified operator approval and full prereview. Validate the latest five-table/twelve-policy state, forbid UPDATE/DELETE on confirmed `profile_versions`, then rerun both supported real pooler modes as `axiom_runtime` and appropriate profile cross-owner security tests. No hosted migration or direct database work is authorized solely by this doc change; the previously recorded provider Auth tests remain separate from hosted schema/parity.
