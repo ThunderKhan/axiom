@@ -207,7 +207,7 @@ describe("authenticated CRM API client", () => {
         subject,
         async () => token,
         async () =>
-          Response.json({ error: { code, debug: "private" } }, { status }),
+          Response.json({ error: { code, debug: "secret-contract-value-8374" } }, { status }),
       );
       await assert.rejects(
         api.read(workspace, leadId, signal),
@@ -215,7 +215,7 @@ describe("authenticated CRM API client", () => {
           error instanceof LeadApiError &&
           error.status === status &&
           error.code === code &&
-          !error.message.includes("private"),
+          !error.message.includes("secret-contract-value-8374"),
       );
     }
   });
