@@ -16,6 +16,7 @@ export type ProfileSnapshot = Readonly<{
 
 export type ProfileState = Readonly<{
   draft_revision: number;
+  draft_step: number;
   answers: ProfileAnswers | null;
   confirmed_revision: number;
   confirmed: ProfileSnapshot | null;
@@ -67,8 +68,11 @@ export function parseProfileState(value: unknown): ProfileState {
   if (
     !isObject(value) ||
     !Number.isSafeInteger(value.draft_revision) ||
+    !Number.isSafeInteger(value.draft_step) ||
     !Number.isSafeInteger(value.confirmed_revision) ||
     (value.draft_revision as number) < 0 ||
+    (value.draft_step as number) < 0 ||
+    (value.draft_step as number) > 14 ||
     (value.confirmed_revision as number) < 0
   ) {
     throw new InvalidProfileResponse();
@@ -104,6 +108,7 @@ export function parseProfileState(value: unknown): ProfileState {
   }
   return {
     draft_revision: value.draft_revision as number,
+    draft_step: value.draft_step as number,
     answers,
     confirmed_revision: value.confirmed_revision as number,
     confirmed: snapshot,
@@ -222,11 +227,13 @@ export function createProfileApi(
       workspaceId: string,
       answers: ProfileAnswers,
       expectedRevision: number,
+      draftStep: number,
       signal: AbortSignal,
     ) =>
       request(workspaceId, "/draft", "PUT", signal, {
         answers,
         expected_revision: expectedRevision,
+        draft_step: draftStep,
       }),
     confirm: (
       workspaceId: string,

@@ -48,3 +48,26 @@ def test_unconfirmed_website_url_is_stored_not_classified_as_verified() -> None:
     answers = ProfileAnswers(website_url="https://example.org/about", stage="idea")
     assert not answers.confirmable()
     assert answers.model_dump()["website_url"] == "https://example.org/about"
+
+
+def test_all_individually_allowed_answer_lengths_do_not_hit_hidden_limit() -> None:
+    answers = {
+        "name": "n" * 120,
+        "problem": "p" * 2000,
+        "audience": "a" * 1000,
+        "industry": "i" * 300,
+        "geography": "g" * 300,
+        "alternatives": "a" * 1000,
+        "capabilities": "c" * 2000,
+        "missing_capabilities": "m" * 1000,
+        "differentiators": "d" * 1000,
+        "pricing_hypothesis": "p" * 500,
+        "website_url": "https://" + ("e" * 2040),
+        "competitors": "c" * 1000,
+        "desired_signals": "s" * 1000,
+        "restrictions": "r" * 1000,
+        "stage": "idea",
+    }
+    profile = ProfileAnswers.model_validate(answers)
+    assert sum(len(value) for value in answers.values()) > 11000
+    assert profile.confirmable()

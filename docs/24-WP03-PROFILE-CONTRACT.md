@@ -22,3 +22,7 @@ Run Python type/style/unit tests, guarded isolated PostgreSQL migrations and RLS
 ## Browser integration
 
 The selected workspace shows a stage-aware one-question-at-a-time editor, 15 bounded question families, Back/Skip, explicit draft save/resume, human review, and confirmed version state. All drafts/confirmations call the FastAPI boundary with current Supabase access tokens after verifying the same signed-in subject. No browser storage persists private answers; lost write responses require inspection rather than an automatic duplicate. The public app must still pass real-provider/DB browser tests before this is called a verified journey.
+
+## Review-driven correctness changes (23 November)
+
+A saved interview draft now also commits the current 0–14 question position atomically with its answers and optimistic revision, and restores that step on next sign-in. Inputs are disabled during save/confirm to prevent unpersisted edits being mistaken for success. The hidden 11,000-character aggregate limit was removed: the fifteen typed fields already have fixed, independently enforced field limits totaling a bounded payload. This avoids rejecting valid input after the founder follows each displayed maximum. These are functional corrections to Codex's review findings, not relaxed authorization or skipped tests.

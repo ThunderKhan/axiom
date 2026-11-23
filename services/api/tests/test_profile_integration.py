@@ -64,6 +64,7 @@ def test_resumable_profile_is_owner_scoped_and_versions_are_immutable(database: 
 
     assert profiles.read(alice, alice_id) == {
         "draft_revision": 0,
+        "draft_step": 0,
         "answers": None,
         "confirmed_revision": 0,
         "confirmed": None,
@@ -82,8 +83,12 @@ def test_resumable_profile_is_owner_scoped_and_versions_are_immutable(database: 
     with pytest.raises(VersionConflict):
         profiles.save(alice, alice_id, answers=_answers("Stale"), expected_revision=0)
 
-    saved = profiles.save(alice, alice_id, answers=_answers("Idea"), expected_revision=1)
+    saved = profiles.save(
+        alice, alice_id, answers=_answers("Idea"), expected_revision=1, draft_step=7
+    )
     assert saved["draft_revision"] == 2
+    assert saved["draft_step"] == 7
+    assert profiles.read(alice, alice_id)["draft_step"] == 7
     confirmed = profiles.confirm(alice, alice_id, expected_revision=2)
     assert confirmed["confirmed_revision"] == 1
     assert confirmed["draft_revision"] == 3  # Replayed POST cannot mint a second version.

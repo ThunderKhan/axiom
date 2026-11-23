@@ -35,11 +35,17 @@ test("only full minimum founder context can be confirmed", () => {
 test("profile transport refuses malformed or contradictory responses", () => {
   const valid = {
     draft_revision: 1,
+    draft_step: 5,
     answers: { ...emptyProfileAnswers, stage: "idea" },
     confirmed_revision: 0,
     confirmed: null,
   };
   assert.equal(parseProfileState(valid).draft_revision, 1);
+  assert.equal(parseProfileState(valid).draft_step, 5);
+  assert.throws(
+    () => parseProfileState({ ...valid, draft_step: 15 }),
+    InvalidProfileResponse,
+  );
   assert.throws(
     () => parseProfileState({ ...valid, confirmed_revision: 1 }),
     InvalidProfileResponse,

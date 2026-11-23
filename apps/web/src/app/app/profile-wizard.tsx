@@ -107,7 +107,7 @@ export function ProfileWizard({
         next.answers ?? next.confirmed?.answers ?? emptyProfileAnswers,
       );
       setMode(next.confirmed ? "saved" : "interview");
-      setStep(0);
+      setStep(next.draft_step);
       setView("ready");
     } catch (error) {
       if (sequence.current !== generation) return;
@@ -156,6 +156,7 @@ export function ProfileWizard({
         workspaceId,
         answers,
         state.draft_revision,
+        step,
         controller.signal,
       );
       if (generation !== sequence.current) return;
@@ -189,6 +190,7 @@ export function ProfileWizard({
         workspaceId,
         answers,
         state.draft_revision,
+        step,
         controller.signal,
       );
       if (generation !== sequence.current) return;
@@ -295,6 +297,7 @@ export function ProfileWizard({
                       type="radio"
                       name="product-stage"
                       checked={answers.stage === "idea"}
+                      disabled={busy}
                       onChange={() =>
                         setAnswers((value) => ({ ...value, stage: "idea" }))
                       }
@@ -306,6 +309,7 @@ export function ProfileWizard({
                       type="radio"
                       name="product-stage"
                       checked={answers.stage === "live"}
+                      disabled={busy}
                       onChange={() =>
                         setAnswers((value) => ({ ...value, stage: "live" }))
                       }
@@ -328,6 +332,7 @@ export function ProfileWizard({
                     "Your answer, or leave blank if unknown"
                   }
                   value={answers[question.key] ?? ""}
+                  disabled={busy}
                   onChange={(event) => {
                     const key = question.key as TextAnswerKey;
                     setAnswers((value) => ({
