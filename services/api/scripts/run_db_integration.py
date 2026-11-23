@@ -86,7 +86,7 @@ def main() -> int:
         )
     if revision is None:
         run("uv", "run", "--frozen", "alembic", "upgrade", "m1_0001_schema", env=env)
-    elif revision not in ("m1_0001_schema", "m1_0002_rls"):
+    elif revision not in ("m1_0001_schema", "m1_0002_rls", "m2_0001_profiles"):
         raise RuntimeError("Unexpected migration state in isolated test database")
     run("uv", "run", "--frozen", "alembic", "upgrade", "head", env=env)
     run("uv", "run", "--frozen", "alembic", "upgrade", "head", env=env)
@@ -105,7 +105,7 @@ def main() -> int:
     )
     with psycopg.connect(env[ENV_NAMES[0]]) as admin:
         unchanged = admin.execute("SELECT version_num FROM public.alembic_version").fetchone()
-        if unchanged != ("m1_0002_rls",):
+        if unchanged != ("m2_0001_profiles",):
             raise RuntimeError("A refused downgrade unexpectedly changed the schema revision")
     run("uv", "run", "--frozen", "alembic", "check", env=env)
     # Drift detection must reject an unexpected index; remove it only from this
@@ -127,6 +127,7 @@ def main() -> int:
         "postgres",
         "tests/test_database_integration.py",
         "tests/test_workspace_api_integration.py",
+        "tests/test_profile_integration.py",
         env=env,
     )
     return 0
