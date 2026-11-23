@@ -190,12 +190,15 @@ class Lead(Base):
             "stage IN ('spotted', 'qualified', 'contacted', 'closed_lost')",
             name="ck_leads_stage",
         ),
-        CheckConstraint("char_length(title) BETWEEN 1 AND 180", name="ck_leads_title"),
+        CheckConstraint("char_length(title) BETWEEN 1 AND 180 AND btrim(title) <> ''", name="ck_leads_title"),
         CheckConstraint("char_length(source_url) <= 2048", name="ck_leads_source_url"),
         CheckConstraint("char_length(source_excerpt) BETWEEN 1 AND 500", name="ck_leads_excerpt"),
         CheckConstraint("char_length(note) <= 2000", name="ck_leads_note"),
         CheckConstraint("char_length(unsent_draft) <= 4000", name="ck_leads_draft"),
         CheckConstraint("version >= 1", name="ck_leads_version"),
+        CheckConstraint(
+            "NOT follow_up_done OR follow_up_at IS NOT NULL", name="ck_leads_followup_state"
+        ),
         CheckConstraint("source_origin = 'user_provided'", name="ck_leads_origin"),
         CheckConstraint(
             "char_length(create_key) BETWEEN 8 AND 128 "
