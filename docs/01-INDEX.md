@@ -83,6 +83,12 @@ This amendment supersedes only the listed **R0 deadline/breadth targets** in the
 
 This does not supersede the approved M1 contract or authorize a release.
 
+## WP-03 implementation contract (engineering evidence only)
+
+| Document | Purpose | Status |
+| --- | --- | --- |
+| [24-WP03-PROFILE-CONTRACT.md](24-WP03-PROFILE-CONTRACT.md) | Versioned onboarding draft/profile API, M2 RLS migration, test and hosted-M1 compatibility boundary | **Implementation in review; not yet independently verified or deployed** |
+
 ## WP-05/07 implementation reference (not P0 acceptance)
 
 | Document | Purpose | Status |

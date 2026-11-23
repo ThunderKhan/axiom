@@ -12,8 +12,10 @@ from sqlalchemy import (
     ForeignKey,
     Index,
     MetaData,
+    SmallInteger,
     String,
     Text,
+    UniqueConstraint,
     func,
     text,
 )
@@ -22,7 +24,7 @@ from sqlalchemy.dialects.postgresql import UUID as PgUUID
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 
 SCHEMA = "axiom"
-HEAD_REVISION = "m1_0002_rls"
+HEAD_REVISION = "m2_0001_profiles"
 # PostgreSQL's U& literal enumerates Python str.strip() whitespace codepoints.
 _TRIM = (
     r"U&'\0009\000A\000B\000C\000D\001C\001D\001E\001F\0020\0085\0"
@@ -121,3 +123,57 @@ class WorkspaceCreateIdempotency(Base):
         DateTime(timezone=True), nullable=False, server_default=func.now()
     )
     expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+
+
+class ProductProfile(Base):
+    """One mutable onboarding draft per owned workspace; confirmed versions are append-only."""
+
+    __tablename__ = "product_profiles"
+    __table_args__ = (
+        CheckConstraint("draft_revision >= 0", name="ck_profile_draft_revision"),
+        CheckConstraint("draft_step BETWEEN 0 AND 14", name="ck_profile_draft_step"),
+        CheckConstraint("confirmed_revision >= 0", name="ck_profile_confirmed_revision"),
+        CheckConstraint("jsonb_typeof(draft_answers) = 'object'", name="ck_profile_draft_object"),
+    )
+
+    workspace_id: Mapped[UUID] = mapped_column(
+        PgUUID(as_uuid=True),
+        ForeignKey("axiom.workspaces.id", ondelete="RESTRICT"),
+        primary_key=True,
+    )
+    draft_revision: Mapped[int] = mapped_column(
+        BigInteger, nullable=False, server_default=text("0")
+    )
+    draft_step: Mapped[int] = mapped_column(SmallInteger, nullable=False, server_default=text("0"))
+    confirmed_revision: Mapped[int] = mapped_column(
+        BigInteger, nullable=False, server_default=text("0")
+    )
+    draft_answers: Mapped[dict[str, object]] = mapped_column(
+        JSONB, nullable=False, server_default=text("'{}'::jsonb")
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, server_default=func.now()
+    )
+
+
+class ProfileVersion(Base):
+    """Immutable, owner-scoped founder-confirmed profile snapshot."""
+
+    __tablename__ = "profile_versions"
+    __table_args__ = (
+        CheckConstraint("revision >= 1", name="ck_profile_version_revision"),
+        CheckConstraint("jsonb_typeof(answers) = 'object'", name="ck_profile_version_object"),
+        UniqueConstraint("workspace_id", "revision", name="uq_profile_version_workspace_revision"),
+    )
+
+    id: Mapped[UUID] = mapped_column(PgUUID(as_uuid=True), primary_key=True)
+    workspace_id: Mapped[UUID] = mapped_column(
+        PgUUID(as_uuid=True),
+        ForeignKey("axiom.product_profiles.workspace_id", ondelete="RESTRICT"),
+        nullable=False,
+    )
+    revision: Mapped[int] = mapped_column(BigInteger, nullable=False)
+    answers: Mapped[dict[str, object]] = mapped_column(JSONB, nullable=False)
+    confirmed_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, server_default=func.now()
+    )
