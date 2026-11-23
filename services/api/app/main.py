@@ -16,6 +16,8 @@ from sqlalchemy.exc import SQLAlchemyError
 
 from app.auth import AuthFailure, JwtVerifier
 from app.database import Database
+from app.leads_http import router as leads_router
+from app.leads_store import InvalidLeadInput
 from app.profile_http import router as profile_router
 from app.profile_store import ProfileIncomplete
 from app.settings import RuntimeSettings, load_settings
@@ -62,7 +64,7 @@ def create_app(settings: RuntimeSettings | None = None) -> FastAPI:
     application.add_middleware(
         CORSMiddleware,
         allow_origins=resolved.cors_origins.split(","),
-        allow_methods=["GET", "POST", "PATCH", "PUT"],
+        allow_methods=["GET", "POST", "PATCH", "PUT", "DELETE"],
         allow_headers=["Authorization", "Content-Type", "Idempotency-Key"],
         allow_credentials=False,
     )
@@ -129,6 +131,7 @@ def create_app(settings: RuntimeSettings | None = None) -> FastAPI:
         return api_error("VALIDATION_FAILED", 422, "Invalid workspace input.")
 
     application.add_exception_handler(InvalidWorkspaceInput, invalid_domain_input)
+    application.add_exception_handler(InvalidLeadInput, invalid_domain_input)
     application.add_exception_handler(InvalidCursor, invalid_domain_input)
 
     @application.exception_handler(RequestValidationError)
@@ -142,6 +145,7 @@ def create_app(settings: RuntimeSettings | None = None) -> FastAPI:
 
     application.include_router(router)
     application.include_router(profile_router)
+    application.include_router(leads_router)
 
     @application.get("/api/v1/health/live", response_model=Liveness, tags=["health"])
     def liveness() -> Liveness:
