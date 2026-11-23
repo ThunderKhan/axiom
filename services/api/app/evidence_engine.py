@@ -153,7 +153,13 @@ def assess(
         elif cap.status == "missing":
             missing.append(need.id)
             links.append(
-                Relationship(source.id, need.id, cap.name, "contradicts", "Founder declares missing")
+                Relationship(
+                    source.id,
+                    need.id,
+                    cap.name,
+                    "contradicts",
+                    "Founder declares missing",
+                )
             )
             report.append(f"{need.requirement}: explicitly missing.")
         elif cap.status == "proposed" and launched:
@@ -185,6 +191,8 @@ def assess(
         intent = "seeking_solution"
     elif any(need.intent == "discussion" for need in needs):
         intent = "discussion"
+    codes: tuple[str, ...]
+    compatibility: Literal["supported", "contradicted", "partial", "unknown"]
     if missing:
         verdict = Verdict.SKIP
         codes = ("EXPLICIT_MISSING_FEATURE",)
