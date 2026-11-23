@@ -459,165 +459,170 @@ export function WorkspaceManager({
       {view.kind === "ready" && (
         <>
           <div className="workspace-grid">
-          <div className="workspace-card">
-            <div className="workspace-card-heading">
+            <div className="workspace-card">
+              <div className="workspace-card-heading">
+                <h2>
+                  {view.items.length === 0
+                    ? "Create your first workspace"
+                    : "Choose a workspace"}
+                </h2>
+                <span className="workspace-count">
+                  {view.items.length} owned
+                </span>
+              </div>
+              {view.notice && (
+                <p className="workspace-notice" role="status">
+                  {view.notice}
+                </p>
+              )}
+              {view.items.length === 0 ? (
+                <p>
+                  No workspaces yet. Give your first product or idea a name to
+                  begin.
+                </p>
+              ) : (
+                <ul
+                  className="workspace-list"
+                  aria-label="Your authorized workspaces"
+                >
+                  {view.items.map((item) => (
+                    <li key={item.id}>
+                      <button
+                        type="button"
+                        className={
+                          "workspace-choice" +
+                          (view.selected?.id === item.id
+                            ? " workspace-choice--active"
+                            : "")
+                        }
+                        aria-pressed={view.selected?.id === item.id}
+                        disabled={busy}
+                        onClick={() => void select(item.id)}
+                      >
+                        <span>{item.name}</span>
+                        <span>
+                          {switching === item.id
+                            ? "Checking…"
+                            : view.selected?.id === item.id
+                              ? "Active"
+                              : "Select"}
+                        </span>
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              )}
+              <div className="workspace-active" aria-live="polite">
+                <h3>Active workspace</h3>
+                {switching && <p role="status">Authorizing your selection…</p>}
+                {view.selected ? (
+                  <>
+                    <strong>{view.selected.name}</strong>
+                    <p>
+                      Verified owner access · Workspace ID {view.selected.id}
+                    </p>
+                    <p className="workspace-limit">
+                      Workspace context is verified. Complete your product
+                      profile below before future research.
+                    </p>
+                    <ProfileWizard
+                      key={view.selected.id}
+                      subject={subject}
+                      workspaceId={view.selected.id}
+                    />
+                  </>
+                ) : (
+                  <p>
+                    Nothing selected. Choose a workspace to establish an
+                    authorized context.
+                  </p>
+                )}
+              </div>
+              <button
+                className="workspace-secondary"
+                type="button"
+                disabled={busy}
+                onClick={() => void load()}
+              >
+                Refresh authorized list
+              </button>
+            </div>
+
+            <div className="workspace-card">
               <h2>
                 {view.items.length === 0
-                  ? "Create your first workspace"
-                  : "Choose a workspace"}
+                  ? "New workspace"
+                  : "Add another workspace"}
               </h2>
-              <span className="workspace-count">{view.items.length} owned</span>
-            </div>
-            {view.notice && (
-              <p className="workspace-notice" role="status">
-                {view.notice}
-              </p>
-            )}
-            {view.items.length === 0 ? (
-              <p>
-                No workspaces yet. Give your first product or idea a name to
-                begin.
-              </p>
-            ) : (
-              <ul
-                className="workspace-list"
-                aria-label="Your authorized workspaces"
+              <p>Each workspace is independent and private to your account.</p>
+              <form
+                className="workspace-form"
+                onSubmit={(event) => void create(event)}
               >
-                {view.items.map((item) => (
-                  <li key={item.id}>
-                    <button
-                      type="button"
-                      className={
-                        "workspace-choice" +
-                        (view.selected?.id === item.id
-                          ? " workspace-choice--active"
-                          : "")
-                      }
-                      aria-pressed={view.selected?.id === item.id}
-                      disabled={busy}
-                      onClick={() => void select(item.id)}
-                    >
-                      <span>{item.name}</span>
-                      <span>
-                        {switching === item.id
-                          ? "Checking…"
-                          : view.selected?.id === item.id
-                            ? "Active"
-                            : "Select"}
-                      </span>
-                    </button>
-                  </li>
-                ))}
-              </ul>
-            )}
-            <div className="workspace-active" aria-live="polite">
-              <h3>Active workspace</h3>
-              {switching && <p role="status">Authorizing your selection…</p>}
-              {view.selected ? (
-                <>
-                  <strong>{view.selected.name}</strong>
-                  <p>Verified owner access · Workspace ID {view.selected.id}</p>
-                  <p className="workspace-limit">
-                    Workspace context is verified. Complete your product profile
-                    below before future research.
+                <label htmlFor="workspace-name">Product or idea name</label>
+                <input
+                  id="workspace-name"
+                  name="workspace-name"
+                  autoComplete="off"
+                  maxLength={240}
+                  required
+                  value={name}
+                  disabled={
+                    busy || switching !== null || creation.kind === "uncertain"
+                  }
+                  onChange={(event) => setName(event.target.value)}
+                  placeholder="e.g. Research notes"
+                />
+                {creation.kind === "error" && (
+                  <p className="workspace-error" role="alert">
+                    {creation.message}
                   </p>
-                  <ProfileWizard
-                    key={view.selected.id}
-                    subject={subject}
-                    workspaceId={view.selected.id}
-                  />
-                </>
-              ) : (
-                <p>
-                  Nothing selected. Choose a workspace to establish an
-                  authorized context.
-                </p>
-              )}
-            </div>
-            <button
-              className="workspace-secondary"
-              type="button"
-              disabled={busy}
-              onClick={() => void load()}
-            >
-              Refresh authorized list
-            </button>
-          </div>
-
-          <div className="workspace-card">
-            <h2>
-              {view.items.length === 0
-                ? "New workspace"
-                : "Add another workspace"}
-            </h2>
-            <p>Each workspace is independent and private to your account.</p>
-            <form
-              className="workspace-form"
-              onSubmit={(event) => void create(event)}
-            >
-              <label htmlFor="workspace-name">Product or idea name</label>
-              <input
-                id="workspace-name"
-                name="workspace-name"
-                autoComplete="off"
-                maxLength={240}
-                required
-                value={name}
-                disabled={
-                  busy || switching !== null || creation.kind === "uncertain"
-                }
-                onChange={(event) => setName(event.target.value)}
-                placeholder="e.g. Research notes"
-              />
-              {creation.kind === "error" && (
-                <p className="workspace-error" role="alert">
-                  {creation.message}
-                </p>
-              )}
-              {creation.kind === "submitting" && (
-                <p role="status" aria-live="polite">
-                  Creating your workspace…
-                </p>
-              )}
-              {creation.kind === "uncertain" && (
-                <div className="workspace-warning" role="alert">
-                  <h3>Creation outcome is uncertain</h3>
-                  <p>
-                    The request for “{creation.name}” may have succeeded. Do not
-                    submit a new request until you inspect your workspaces.
+                )}
+                {creation.kind === "submitting" && (
+                  <p role="status" aria-live="polite">
+                    Creating your workspace…
                   </p>
-                  <button
-                    type="button"
-                    className="workspace-secondary"
-                    onClick={() => void load()}
-                  >
-                    Inspect owned workspaces
-                  </button>
-                  {creation.inspected && (
+                )}
+                {creation.kind === "uncertain" && (
+                  <div className="workspace-warning" role="alert">
+                    <h3>Creation outcome is uncertain</h3>
+                    <p>
+                      The request for “{creation.name}” may have succeeded. Do
+                      not submit a new request until you inspect your
+                      workspaces.
+                    </p>
                     <button
                       type="button"
                       className="workspace-secondary"
-                      onClick={() => {
-                        pendingCreation.current = null;
-                        setCreation(emptyForm);
-                      }}
+                      onClick={() => void load()}
                     >
-                      I have inspected; allow a separate new attempt
+                      Inspect owned workspaces
                     </button>
-                  )}
-                </div>
-              )}
-              <button
-                className="workspace-primary"
-                type="submit"
-                disabled={
-                  busy || switching !== null || creation.kind === "uncertain"
-                }
-              >
-                {busy ? "Creating…" : "Create workspace"}
-              </button>
-            </form>
-          </div>
+                    {creation.inspected && (
+                      <button
+                        type="button"
+                        className="workspace-secondary"
+                        onClick={() => {
+                          pendingCreation.current = null;
+                          setCreation(emptyForm);
+                        }}
+                      >
+                        I have inspected; allow a separate new attempt
+                      </button>
+                    )}
+                  </div>
+                )}
+                <button
+                  className="workspace-primary"
+                  type="submit"
+                  disabled={
+                    busy || switching !== null || creation.kind === "uncertain"
+                  }
+                >
+                  {busy ? "Creating…" : "Create workspace"}
+                </button>
+              </form>
+            </div>
           </div>
           {view.selected && (
             <LeadManager
