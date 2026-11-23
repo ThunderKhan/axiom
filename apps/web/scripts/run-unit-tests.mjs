@@ -32,6 +32,8 @@ args.push(
   "src/lib/workspace-context.test.ts",
   "src/lib/workspace-api.test.ts",
   "src/lib/profile-questions.test.ts",
+  "src/lib/lead-contract.test.ts",
+  "src/lib/lead-api.test.ts",
 );
 
 const result = spawnSync(process.execPath, args, {
