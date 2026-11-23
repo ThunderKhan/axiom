@@ -17,7 +17,7 @@ from sqlalchemy.exc import SQLAlchemyError
 from app.auth import AuthFailure, JwtVerifier
 from app.database import Database
 from app.leads_http import router as leads_router
-from app.leads_store import InvalidLeadInput
+from app.leads_store import InvalidLeadInput, LeadAlreadySaved
 from app.profile_http import router as profile_router
 from app.profile_store import ProfileIncomplete
 from app.settings import RuntimeSettings, load_settings
@@ -132,6 +132,10 @@ def create_app(settings: RuntimeSettings | None = None) -> FastAPI:
 
     application.add_exception_handler(InvalidWorkspaceInput, invalid_domain_input)
     application.add_exception_handler(InvalidLeadInput, invalid_domain_input)
+
+    @application.exception_handler(LeadAlreadySaved)
+    def duplicate_lead(_request: Request, _exc: LeadAlreadySaved) -> JSONResponse:
+        return api_error("LEAD_ALREADY_SAVED", 409, "Source URL is already saved.")
     application.add_exception_handler(InvalidCursor, invalid_domain_input)
 
     @application.exception_handler(RequestValidationError)
