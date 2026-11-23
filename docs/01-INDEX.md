@@ -101,6 +101,12 @@ This does not supersede the approved M1 contract or authorize a release.
 | --- | --- | --- |
 | [25-EVIDENCE-DECISION-CORE.md](25-EVIDENCE-DECISION-CORE.md) | Deterministic four-verdict source-linked domain evaluation and tests | **Implementation in review; no live-source or graph UI acceptance** |
 
+## WP-09 founder CRM browser integration (verification pending)
+
+| Document | Purpose | Status |
+| --- | --- | --- |
+| [27-WP09-CRM-FOUNDER-UI.md](27-WP09-CRM-FOUNDER-UI.md) | Authenticated workspace-scoped manual-source CRM screen, API/response guards, full-width responsive editor and remaining provider/E2E checks | **Implementation in review; deployed end-to-end not verified** |
+
 ## WP-09 CRM backend implementation reference (not deployed P0 acceptance)
 
 | Document | Purpose | Status |

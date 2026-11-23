@@ -687,3 +687,211 @@ input:focus-visible,
   outline: 3px solid var(--green);
   outline-offset: 3px;
 }
+
+/* WP-09 founder CRM: manual provenance, accessible evidence and draft editing. */
+.crm-panel {
+  width: 100%;
+  min-width: 0;
+  margin-top: 2.25rem;
+  border: 1px solid var(--line);
+  border-radius: 22px;
+  padding: clamp(1.25rem, 3vw, 2rem);
+  background: var(--surface);
+}
+
+.crm-heading,
+.crm-detail-heading {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 1.25rem;
+}
+
+.crm-heading h3 {
+  font-size: clamp(1.35rem, 3.5vw, 1.9rem);
+  margin-bottom: 0.4rem;
+}
+
+.crm-meta {
+  color: var(--text);
+  font-size: 0.88rem;
+}
+
+.crm-layout {
+  display: grid;
+  grid-template-columns: minmax(220px, 0.8fr) minmax(0, 1.6fr);
+  align-items: start;
+  gap: 1rem;
+  margin-top: 1.5rem;
+}
+
+.crm-list,
+.crm-detail,
+.crm-create {
+  min-width: 0;
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  padding: clamp(1rem, 3vw, 1.5rem);
+  background: var(--bg);
+}
+
+.crm-list h4,
+.crm-create h4,
+.crm-history h4 {
+  margin-bottom: 0.85rem;
+  font-size: 1.05rem;
+}
+
+.crm-list ul,
+.crm-history ol {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.crm-list li + li {
+  margin-top: 0.45rem;
+}
+
+.crm-choice {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 0.7rem;
+  width: 100%;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 0.75rem 0.85rem;
+  color: var(--ink);
+  background: var(--surface);
+  text-align: left;
+  cursor: pointer;
+}
+
+.crm-choice strong,
+.crm-choice span {
+  overflow-wrap: anywhere;
+}
+
+.crm-choice span {
+  font-size: 0.8rem;
+  color: var(--text);
+}
+
+.crm-choice[aria-pressed="true"] {
+  border-color: var(--green);
+  background: var(--tint);
+}
+
+.crm-detail h3 {
+  margin-bottom: 0.4rem;
+  font-size: 1.3rem;
+  overflow-wrap: anywhere;
+}
+
+.crm-detail-heading a {
+  display: inline-block;
+  color: var(--green);
+  overflow-wrap: anywhere;
+}
+
+.crm-evidence {
+  border-left: 3px solid var(--green);
+  margin: 1.3rem 0;
+  padding: 0.65rem 0.9rem;
+  background: var(--band);
+  overflow-wrap: anywhere;
+}
+
+.crm-form {
+  display: flex;
+  flex-direction: column;
+  gap: 0.7rem;
+}
+
+.crm-form label {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.crm-form input:not([type="checkbox"]),
+.crm-form select,
+.crm-form textarea {
+  display: block;
+  width: 100%;
+  min-width: 0;
+  border: 1px solid #a79da1;
+  border-radius: 11px;
+  padding: 0.7rem 0.85rem;
+  background: var(--surface);
+  color: var(--ink);
+  font: inherit;
+}
+
+.crm-form textarea {
+  resize: vertical;
+}
+
+.crm-inline-check {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  font-weight: 500 !important;
+}
+
+.crm-inline-check input {
+  width: 20px;
+  height: 20px;
+  accent-color: var(--green);
+}
+
+.crm-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.65rem;
+  margin-top: 0.5rem;
+}
+
+.crm-create {
+  margin-top: 1.5rem;
+  max-width: 720px;
+}
+
+.crm-history {
+  margin-top: 1.3rem;
+  padding: 1rem;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--surface);
+}
+
+.crm-history li {
+  border-top: 1px solid var(--line);
+  padding: 0.65rem 0;
+  font-size: 0.87rem;
+  overflow-wrap: anywhere;
+}
+
+.crm-form input:focus-visible,
+.crm-form select:focus-visible,
+.crm-form textarea:focus-visible,
+.crm-choice:focus-visible {
+  outline: 3px solid var(--green);
+  outline-offset: 3px;
+}
+
+@media (max-width: 820px) {
+  .crm-layout {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .crm-heading,
+  .crm-detail-heading {
+    flex-direction: column;
+  }
+
+  .crm-panel {
+    border-radius: 16px;
+  }
+}
