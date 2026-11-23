@@ -42,6 +42,9 @@ def test_create_accepts_declared_public_source_and_never_assigns_verified_origin
         "http://example.org/path",
         "https://example.org\\@internal/",
         "https://localhost/private",
+        "https://localhost./private",
+        "https://127.1/private",
+        "https://2130706433/private",
         "https://127.0.0.1/private",
         "https://192.168.1.1/admin",
         "https://metadata.google.internal/path",
@@ -69,6 +72,23 @@ def test_rejects_invalid_or_secret_bearing_source_authorities(source_url: str) -
 def test_create_rejects_bad_fields_and_fake_actions(changes: dict[str, object]) -> None:
     with pytest.raises(ValidationError):
         CreateLead.model_validate(example(**changes))
+
+
+def test_http_json_timezone_strings_are_parsed_without_weakening_strict_body() -> None:
+    raw = example(
+        follow_up_at="2026-11-26T12:00:00Z",
+        follow_up_done=True,
+    )
+    created = CreateLead.model_validate(raw)
+    assert created.follow_up_at is not None
+    assert created.follow_up_at.utcoffset().total_seconds() == 0
+    patch = PatchLead.model_validate(
+        {"expected_version": 1, "follow_up_at": "2026-11-26T17:30:00+05:30"}
+    )
+    assert patch.follow_up_at is not None
+    assert patch.follow_up_at.utcoffset().total_seconds() == 19800
+    with pytest.raises(ValidationError):
+        CreateLead.model_validate(example(follow_up_at="2026-11-26T12:00:00"))
 
 
 def test_patch_needs_real_edit_and_version() -> None:
