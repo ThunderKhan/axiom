@@ -105,9 +105,7 @@ def list_leads(
 
 
 @router.get("/{lead_id}", response_model=LeadDTO)
-def get_lead(
-    workspace_id: UUID, lead_id: UUID, principal: Principal, store: Store
-) -> LeadDTO:
+def get_lead(workspace_id: UUID, lead_id: UUID, principal: Principal, store: Store) -> LeadDTO:
     return LeadDTO.model_validate(store.read(principal, workspace_id, lead_id))
 
 
@@ -134,6 +132,9 @@ def archive_lead(
 def lead_history(
     workspace_id: UUID, lead_id: UUID, principal: Principal, store: Store
 ) -> LeadHistoryDTO:
-    return LeadHistoryDTO(items=[LeadEventDTO.model_validate(event) for event in store.history(
-        principal, workspace_id, lead_id
-    )])
+    return LeadHistoryDTO(
+        items=[
+            LeadEventDTO.model_validate(event)
+            for event in store.history(principal, workspace_id, lead_id)
+        ]
+    )
