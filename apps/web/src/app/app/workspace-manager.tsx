@@ -618,6 +618,7 @@ export function WorkspaceManager({
               </button>
             </form>
           </div>
+          </div>
           {view.selected && (
             <LeadManager
               key={"crm-" + view.selected.id}
