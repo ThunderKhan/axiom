@@ -89,6 +89,12 @@ This does not supersede the approved M1 contract or authorize a release.
 | --- | --- | --- |
 | [24-WP03-PROFILE-CONTRACT.md](24-WP03-PROFILE-CONTRACT.md) | Versioned onboarding draft/profile API, M2 RLS migration, test and hosted-M1 compatibility boundary | **Implementation in review; not yet independently verified or deployed** |
 
+## WP-04 safe-source security foundation (not live ingestion)
+
+| Document | Purpose | Status |
+| --- | --- | --- |
+| [25-WP04-SOURCE-BOUNDARY.md](25-WP04-SOURCE-BOUNDARY.md) | Fail-closed bounded public URL acquisition and normalization, policy prerequisites and known gaps | **Inactive security foundation; no source integration or provider authorization claimed** |
+
 ## WP-05/07 implementation reference (not P0 acceptance)
 
 | Document | Purpose | Status |
