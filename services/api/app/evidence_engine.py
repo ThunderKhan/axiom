@@ -6,6 +6,7 @@ from dataclasses import dataclass
 from datetime import datetime
 from enum import StrEnum
 from typing import Literal
+from urllib.parse import urlsplit
 
 Origin = Literal["live", "cached", "seeded", "user_provided"]
 Intent = Literal["buying", "seeking_solution", "discussion", "unknown"]
@@ -34,6 +35,20 @@ class Source:
     def __post_init__(self) -> None:
         if not self.id or not self.url.startswith("https://"):
             raise EvidenceInputError("Source identity or HTTPS URL is missing")
+        try:
+            address = urlsplit(self.url)
+            if (
+                address.scheme != "https"
+                or not address.hostname
+                or address.username is not None
+                or address.password is not None
+                or (address.port is not None and address.port < 1)
+                or any(character.isspace() for character in address.netloc)
+                or any(ord(character) < 32 for character in self.url)
+            ):
+                raise EvidenceInputError("Source HTTPS authority is malformed")
+        except ValueError as exc:
+            raise EvidenceInputError("Source HTTPS authority is malformed") from exc
         if not self.excerpt.strip() or len(self.excerpt) > 1500:
             raise EvidenceInputError("Source excerpt missing or oversized")
         if self.retrieved_at.tzinfo is None:
@@ -73,6 +88,7 @@ class Assessment:
     intent: Intent
     compatibility: Literal["supported", "contradicted", "partial", "unknown"]
     supported_need_ids: tuple[str, ...]
+    hypothetical_need_ids: tuple[str, ...]
     missing_need_ids: tuple[str, ...]
     unknown_need_ids: tuple[str, ...]
     source_ids: tuple[str, ...]
@@ -131,12 +147,14 @@ def assess(
             (),
             (),
             (),
+            (),
             tuple(by_source),
             (),
             ("No source-linked customer requirements were supplied.",),
         )
 
     supported: list[str] = []
+    hypothetical: list[str] = []
     missing: list[str] = []
     unknown: list[str] = []
     links: list[Relationship] = []
@@ -162,6 +180,20 @@ def assess(
                 )
             )
             report.append(f"{need.requirement}: explicitly missing.")
+        elif cap.status == "proposed" and not launched:
+            hypothetical.append(need.id)
+            links.append(
+                Relationship(
+                    source.id,
+                    need.id,
+                    cap.name,
+                    "unverified",
+                    "Hypothetical idea-stage coverage; proposed, not shipped",
+                )
+            )
+            report.append(
+                f"{need.requirement}: hypothetical coverage only; feature not shipped."
+            )
         elif cap.status == "proposed" and launched:
             unknown.append(need.id)
             links.append(Relationship(source.id, need.id, cap.name, "unverified", "Not shipped"))
@@ -198,7 +230,11 @@ def assess(
     elif unknown:
         verdict = Verdict.RESEARCH
         codes = ("UNKNOWN_CAPABILITY",)
-        compatibility = "partial" if supported else "unknown"
+        compatibility = "partial" if supported or hypothetical else "unknown"
+    elif hypothetical:
+        verdict = Verdict.RESEARCH
+        codes = ("IDEA_STAGE_HYPOTHESIS",)
+        compatibility = "partial"
     elif launched and intent in ("buying", "seeking_solution"):
         verdict = Verdict.PURSUE
         codes = ("SOLUTION_INTENT_AND_DECLARED_COVERAGE",)
@@ -207,6 +243,8 @@ def assess(
         verdict = Verdict.RESEARCH
         codes = ("IDEA_STAGE_HYPOTHESIS",) if not launched else ("NO_CLEAR_SOLUTION_INTENT",)
         compatibility = "supported"
+    if hypothetical and "IDEA_STAGE_HYPOTHESIS" not in codes:
+        codes = (*codes, "IDEA_STAGE_HYPOTHESIS")
     if any(by_source[need.source_id].origin == "seeded" for need in needs):
         codes = (*codes, "INCLUDES_SEEDED_EXAMPLE")
     return Assessment(
@@ -215,6 +253,7 @@ def assess(
         intent,
         compatibility,
         tuple(supported),
+        tuple(hypothetical),
         tuple(missing),
         tuple(unknown),
         tuple(dict.fromkeys(need.source_id for need in needs)),

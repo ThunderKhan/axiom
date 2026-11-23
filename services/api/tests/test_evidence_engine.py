@@ -112,3 +112,45 @@ def test_report_and_relationships_share_real_source_identity() -> None:
     assert result.source_ids == ("hn-123",)
     assert all(link.source_id == "hn-123" for link in result.relationships)
     assert "hn-123" in " ".join(result.report_lines)
+
+
+def test_hypothetical_coverage_survives_other_unknown_or_missing_needs() -> None:
+    example = source("I need offline sync and export")
+    first = need()
+    second = Need("need-2", "export", "hn-123", "export", "unknown")
+    mixed = assess(
+        (example,),
+        (first, second),
+        (Capability("offline sync", "proposed"),),
+        launched=False,
+    )
+    assert mixed.verdict == Verdict.RESEARCH
+    assert mixed.hypothetical_need_ids == ("need-1",)
+    assert mixed.unknown_need_ids == ("need-2",)
+    assert "IDEA_STAGE_HYPOTHESIS" in mixed.reason_codes
+    assert mixed.compatibility == "partial"
+    assert any(
+        link.need_id == "need-1" and link.relation == "unverified"
+        and "Hypothetical" in link.explanation
+        for link in mixed.relationships
+    )
+    assert "hypothetical" in " ".join(mixed.report_lines)
+    rejected = assess(
+        (example,),
+        (first, second),
+        (Capability("offline sync", "proposed"), Capability("export", "missing")),
+        launched=False,
+    )
+    assert rejected.verdict == Verdict.SKIP
+    assert "IDEA_STAGE_HYPOTHESIS" in rejected.reason_codes
+
+
+@pytest.mark.parametrize(
+    "url",
+    ["https://", "https://?q=1", "https://example.com:invalid",
+     "https://name:pass@example.com", "https://not a host.com",
+     "https://example.org\\nother", "http://example.org"],
+)
+def test_unusable_source_url_rejected_even_without_network_fetch(url: str) -> None:
+    with pytest.raises(EvidenceInputError):
+        Source("s", url, "Need work", datetime.now(UTC), "seeded")
