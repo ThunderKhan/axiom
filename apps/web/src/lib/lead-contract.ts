@@ -65,23 +65,23 @@ export function parseLead(value: unknown, workspaceId: string): Lead {
     !isWorkspaceId(value.id) ||
     value.workspace_id !== workspaceId ||
     typeof value.title !== "string" ||
-    value.title.length < 1 ||
-    value.title.length > 180 ||
+    [...value.title].length < 1 ||
+    [...value.title].length > 180 ||
     typeof value.source_url !== "string" ||
     value.source_url.length > 2048 ||
     !value.source_url.startsWith("https://") ||
     typeof value.source_excerpt !== "string" ||
-    value.source_excerpt.length < 1 ||
-    value.source_excerpt.length > 500 ||
+    [...value.source_excerpt].length < 1 ||
+    [...value.source_excerpt].length > 500 ||
     value.source_origin !== "user_provided" ||
     !isLeadStage(value.stage) ||
     typeof value.note !== "string" ||
-    value.note.length > 2000 ||
+    [...value.note].length > 2000 ||
     (value.follow_up_at !== null && !timestamp(value.follow_up_at)) ||
     typeof value.follow_up_done !== "boolean" ||
     (value.follow_up_done && value.follow_up_at === null) ||
     typeof value.unsent_draft !== "string" ||
-    value.unsent_draft.length > 4000 ||
+    [...value.unsent_draft].length > 4000 ||
     !Number.isSafeInteger(value.version) ||
     (value.version as number) < 1 ||
     !timestamp(value.created_at) ||
@@ -157,7 +157,21 @@ export function parseLeadEvents(value: unknown): LeadEvent[] {
 
 /** Server-side Pydantic remains authoritative. This only protects client edits. */
 export function normalizeLeadText(value: string, limit: number): string {
-  if (value.length > limit || /[\u0000\uD800-\uDFFF]/u.test(value))
+  if ([...value].length > limit || /[\u0000\uD800-\uDFFF]/u.test(value))
     throw new Error("The input contains too much text or invalid characters.");
   return value;
+}
+
+/** An unchanged browser-local wall time must retain the original absolute instant. */
+export function resolveFollowUpInstant(
+  original: string | null,
+  initialLocal: string,
+  editedLocal: string,
+): string | null {
+  if (!editedLocal) return null;
+  if (original && editedLocal === initialLocal) return original;
+  const chosen = new Date(editedLocal);
+  if (!Number.isFinite(chosen.getTime()))
+    throw new Error("Enter a valid local follow-up date and time.");
+  return chosen.toISOString();
 }
