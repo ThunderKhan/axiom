@@ -110,7 +110,9 @@ export function parseLead(value: unknown, workspaceId: string): Lead {
 export function parseLeadList(value: unknown, workspaceId: string): Lead[] {
   if (!record(value) || !Array.isArray(value.items) || value.items.length > 100)
     throw new InvalidLeadResponse();
-  const leads = value.items.map((item: unknown) => parseLead(item, workspaceId));
+  const leads = value.items.map((item: unknown) =>
+    parseLead(item, workspaceId),
+  );
   if (new Set(leads.map((lead) => lead.id)).size !== leads.length)
     throw new InvalidLeadResponse();
   return leads;
@@ -155,10 +157,7 @@ export function parseLeadEvents(value: unknown): LeadEvent[] {
 
 /** Server-side Pydantic remains authoritative. This only protects client edits. */
 export function normalizeLeadText(value: string, limit: number): string {
-  if (
-    value.length > limit ||
-    /[\u0000\uD800-\uDFFF]/u.test(value)
-  )
+  if (value.length > limit || /[\u0000\uD800-\uDFFF]/u.test(value))
     throw new Error("The input contains too much text or invalid characters.");
   return value;
 }
