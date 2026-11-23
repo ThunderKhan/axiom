@@ -8,6 +8,7 @@ import {
   parseLead,
   parseLeadEvents,
   parseLeadList,
+  resolveFollowUpInstant,
 } from "./lead-contract.ts";
 
 const workspace = "11111111-1111-4111-8111-111111111111";
@@ -108,6 +109,42 @@ describe("CRM response and provenance integrity", () => {
       { items: new Array(101).fill(saved) },
     ])
       assert.throws(() => parseLeadEvents(data), InvalidLeadResponse);
+  });
+
+  it("uses Python-compatible Unicode codepoint limits for all private text", () => {
+    const emoji = "🛰️";
+    const singleCodepoint = "🛰";
+    const valid = {
+      ...saved,
+      title: singleCodepoint.repeat(180),
+      source_excerpt: singleCodepoint.repeat(500),
+      note: singleCodepoint.repeat(2000),
+      unsent_draft: singleCodepoint.repeat(4000),
+    };
+    assert.deepEqual(parseLead(valid, workspace), valid);
+    assert.equal(normalizeLeadText(singleCodepoint.repeat(500), 500),
+      singleCodepoint.repeat(500));
+    assert.throws(
+      () => parseLead({ ...saved, title: singleCodepoint.repeat(181) }, workspace),
+      InvalidLeadResponse,
+    );
+    assert.throws(
+      () => normalizeLeadText(emoji.repeat(501), 500),
+    );
+  });
+
+  it("preserves seconds and DST offset for a follow-up whose local field did not change", () => {
+    const secondHour = "2026-11-01T06:30:45Z";
+    assert.equal(
+      resolveFollowUpInstant(secondHour, "2026-11-01T01:30", "2026-11-01T01:30"),
+      secondHour,
+    );
+    assert.equal(resolveFollowUpInstant(secondHour, "2026-11-01T01:30", ""), null);
+    assert.equal(
+      resolveFollowUpInstant(null, "", "2026-11-02T11:45"),
+      new Date("2026-11-02T11:45").toISOString(),
+    );
+    assert.throws(() => resolveFollowUpInstant(null, "", "not-a-date"));
   });
 
   it("keeps client changes within server limits", () => {
