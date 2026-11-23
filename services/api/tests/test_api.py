@@ -35,11 +35,11 @@ def test_fastapi_import_and_versioned_openapi() -> None:
         assert set(paths["/api/v1/workspaces/{workspace_id}/profile/confirm"]) == {"post"}
         assert set(paths["/api/v1/workspaces/{workspace_id}/leads"]) == {"get", "post"}
         assert set(paths["/api/v1/workspaces/{workspace_id}/leads/{lead_id}"]) == {
-            "get", "patch", "delete"
+            "get",
+            "patch",
+            "delete",
         }
-        assert set(paths["/api/v1/workspaces/{workspace_id}/leads/{lead_id}/activity"]) == {
-            "get"
-        }
+        assert set(paths["/api/v1/workspaces/{workspace_id}/leads/{lead_id}/activity"]) == {"get"}
 
 
 def test_liveness_is_genuine_http_response() -> None:
