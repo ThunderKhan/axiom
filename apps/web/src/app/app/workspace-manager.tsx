@@ -38,6 +38,7 @@ import {
 import { publicApiBaseUrl } from "../../lib/public-api";
 import { createBrowserAuthClient } from "../../lib/supabase/browser";
 import { ProfileWizard } from "./profile-wizard";
+import { LeadManager } from "./lead-manager";
 
 type ReadyView = {
   kind: "ready";
@@ -424,8 +425,9 @@ export function WorkspaceManager({
         <h1 id="workspace-heading">Work from the right context.</h1>
         <p className="introduction">
           Workspaces belong to your verified account. Every selection is
-          authorized by FastAPI. Research, onboarding and CRM are not available
-          in this milestone.
+          authorized by FastAPI. You can confirm a product profile and save
+          manually cited leads. Live discovery and competitor research remain
+          unavailable until separately verified.
         </p>
       </div>
 
@@ -520,6 +522,11 @@ export function WorkspaceManager({
                   </p>
                   <ProfileWizard
                     key={view.selected.id}
+                    subject={subject}
+                    workspaceId={view.selected.id}
+                  />
+                  <LeadManager
+                    key={"crm-" + view.selected.id}
                     subject={subject}
                     workspaceId={view.selected.id}
                   />
