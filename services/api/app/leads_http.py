@@ -7,7 +7,7 @@ from typing import Annotated, Literal
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, Header, Query, Response
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
 from app.auth import VerifiedPrincipal, get_verified_principal
 from app.leads_contract import CreateLead, LeadStage, PatchLead
