@@ -1,0 +1,216 @@
+import {
+  InvalidLeadResponse,
+  parseCreatedLead,
+  parseLead,
+  parseLeadEvents,
+  parseLeadList,
+  type Lead,
+  type LeadEvent,
+  type LeadStage,
+} from "./lead-contract.ts";
+import { validatePublicApiBaseUrl } from "./public-api.ts";
+import { isWorkspaceId } from "./workspace-contract.ts";
+
+type AuthToken = (subject: string) => Promise<string>;
+type Method = "GET" | "POST" | "PATCH" | "DELETE";
+
+export type NewLead = Readonly<{
+  title: string;
+  source_url: string;
+  source_excerpt: string;
+}>;
+
+export type LeadEdit = Readonly<{
+  expected_version: number;
+  stage?: LeadStage;
+  note?: string;
+  follow_up_at?: string | null;
+  follow_up_done?: boolean;
+  unsent_draft?: string;
+}>;
+
+export class LeadApiError extends Error {
+  readonly status: number;
+  readonly code: string;
+
+  constructor(code: string, status: number) {
+    super("The private lead request could not be completed.");
+    this.name = "LeadApiError";
+    this.code = code;
+    this.status = status;
+  }
+}
+
+const allowedCodes = new Set([
+  "AUTH_REQUIRED",
+  "AUTH_UNAVAILABLE",
+  "ACCOUNT_DISABLED",
+  "NOT_FOUND",
+  "VALIDATION_FAILED",
+  "VERSION_CONFLICT",
+  "IDEMPOTENCY_CONFLICT",
+  "LEAD_ALREADY_SAVED",
+  "DATABASE_UNAVAILABLE",
+]);
+
+function serverCode(raw: unknown, status: number): string {
+  if (
+    raw !== null &&
+    typeof raw === "object" &&
+    "error" in raw &&
+    raw.error !== null &&
+    typeof raw.error === "object" &&
+    "code" in raw.error &&
+    typeof raw.error.code === "string" &&
+    allowedCodes.has(raw.error.code)
+  )
+    return raw.error.code;
+  return status === 401 ? "AUTH_REQUIRED" : "UNEXPECTED_RESPONSE";
+}
+
+export function createLeadApi(
+  rawOrigin: string,
+  subject: string,
+  getToken: AuthToken,
+  fetcher: typeof fetch = fetch,
+) {
+  const origin = validatePublicApiBaseUrl(rawOrigin);
+
+  function pathFor(workspaceId: string, leadId?: string): string {
+    if (!isWorkspaceId(workspaceId) || (leadId && !isWorkspaceId(leadId)))
+      throw new InvalidLeadResponse();
+    return (
+      "/api/v1/workspaces/" +
+      encodeURIComponent(workspaceId) +
+      "/leads" +
+      (leadId ? "/" + encodeURIComponent(leadId) : "")
+    );
+  }
+
+  async function send(
+    path: string,
+    method: Method,
+    signal: AbortSignal,
+    body?: unknown,
+    key?: string,
+  ): Promise<unknown> {
+    if (!origin) throw new LeadApiError("DATABASE_UNAVAILABLE", 503);
+    if (signal.aborted) throw new LeadApiError("CANCELLED", 0);
+    let response: Response;
+    try {
+      const token = await getToken(subject);
+      if (!token || signal.aborted) throw new LeadApiError("AUTH_REQUIRED", 401);
+      const headers: Record<string, string> = {
+        Authorization: "Bearer " + token,
+        Accept: "application/json",
+      };
+      if (body !== undefined) headers["Content-Type"] = "application/json";
+      if (key) headers["Idempotency-Key"] = key;
+      response = await fetcher(origin + path, {
+        method,
+        headers,
+        body: body === undefined ? undefined : JSON.stringify(body),
+        cache: "no-store",
+        credentials: "omit",
+        signal: AbortSignal.any([signal, AbortSignal.timeout(12000)]),
+      });
+    } catch (error) {
+      if (error instanceof LeadApiError) throw error;
+      if (signal.aborted) throw new LeadApiError("CANCELLED", 0);
+      throw new LeadApiError(
+        method === "GET" ? "NETWORK_FAILED" : "NETWORK_UNCERTAIN",
+        0,
+      );
+    }
+    if (response.status === 204 && method === "DELETE") return null;
+    let data: unknown = null;
+    try {
+      const text = await response.text();
+      if (text.length > 1_000_000) throw new InvalidLeadResponse();
+      data = JSON.parse(text) as unknown;
+    } catch {
+      if (response.ok) {
+        if (method !== "GET")
+          throw new LeadApiError("NETWORK_UNCERTAIN", 0);
+        throw new InvalidLeadResponse();
+      }
+      // The HTTP status remains authoritative when an error is malformed.
+    }
+    if (!response.ok) {
+      throw new LeadApiError(serverCode(data, response.status), response.status);
+    }
+    return data;
+  }
+
+  return {
+    async list(workspaceId: string, signal: AbortSignal): Promise<Lead[]> {
+      return parseLeadList(
+        await send(pathFor(workspaceId) + "?limit=100", "GET", signal),
+        workspaceId,
+      );
+    },
+    async read(
+      workspaceId: string,
+      leadId: string,
+      signal: AbortSignal,
+    ): Promise<Lead> {
+      const item = parseLead(
+        await send(pathFor(workspaceId, leadId), "GET", signal),
+        workspaceId,
+      );
+      if (item.id !== leadId) throw new InvalidLeadResponse();
+      return item;
+    },
+    async create(
+      workspaceId: string,
+      payload: NewLead,
+      key: string,
+      signal: AbortSignal,
+    ): Promise<Lead & { already_exists: boolean }> {
+      if (!/^[A-Za-z0-9][A-Za-z0-9_-]{7,127}$/.test(key))
+        throw new InvalidLeadResponse();
+      return parseCreatedLead(
+        await send(pathFor(workspaceId), "POST", signal, payload, key),
+        workspaceId,
+      );
+    },
+    async update(
+      workspaceId: string,
+      leadId: string,
+      payload: LeadEdit,
+      signal: AbortSignal,
+    ): Promise<Lead> {
+      const item = parseLead(
+        await send(pathFor(workspaceId, leadId), "PATCH", signal, payload),
+        workspaceId,
+      );
+      if (item.id !== leadId) throw new InvalidLeadResponse();
+      return item;
+    },
+    async archive(
+      workspaceId: string,
+      leadId: string,
+      expectedVersion: number,
+      signal: AbortSignal,
+    ): Promise<void> {
+      if (!Number.isSafeInteger(expectedVersion) || expectedVersion < 1)
+        throw new InvalidLeadResponse();
+      await send(
+        pathFor(workspaceId, leadId) +
+          "?expected_version=" +
+          String(expectedVersion),
+        "DELETE",
+        signal,
+      );
+    },
+    async history(
+      workspaceId: string,
+      leadId: string,
+      signal: AbortSignal,
+    ): Promise<LeadEvent[]> {
+      return parseLeadEvents(
+        await send(pathFor(workspaceId, leadId) + "/activity", "GET", signal),
+      );
+    },
+  };
+}
