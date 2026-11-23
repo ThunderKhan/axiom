@@ -212,7 +212,6 @@ function LeadDetail({
         <textarea
           id="lead-note"
           rows={3}
-         
           value={note}
           onChange={(event) => setNote(event.target.value)}
           disabled={busy}
@@ -243,7 +242,6 @@ function LeadDetail({
         <textarea
           id="lead-draft"
           rows={5}
-         
           value={draft}
           onChange={(event) => setDraft(event.target.value)}
           disabled={busy}
@@ -549,7 +547,6 @@ export function LeadManager({
             <input
               id="crm-title"
               required
-             
               value={title}
               disabled={creating || uncertain}
               onChange={(event) => setTitle(event.target.value)}
@@ -571,7 +568,6 @@ export function LeadManager({
             <textarea
               id="crm-excerpt"
               required
-             
               rows={3}
               value={excerpt}
               disabled={creating || uncertain}
