@@ -13,7 +13,7 @@ from sqlalchemy.exc import DBAPIError
 from app.auth import VerifiedPrincipal
 from app.database import Database
 from app.leads_contract import CreateLead, PatchLead
-from app.leads_store import InvalidLeadInput, LeadStore
+from app.leads_store import InvalidLeadInput, LeadAlreadySaved, LeadStore
 from app.settings import RuntimeSettings
 from app.workspace_store import (
     IdempotencyConflict,
@@ -70,9 +70,9 @@ def test_manual_lead_survives_update_dedupe_and_foreign_workspace_denial(
     replay = leads.create(owner, own_id, payload=sample(), key=key)
     assert replay["id"] == lead_id
     assert replay["already_exists"] is True
-    assert (
-        leads.create(owner, own_id, payload=sample(), key="next-" + uuid4().hex)["id"] == lead_id
-    )  # URL dedupe even with a fresh request key.
+    duplicate_key = "next-" + uuid4().hex
+    with pytest.raises(LeadAlreadySaved):
+        leads.create(owner, own_id, payload=sample(), key=duplicate_key)
     with pytest.raises(IdempotencyConflict):
         leads.create(owner, own_id, payload=sample(note="different"), key=key)
 
@@ -137,6 +137,14 @@ def test_manual_lead_survives_update_dedupe_and_foreign_workspace_denial(
             {"lead": lead_id},
         )
     assert retained == 3
+    # The rejected duplicate key was never accepted; it remains safe for a new URL.
+    distinct = leads.create(
+        owner,
+        own_id,
+        payload=sample(source_url="https://example.org/different"),
+        key=duplicate_key,
+    )
+    assert distinct["already_exists"] is False
 
 
 def test_composite_fk_and_runtime_columns_resist_cross_workspace_mutation(
