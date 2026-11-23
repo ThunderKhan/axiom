@@ -149,7 +149,7 @@ def test_hypothetical_coverage_survives_other_unknown_or_missing_needs() -> None
     "url",
     ["https://", "https://?q=1", "https://example.com:invalid",
      "https://name:pass@example.com", "https://not a host.com",
-     "https://example.org\\nother", "http://example.org"],
+     "https://example.org" + chr(10) + "other", "http://example.org"],
 )
 def test_unusable_source_url_rejected_even_without_network_fetch(url: str) -> None:
     with pytest.raises(EvidenceInputError):
