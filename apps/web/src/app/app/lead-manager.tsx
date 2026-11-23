@@ -1,6 +1,13 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState, type FormEvent } from "react";
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type FormEvent,
+} from "react";
 import {
   createLeadApi,
   LeadApiError,
@@ -42,7 +49,9 @@ function safeMessage(error: unknown): string {
 function toLocalInput(iso: string | null): string {
   if (!iso) return "";
   const timestamp = new Date(iso);
-  const local = new Date(timestamp.getTime() - timestamp.getTimezoneOffset() * 60_000);
+  const local = new Date(
+    timestamp.getTime() - timestamp.getTimezoneOffset() * 60_000,
+  );
   return local.toISOString().slice(0, 16);
 }
 
@@ -104,7 +113,12 @@ function LeadDetail({
     const controller = new AbortController();
     active.current = controller;
     try {
-      const updated = await api.update(workspaceId, lead.id, payload, controller.signal);
+      const updated = await api.update(
+        workspaceId,
+        lead.id,
+        payload,
+        controller.signal,
+      );
       if (!mounted.current || controller.signal.aborted) return;
       onSaved(updated);
       setMessage("Changes saved to your workspace.");
@@ -144,7 +158,11 @@ function LeadDetail({
     active.current?.abort();
     active.current = controller;
     try {
-      const records = await api.history(workspaceId, lead.id, controller.signal);
+      const records = await api.history(
+        workspaceId,
+        lead.id,
+        controller.signal,
+      );
       if (!mounted.current || controller.signal.aborted) return;
       setHistory(records);
       setMessage("");
@@ -160,7 +178,9 @@ function LeadDetail({
         <div>
           <p className="eyebrow">SAVED OPPORTUNITY</p>
           <h3 id="crm-lead-heading">{lead.title}</h3>
-          <p className="crm-meta">Manual source · No live verification claimed</p>
+          <p className="crm-meta">
+            Manual source · No live verification claimed
+          </p>
           <a href={lead.source_url} target="_blank" rel="noopener noreferrer">
             View original public citation
           </a>
@@ -170,49 +190,90 @@ function LeadDetail({
       <blockquote className="crm-evidence">{lead.source_excerpt}</blockquote>
       <form className="crm-form" onSubmit={(event) => void save(event)}>
         <label htmlFor="lead-stage">Stage (recorded by you)</label>
-        <select id="lead-stage" value={stage} disabled={busy}
-          onChange={(event) => setStage(event.target.value as LeadStage)}>
+        <select
+          id="lead-stage"
+          value={stage}
+          disabled={busy}
+          onChange={(event) => setStage(event.target.value as LeadStage)}
+        >
           {leadStages.map((value) => (
-            <option key={value} value={value}>{value.replace("_", " ")}</option>
+            <option key={value} value={value}>
+              {value.replace("_", " ")}
+            </option>
           ))}
         </select>
         <label htmlFor="lead-note">Research notes</label>
-        <textarea id="lead-note" rows={3} maxLength={2000} value={note}
-          onChange={(event) => setNote(event.target.value)} disabled={busy} />
-        <label htmlFor="lead-due">Follow-up date and time (your local timezone)</label>
-        <input id="lead-due" type="datetime-local" value={followUp}
+        <textarea
+          id="lead-note"
+          rows={3}
+          maxLength={2000}
+          value={note}
+          onChange={(event) => setNote(event.target.value)}
+          disabled={busy}
+        />
+        <label htmlFor="lead-due">
+          Follow-up date and time (your local timezone)
+        </label>
+        <input
+          id="lead-due"
+          type="datetime-local"
+          value={followUp}
           onChange={(event) => {
             setFollowUp(event.target.value);
             if (!event.target.value) setCompleted(false);
-          }} disabled={busy} />
+          }}
+          disabled={busy}
+        />
         <label className="crm-inline-check">
-          <input type="checkbox" checked={completed} disabled={busy || !followUp}
-            onChange={(event) => setCompleted(event.target.checked)} />
+          <input
+            type="checkbox"
+            checked={completed}
+            disabled={busy || !followUp}
+            onChange={(event) => setCompleted(event.target.checked)}
+          />
           Mark this follow-up completed
         </label>
         <label htmlFor="lead-draft">Outreach draft — not sent</label>
-        <textarea id="lead-draft" rows={5} maxLength={4000} value={draft}
-          onChange={(event) => setDraft(event.target.value)} disabled={busy}
-          placeholder="Write an optional human-reviewed draft. No message is sent." />
+        <textarea
+          id="lead-draft"
+          rows={5}
+          maxLength={4000}
+          value={draft}
+          onChange={(event) => setDraft(event.target.value)}
+          disabled={busy}
+          placeholder="Write an optional human-reviewed draft. No message is sent."
+        />
         <p className="crm-meta">
-          Marking a lead contacted records your choice; it does not send a message
-          or verify that anyone was contacted.
+          Marking a lead contacted records your choice; it does not send a
+          message or verify that anyone was contacted.
         </p>
         <div className="crm-actions">
           <button type="submit" className="workspace-primary" disabled={busy}>
             {busy ? "Saving…" : "Save changes"}
           </button>
-          <button className="workspace-secondary" type="button"
-            disabled={busy} onClick={() => void showHistory()}>
+          <button
+            className="workspace-secondary"
+            type="button"
+            disabled={busy}
+            onClick={() => void showHistory()}
+          >
             Activity history
           </button>
-          <button className="workspace-secondary" type="button"
-            disabled={busy} onClick={() => void archive()}>
+          <button
+            className="workspace-secondary"
+            type="button"
+            disabled={busy}
+            onClick={() => void archive()}
+          >
             Archive lead
           </button>
         </div>
       </form>
-      {message && <p className="workspace-notice" role="status">{message}</p>}
+      {message && (
+        <p className="workspace-notice" role="status">
+          {message}
+        </p>
+      )}
       {history !== null && (
         <div className="crm-history" aria-label="Lead activity history">
           <h4>Recent activity</h4>
@@ -220,7 +281,8 @@ function LeadDetail({
           <ol>
             {history.map((event) => (
               <li key={event.id}>
-                <strong>{event.event_type}</strong> · {event.changed_fields.join(", ")}
+                <strong>{event.event_type}</strong> ·{" "}
+                {event.changed_fields.join(", ")}
                 <time dateTime={event.created_at}>
                   {" · " + new Date(event.created_at).toLocaleString()}
                 </time>
@@ -242,7 +304,9 @@ export function LeadManager({
 }) {
   const [items, setItems] = useState<Lead[]>([]);
   const [selectedId, setSelectedId] = useState<string | null>(null);
-  const [state, setState] = useState<"loading" | "ready" | "error" | "blocked">("loading");
+  const [state, setState] = useState<"loading" | "ready" | "error" | "blocked">(
+    "loading",
+  );
   const [notice, setNotice] = useState("");
   const [title, setTitle] = useState("");
   const [url, setUrl] = useState("");
@@ -254,23 +318,28 @@ export function LeadManager({
   const pendingKey = useRef<string | null>(null);
   const active = useRef<AbortController | null>(null);
   const auth = useMemo(() => createBrowserAuthClient(), []);
-  const api = useMemo(() =>
-    createLeadApi(publicApiBaseUrl, subject, async (expected) => {
-      const verified = await auth.auth.getClaims();
-      if (
-        verified.error ||
-        verified.data?.claims?.sub !== expected ||
-        verified.data.claims.role !== "authenticated" ||
-        verified.data.claims.is_anonymous === true
-      ) throw new LeadApiError("AUTH_REQUIRED", 401);
-      const session = await auth.auth.getSession();
-      if (
-        session.error ||
-        !session.data.session ||
-        session.data.session.user.id !== expected
-      ) throw new LeadApiError("AUTH_REQUIRED", 401);
-      return session.data.session.access_token;
-    }), [auth, subject]);
+  const api = useMemo(
+    () =>
+      createLeadApi(publicApiBaseUrl, subject, async (expected) => {
+        const verified = await auth.auth.getClaims();
+        if (
+          verified.error ||
+          verified.data?.claims?.sub !== expected ||
+          verified.data.claims.role !== "authenticated" ||
+          verified.data.claims.is_anonymous === true
+        )
+          throw new LeadApiError("AUTH_REQUIRED", 401);
+        const session = await auth.auth.getSession();
+        if (
+          session.error ||
+          !session.data.session ||
+          session.data.session.user.id !== expected
+        )
+          throw new LeadApiError("AUTH_REQUIRED", 401);
+        return session.data.session.access_token;
+      }),
+    [auth, subject],
+  );
 
   const load = useCallback(async () => {
     active.current?.abort();
@@ -294,8 +363,11 @@ export function LeadManager({
       if (controller.signal.aborted) return;
       setItems([]);
       setSelectedId(null);
-      setState(error instanceof LeadApiError && [401, 403].includes(error.status)
-        ? "blocked" : "error");
+      setState(
+        error instanceof LeadApiError && [401, 403].includes(error.status)
+          ? "blocked"
+          : "error",
+      );
       setNotice(safeMessage(error));
     }
   }, [api, workspaceId]);
@@ -331,8 +403,11 @@ export function LeadManager({
         source_url: url.trim(),
         source_excerpt: normalizeLeadText(excerpt.trim(), 500),
       };
-      if (!payload.title || !payload.source_excerpt ||
-          !payload.source_url.startsWith("https://"))
+      if (
+        !payload.title ||
+        !payload.source_excerpt ||
+        !payload.source_url.startsWith("https://")
+      )
         throw new Error("An HTTPS citation is required.");
     } catch {
       setNotice("Enter a title, HTTPS citation and excerpt within the limits.");
@@ -348,19 +423,31 @@ export function LeadManager({
     active.current?.abort();
     active.current = controller;
     try {
-      const result = await api.create(workspaceId, payload, key, controller.signal);
+      const result = await api.create(
+        workspaceId,
+        payload,
+        key,
+        controller.signal,
+      );
       if (controller.signal.aborted) return;
-      setItems((previous) => [result, ...previous.filter((item) => item.id !== result.id)]);
+      setItems((previous) => [
+        result,
+        ...previous.filter((item) => item.id !== result.id),
+      ]);
       setSelectedId(result.id);
       setTitle("");
       setUrl("");
       setExcerpt("");
       pendingKey.current = null;
-      setNotice("Saved to your workspace. Manual citation, not live-verified evidence.");
+      setNotice(
+        "Saved to your workspace. Manual citation, not live-verified evidence.",
+      );
     } catch (error) {
       if (controller.signal.aborted) return;
-      if (error instanceof LeadApiError &&
-          (error.code === "NETWORK_UNCERTAIN" || error.status >= 500))
+      if (
+        error instanceof LeadApiError &&
+        (error.code === "NETWORK_UNCERTAIN" || error.status >= 500)
+      )
         setUncertain(true);
       else pendingKey.current = null;
       setNotice(safeMessage(error));
@@ -382,26 +469,39 @@ export function LeadManager({
             verified by Axiom. Records are private to this authorized workspace.
           </p>
         </div>
-        <button type="button" className="workspace-secondary"
-          onClick={() => void load()} disabled={creating}>
+        <button
+          type="button"
+          className="workspace-secondary"
+          onClick={() => void load()}
+          disabled={creating}
+        >
           Refresh records
         </button>
       </div>
-      {state === "loading" && <p role="status">Loading saved workspace leads…</p>}
-      {state === "blocked" && <p role="alert">CRM access cannot be verified. {notice}</p>}
+      {state === "loading" && (
+        <p role="status">Loading saved workspace leads…</p>
+      )}
+      {state === "blocked" && (
+        <p role="alert">CRM access cannot be verified. {notice}</p>
+      )}
       {state === "error" && <p role="alert">{notice}</p>}
       {state === "ready" && (
         <>
           <div className="crm-layout">
             <div className="crm-list">
               <h4>Most recent saved leads</h4>
-              {items.length === 0 && <p>No saved leads in this workspace yet.</p>}
+              {items.length === 0 && (
+                <p>No saved leads in this workspace yet.</p>
+              )}
               <ul aria-label="Saved leads">
                 {items.map((lead) => (
                   <li key={lead.id}>
-                    <button type="button" className="crm-choice"
+                    <button
+                      type="button"
+                      className="crm-choice"
                       aria-pressed={lead.id === selectedId}
-                      onClick={() => setSelectedId(lead.id)}>
+                      onClick={() => setSelectedId(lead.id)}
+                    >
                       <strong>{lead.title}</strong>
                       <span>{lead.stage.replace("_", " ")}</span>
                     </button>
@@ -410,11 +510,17 @@ export function LeadManager({
               </ul>
             </div>
             {selected && (
-              <LeadDetail key={selected.id + ":" + selected.version}
-                lead={selected} workspaceId={workspaceId} api={api}
+              <LeadDetail
+                key={selected.id + ":" + selected.version}
+                lead={selected}
+                workspaceId={workspaceId}
+                api={api}
                 onSaved={(changed) => {
-                  setItems((records) => records.map((row) =>
-                    row.id === changed.id ? changed : row));
+                  setItems((records) =>
+                    records.map((row) =>
+                      row.id === changed.id ? changed : row,
+                    ),
+                  );
                   setNotice("Your lead has been updated.");
                 }}
                 onArchived={(id) => {
@@ -425,49 +531,91 @@ export function LeadManager({
               />
             )}
           </div>
-          <form className="crm-form crm-create" onSubmit={(event) => void create(event)}>
+          <form
+            className="crm-form crm-create"
+            onSubmit={(event) => void create(event)}
+          >
             <h4>Save a source manually</h4>
-            <p className="crm-meta">No crawling, enrichment or outreach is triggered.</p>
+            <p className="crm-meta">
+              No crawling, enrichment or outreach is triggered.
+            </p>
             <label htmlFor="crm-title">Opportunity title</label>
-            <input id="crm-title" required maxLength={180} value={title}
+            <input
+              id="crm-title"
+              required
+              maxLength={180}
+              value={title}
               disabled={creating || uncertain}
-              onChange={(event) => setTitle(event.target.value)} />
+              onChange={(event) => setTitle(event.target.value)}
+            />
             <label htmlFor="crm-source">Public HTTPS source URL</label>
-            <input id="crm-source" type="url" required maxLength={2048}
+            <input
+              id="crm-source"
+              type="url"
+              required
+              maxLength={2048}
               placeholder="https://example.org/discussion"
-              value={url} disabled={creating || uncertain}
-              onChange={(event) => setUrl(event.target.value)} />
-            <label htmlFor="crm-excerpt">Source excerpt (manually entered)</label>
-            <textarea id="crm-excerpt" required maxLength={500} rows={3}
-              value={excerpt} disabled={creating || uncertain}
-              onChange={(event) => setExcerpt(event.target.value)} />
-            <button type="submit" className="workspace-primary"
-              disabled={creating || uncertain}>
+              value={url}
+              disabled={creating || uncertain}
+              onChange={(event) => setUrl(event.target.value)}
+            />
+            <label htmlFor="crm-excerpt">
+              Source excerpt (manually entered)
+            </label>
+            <textarea
+              id="crm-excerpt"
+              required
+              maxLength={500}
+              rows={3}
+              value={excerpt}
+              disabled={creating || uncertain}
+              onChange={(event) => setExcerpt(event.target.value)}
+            />
+            <button
+              type="submit"
+              className="workspace-primary"
+              disabled={creating || uncertain}
+            >
               {creating ? "Saving…" : "Save opportunity"}
             </button>
             {uncertain && (
               <div className="workspace-warning" role="alert">
                 <p>
-                  The last save outcome is uncertain. Inspect the authorized list
-                  before attempting a separate save with a new key.
+                  The last save outcome is uncertain. Inspect the authorized
+                  list before attempting a separate save with a new key.
                 </p>
-                <button type="button" className="workspace-secondary"
-                  onClick={() => void load()}>Inspect saved leads</button>
-                <button type="button" className="workspace-secondary"
+                <button
+                  type="button"
+                  className="workspace-secondary"
+                  onClick={() => void load()}
+                >
+                  Inspect saved leads
+                </button>
+                <button
+                  type="button"
+                  className="workspace-secondary"
                   disabled={!inspectedUncertain}
                   onClick={() => {
                     setUncertain(false);
                     setInspectedUncertain(false);
                     pendingKey.current = null;
-                    setNotice("Start a separate attempt only after checking for duplicates.");
-                  }}>I inspected; allow a separate attempt</button>
+                    setNotice(
+                      "Start a separate attempt only after checking for duplicates.",
+                    );
+                  }}
+                >
+                  I inspected; allow a separate attempt
+                </button>
               </div>
             )}
           </form>
         </>
       )}
-      {notice && state === "ready" &&
-        <p className="workspace-notice" role="status">{notice}</p>}
+      {notice && state === "ready" && (
+        <p className="workspace-notice" role="status">
+          {notice}
+        </p>
+      )}
     </section>
   );
 }
