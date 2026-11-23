@@ -97,7 +97,9 @@ class LeadStore:
             validate_idempotency_key(key)
         except ValueError as exc:
             raise InvalidLeadInput("Invalid idempotency key") from exc
-        canonical = json.dumps(payload.model_dump(mode="json"), sort_keys=True, separators=(",", ":"))
+        canonical = json.dumps(
+            payload.model_dump(mode="json"), sort_keys=True, separators=(",", ":")
+        )
         fingerprint = hashlib.sha256(canonical.encode("utf-8")).hexdigest()
         with self.database.transaction(principal) as session:
             self._owned(session, principal, workspace_id)
@@ -189,7 +191,9 @@ class LeadStore:
             ).all()
             return {"items": [_payload(lead) for lead in leads]}
 
-    def read(self, principal: VerifiedPrincipal, workspace_id: UUID, lead_id: UUID) -> dict[str, object]:
+    def read(
+        self, principal: VerifiedPrincipal, workspace_id: UUID, lead_id: UUID
+    ) -> dict[str, object]:
         with self.database.transaction(principal) as session:
             self._owned(session, principal, workspace_id)
             return _payload(self._lead(session, workspace_id, lead_id))
