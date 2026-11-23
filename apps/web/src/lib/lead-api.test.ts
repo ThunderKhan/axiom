@@ -32,14 +32,18 @@ const payload = {
 
 describe("authenticated CRM API client", () => {
   it("never places credentials in URLs, stores no fake source and sends one POST", async () => {
-    const requests: Array<{ url: string; options: RequestInit | undefined }> = [];
+    const requests: Array<{ url: string; options: RequestInit | undefined }> =
+      [];
     const fetcher = async (
       url: string | URL | Request,
       options?: RequestInit,
     ): Promise<Response> => {
       requests.push({ url: String(url), options });
       if (options?.method === "POST")
-        return Response.json({ ...lead, already_exists: false }, { status: 201 });
+        return Response.json(
+          { ...lead, already_exists: false },
+          { status: 201 },
+        );
       return Response.json({ items: [lead] });
     };
     const api = createLeadApi(
@@ -57,7 +61,11 @@ describe("authenticated CRM API client", () => {
       leadId,
     );
     assert.equal(requests.length, 2);
-    assert(requests.every((item) => item.url.includes("/workspaces/" + workspace + "/leads")));
+    assert(
+      requests.every((item) =>
+        item.url.includes("/workspaces/" + workspace + "/leads"),
+      ),
+    );
     assert(requests.every((item) => !item.url.includes(token)));
     assert(requests.every((item) => item.options?.credentials === "omit"));
     assert(requests.every((item) => item.options?.cache === "no-store"));
@@ -69,14 +77,17 @@ describe("authenticated CRM API client", () => {
       ),
     );
     assert.equal(
-      (requests[1].options?.headers as Record<string, string>)["Idempotency-Key"],
+      (requests[1].options?.headers as Record<string, string>)[
+        "Idempotency-Key"
+      ],
       "initialKey123",
     );
     assert.deepEqual(JSON.parse(String(requests[1].options?.body)), payload);
   });
 
   it("sends optimistic revisions and never invents an outreach send operation", async () => {
-    const requests: Array<{ url: string; options: RequestInit | undefined }> = [];
+    const requests: Array<{ url: string; options: RequestInit | undefined }> =
+      [];
     const api = createLeadApi(
       "https://api.example.test",
       subject,
@@ -89,12 +100,14 @@ describe("authenticated CRM API client", () => {
       },
     );
     assert.equal(
-      (await api.update(
-        workspace,
-        leadId,
-        { expected_version: 1, stage: "qualified" },
-        signal,
-      )).version,
+      (
+        await api.update(
+          workspace,
+          leadId,
+          { expected_version: 1, stage: "qualified" },
+          signal,
+        )
+      ).version,
       2,
     );
     await api.archive(workspace, leadId, 2, signal);
@@ -103,7 +116,10 @@ describe("authenticated CRM API client", () => {
     assert.equal(
       requests[1].url,
       "https://api.example.test/api/v1/workspaces/" +
-        workspace + "/leads/" + leadId + "?expected_version=2",
+        workspace +
+        "/leads/" +
+        leadId +
+        "?expected_version=2",
     );
   });
 
@@ -115,7 +131,10 @@ describe("authenticated CRM API client", () => {
       async () => token,
       async () => {
         count++;
-        return Response.json({ ...lead, workspace_id: subject }, { status: 201 });
+        return Response.json(
+          { ...lead, workspace_id: subject },
+          { status: 201 },
+        );
       },
     );
     await assert.rejects(
@@ -146,10 +165,17 @@ describe("authenticated CRM API client", () => {
       "https://api.example.test",
       subject,
       async () => token,
-      async () => Response.json({ items: [{ ...lead, workspace_id: subject }] }),
+      async () =>
+        Response.json({ items: [{ ...lead, workspace_id: subject }] }),
     );
-    await assert.rejects(mismatched.list(workspace, signal), InvalidLeadResponse);
-    await assert.rejects(mismatched.read("../other", leadId, signal), InvalidLeadResponse);
+    await assert.rejects(
+      mismatched.list(workspace, signal),
+      InvalidLeadResponse,
+    );
+    await assert.rejects(
+      mismatched.read("../other", leadId, signal),
+      InvalidLeadResponse,
+    );
     let fetchCount = 0;
     const withoutToken = createLeadApi(
       "https://api.example.test",
@@ -164,8 +190,7 @@ describe("authenticated CRM API client", () => {
     );
     await assert.rejects(
       withoutToken.read(workspace, leadId, signal),
-      (error: unknown) =>
-        error instanceof LeadApiError && error.status === 401,
+      (error: unknown) => error instanceof LeadApiError && error.status === 401,
     );
     assert.equal(fetchCount, 0);
   });
@@ -181,7 +206,8 @@ describe("authenticated CRM API client", () => {
         "https://api.example.test",
         subject,
         async () => token,
-        async () => Response.json({ error: { code, debug: "private" } }, { status }),
+        async () =>
+          Response.json({ error: { code, debug: "private" } }, { status }),
       );
       await assert.rejects(
         api.read(workspace, leadId, signal),
