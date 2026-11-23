@@ -127,6 +127,8 @@ def test_manual_lead_survives_update_dedupe_and_foreign_workspace_denial(
     assert leads.list(owner, own_id)["items"] == []
     with pytest.raises(WorkspaceNotFound):
         leads.read(owner, own_id, lead_id)
+    with pytest.raises(IdempotencyConflict):
+        leads.create(owner, own_id, payload=sample(), key=key)
     with pytest.raises(WorkspaceNotFound):
         leads.archive(owner, own_id, lead_id, expected_version=2)
     with database.transaction(owner) as session:
