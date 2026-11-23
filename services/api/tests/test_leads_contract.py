@@ -41,6 +41,10 @@ def test_create_accepts_declared_public_source_and_never_assigns_verified_origin
         "https://example.org/\x00",
         "http://example.org/path",
         "https://example.org\\@internal/",
+        "https://localhost/private",
+        "https://127.0.0.1/private",
+        "https://192.168.1.1/admin",
+        "https://metadata.google.internal/path",
     ],
 )
 def test_rejects_invalid_or_secret_bearing_source_authorities(source_url: str) -> None:
