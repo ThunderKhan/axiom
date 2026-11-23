@@ -348,7 +348,9 @@ export function ProfileWizard({
                   onChange={(event) => {
                     const nextValue = event.target.value;
                     if ([...nextValue].length > (question.maxLength ?? 2048)) {
-                      setMessage("This answer exceeds the permitted field length.");
+                      setMessage(
+                        "This answer exceeds the permitted field length.",
+                      );
                       return;
                     }
                     const key = question.key as TextAnswerKey;
