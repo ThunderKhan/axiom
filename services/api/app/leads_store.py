@@ -93,7 +93,10 @@ class LeadStore:
         payload: CreateLead,
         key: str,
     ) -> dict[str, object]:
-        validate_idempotency_key(key)
+        try:
+            validate_idempotency_key(key)
+        except ValueError as exc:
+            raise InvalidLeadInput("Invalid idempotency key") from exc
         canonical = json.dumps(payload.model_dump(mode="json"), sort_keys=True, separators=(",", ":"))
         fingerprint = hashlib.sha256(canonical.encode("utf-8")).hexdigest()
         with self.database.transaction(principal) as session:
@@ -137,6 +140,8 @@ class LeadStore:
                     )
                 if existing is None:
                     raise RuntimeError("Conflicting lead is not visible to verified owner")
+                if existing.archived_at is not None:
+                    raise IdempotencyConflict()
                 result = _payload(existing)
                 result["already_exists"] = True
                 return result
