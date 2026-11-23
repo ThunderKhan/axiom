@@ -44,6 +44,7 @@ class ProfileStore:
         if profile is None:
             return {
                 "draft_revision": 0,
+                "draft_step": 0,
                 "answers": None,
                 "confirmed_revision": 0,
                 "confirmed": None,
@@ -60,6 +61,7 @@ class ProfileStore:
                 raise RuntimeError("A confirmed profile revision is missing")
         return {
             "draft_revision": profile.draft_revision,
+            "draft_step": profile.draft_step,
             "answers": profile.draft_answers,
             "confirmed_revision": profile.confirmed_revision,
             "confirmed": (
@@ -87,9 +89,12 @@ class ProfileStore:
         *,
         answers: ProfileAnswers,
         expected_revision: int,
+        draft_step: int = 0,
     ) -> dict[str, object]:
         if type(expected_revision) is not int or not 0 <= expected_revision < 9223372036854775807:
             raise VersionConflict()
+        if type(draft_step) is not int or not 0 <= draft_step <= 14:
+            raise ValueError("Draft step must be between 0 and 14")
         with self.database.transaction(principal) as session:
             self._owned(session, principal, workspace_id)
             # Serialize concurrent first drafts at the unique workspace PK, then row-lock.
@@ -107,6 +112,7 @@ class ProfileStore:
             if profile.draft_revision != expected_revision:
                 raise VersionConflict()
             profile.draft_answers = answers.model_dump(mode="json")
+            profile.draft_step = draft_step
             profile.draft_revision += 1
             profile.updated_at = session.execute(select(func.clock_timestamp())).scalar_one()
             session.flush()

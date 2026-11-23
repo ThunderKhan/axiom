@@ -18,6 +18,7 @@ from app.workspace_store import WorkspaceStore
 
 class DraftBody(StrictBody):
     expected_revision: int = Field(ge=0, lt=9223372036854775807)
+    draft_step: int = Field(ge=0, le=14)
     answers: ProfileAnswers
 
 
@@ -34,6 +35,7 @@ class ConfirmedProfileDTO(BaseModel):
 
 class ProfileStateDTO(BaseModel):
     draft_revision: int
+    draft_step: int
     answers: ProfileAnswers | None
     confirmed_revision: int
     confirmed: ConfirmedProfileDTO | None
@@ -73,7 +75,11 @@ def save_draft(
 ) -> ProfileStateDTO:
     return ProfileStateDTO.model_validate(
         store.save(
-            principal, workspace_id, answers=body.answers, expected_revision=body.expected_revision
+            principal,
+            workspace_id,
+            answers=body.answers,
+            expected_revision=body.expected_revision,
+            draft_step=body.draft_step,
         )
     )
 

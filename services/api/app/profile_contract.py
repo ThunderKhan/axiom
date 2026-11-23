@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from typing import Literal
 
-from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 Stage = Literal["idea", "live"]
 
@@ -35,13 +35,6 @@ class ProfileAnswers(BaseModel):
         if value and not value.startswith(("https://", "http://")):
             raise ValueError("Only HTTP(S) websites are accepted")
         return value
-
-    @model_validator(mode="after")
-    def bounded_payload(self) -> ProfileAnswers:
-        # Keep a strict cap on both persisted documents and future model context.
-        if sum(len(value) for value in self.__dict__.values() if isinstance(value, str)) > 11000:
-            raise ValueError("Profile is too large")
-        return self
 
     def confirmable(self) -> bool:
         return bool(

@@ -8,6 +8,7 @@ from uuid import UUID
 from sqlalchemy import (
     BigInteger,
     CheckConstraint,
+    SmallInteger,
     DateTime,
     ForeignKey,
     Index,
@@ -130,6 +131,7 @@ class ProductProfile(Base):
     __tablename__ = "product_profiles"
     __table_args__ = (
         CheckConstraint("draft_revision >= 0", name="ck_profile_draft_revision"),
+        CheckConstraint("draft_step BETWEEN 0 AND 14", name="ck_profile_draft_step"),
         CheckConstraint("confirmed_revision >= 0", name="ck_profile_confirmed_revision"),
         CheckConstraint("jsonb_typeof(draft_answers) = 'object'", name="ck_profile_draft_object"),
     )
@@ -141,6 +143,9 @@ class ProductProfile(Base):
     )
     draft_revision: Mapped[int] = mapped_column(
         BigInteger, nullable=False, server_default=text("0")
+    )
+    draft_step: Mapped[int] = mapped_column(
+        SmallInteger, nullable=False, server_default=text("0")
     )
     confirmed_revision: Mapped[int] = mapped_column(
         BigInteger, nullable=False, server_default=text("0")

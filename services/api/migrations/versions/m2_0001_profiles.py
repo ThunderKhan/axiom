@@ -33,6 +33,7 @@ def upgrade() -> None:
             primary_key=True,
         ),
         sa.Column("draft_revision", sa.BigInteger(), nullable=False, server_default="0"),
+        sa.Column("draft_step", sa.SmallInteger(), nullable=False, server_default="0"),
         sa.Column("confirmed_revision", sa.BigInteger(), nullable=False, server_default="0"),
         sa.Column(
             "draft_answers",
@@ -44,6 +45,7 @@ def upgrade() -> None:
             "updated_at", sa.DateTime(timezone=True), nullable=False, server_default=sa.func.now()
         ),
         sa.CheckConstraint("draft_revision >= 0", name="ck_profile_draft_revision"),
+        sa.CheckConstraint("draft_step BETWEEN 0 AND 14", name="ck_profile_draft_step"),
         sa.CheckConstraint("confirmed_revision >= 0", name="ck_profile_confirmed_revision"),
         sa.CheckConstraint(
             "jsonb_typeof(draft_answers) = 'object'", name="ck_profile_draft_object"
@@ -87,11 +89,11 @@ def upgrade() -> None:
     )
     op.execute("GRANT SELECT ON axiom.product_profiles TO axiom_runtime")
     op.execute(
-        "GRANT INSERT (workspace_id, draft_revision, confirmed_revision, draft_answers) "
+        "GRANT INSERT (workspace_id, draft_revision, draft_step, confirmed_revision, draft_answers) "
         "ON axiom.product_profiles TO axiom_runtime"
     )
     op.execute(
-        "GRANT UPDATE (draft_revision, confirmed_revision, draft_answers, updated_at) "
+        "GRANT UPDATE (draft_revision, draft_step, confirmed_revision, draft_answers, updated_at) "
         "ON axiom.product_profiles TO axiom_runtime"
     )
     op.execute("GRANT SELECT ON axiom.profile_versions TO axiom_runtime")
