@@ -14,6 +14,9 @@ test("anonymous users cannot activate a forged workspace deep link", async ({
   await expect(
     page.getByRole("heading", { name: "Work from the right context." }),
   ).toHaveCount(0);
+  await expect(
+    page.getByRole("heading", { name: "Saved opportunities" }),
+  ).toHaveCount(0);
   expect(await page.content()).not.toContain(foreignId);
 });
 
