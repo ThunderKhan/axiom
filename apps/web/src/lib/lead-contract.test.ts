@@ -122,24 +122,32 @@ describe("CRM response and provenance integrity", () => {
       unsent_draft: singleCodepoint.repeat(4000),
     };
     assert.deepEqual(parseLead(valid, workspace), valid);
-    assert.equal(normalizeLeadText(singleCodepoint.repeat(500), 500),
-      singleCodepoint.repeat(500));
+    assert.equal(
+      normalizeLeadText(singleCodepoint.repeat(500), 500),
+      singleCodepoint.repeat(500),
+    );
     assert.throws(
-      () => parseLead({ ...saved, title: singleCodepoint.repeat(181) }, workspace),
+      () =>
+        parseLead({ ...saved, title: singleCodepoint.repeat(181) }, workspace),
       InvalidLeadResponse,
     );
-    assert.throws(
-      () => normalizeLeadText(emoji.repeat(501), 500),
-    );
+    assert.throws(() => normalizeLeadText(emoji.repeat(501), 500));
   });
 
   it("preserves seconds and DST offset for a follow-up whose local field did not change", () => {
     const secondHour = "2026-11-01T06:30:45Z";
     assert.equal(
-      resolveFollowUpInstant(secondHour, "2026-11-01T01:30", "2026-11-01T01:30"),
+      resolveFollowUpInstant(
+        secondHour,
+        "2026-11-01T01:30",
+        "2026-11-01T01:30",
+      ),
       secondHour,
     );
-    assert.equal(resolveFollowUpInstant(secondHour, "2026-11-01T01:30", ""), null);
+    assert.equal(
+      resolveFollowUpInstant(secondHour, "2026-11-01T01:30", ""),
+      null,
+    );
     assert.equal(
       resolveFollowUpInstant(null, "", "2026-11-02T11:45"),
       new Date("2026-11-02T11:45").toISOString(),
