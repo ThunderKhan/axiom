@@ -120,3 +120,9 @@ The local execution environment could not resolve the publisher host;
 the repository probe is the independent real-network verification.
 NIST standards/news are contextual research, not HN demand evidence.
 A successful probe cannot satisfy the two-family live research gate.
+
+**Probe update:** the cybersecurity feed returned no usable entries in runs
+45371448132 and 45372284976. Test the separately advertised general news
+feed at https://www.nist.gov/news-events/news/rss.xml (same public-information
+policy and reviewed robots rules). This is a separate candidate, not a second
+source family; no retention or deployment permission is granted.

@@ -14,7 +14,7 @@ from app.public_source import (
 # NIST explicitly advertises RSS syndication and allows redistribution of
 # public information except material marked copyrighted. This is a transport
 # check only: no excerpts are displayed or retained, no provider enabled.
-URL = "https://www.nist.gov/news-events/cybersecurity/rss.xml"
+URL = "https://www.nist.gov/news-events/news/rss.xml"
 
 
 def main() -> int:
@@ -27,6 +27,10 @@ def main() -> int:
     if not items:
         # parse_feed already validated the bounded document and denied DTDs.
         root = ET.fromstring(document.body.decode(document.charset))  # noqa: S314
+        atom = "{http://www.w3.org/2005/Atom}"
+        if root.tag == atom + "feed":
+            print(f"BLOCKED: {len(root.findall(atom + 'entry'))} Atom entries; no usable items.")
+            return 1
         entries = root.findall("channel/item")[:128]
         safe_links = sum(_citation(entry.findtext("link", "")) is not None for entry in entries)
         titles = sum(bool(_plain(entry.find("title"), 180)) for entry in entries)
