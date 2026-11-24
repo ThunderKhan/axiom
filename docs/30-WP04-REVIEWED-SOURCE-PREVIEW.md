@@ -53,6 +53,27 @@ rate limit returns 429; upstream failure returns 502. No arbitrary scraping,
 redirects, XML feed parsing, AI instructions, outbound outreach or secret
 transmission to source websites.
 
+## Structured feed preview (RSS 2.0 / Atom 1.0)
+
+`POST /api/v1/workspaces/{workspace_id}/research/feed/preview` accepts
+`{"url":"<reviewed feed URL>","query":"optional literal terms","limit":10}`.
+The exact URL must have the separate `feed_preview` permission. The same
+owner authorization, pinned-IP HTTPS transport, global/per-URL throttling,
+64 KiB body bound and no-redirect rule apply. Entry URLs are never fetched.
+The parser accepts UTF-8/ASCII RSS 2.0 or Atom 1.0, rejects DTD/entity
+declarations and unsupported documents, limits structure and scanned entries,
+and returns at most 20 deduplicated HTTPS article citations. Nested XML/XHTML
+content, private/numeric authorities, query-bearing and fragment links are
+not supported. Only explicit timezone-aware publication timestamps are retained.
+
+The result includes feed digest, actual retrieval timestamp, publisher and
+review metadata. Entry excerpts are inert, bounded text. The optional query
+is literal all-term matching against title and excerpt, not intent inference,
+fit scoring or comprehensive search. Empty matches are legitimate. The
+response is not a saved run and cannot authorize a later article fetch.
+The registry remains empty by default; tests use explicit deterministic
+fixtures, not a verified publisher or successful live deployment.
+
 ## Workspace browser integration
 
 The reviewed-source panel is mounted only inside the authorized workspace's

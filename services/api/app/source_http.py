@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import hashlib
 from datetime import datetime
 from typing import Annotated, Literal
 from uuid import UUID
@@ -10,6 +11,7 @@ from fastapi import APIRouter, Depends, Request, Response
 from pydantic import BaseModel, Field, field_validator
 
 from app.auth import VerifiedPrincipal, get_verified_principal
+from app.feed_source import FeedItem
 from app.public_source import SourceAccessBlocked, SourceAcquisitionFailed, SourceRecord
 from app.source_registry import Purpose, ReviewedSource, ReviewedSourceRegistry, SourceRateLimited
 from app.workspace_http import ApiFailure, ErrorDTO, StrictBody, get_workspace_store
@@ -20,6 +22,26 @@ ClaimKind = Literal["features", "pricing", "positioning"]
 
 class SourcePreviewBody(StrictBody):
     url: str = Field(min_length=10, max_length=2048)
+
+
+class FeedPreviewBody(SourcePreviewBody):
+    query: str = Field(default="", max_length=120)
+    limit: int = Field(default=10, ge=1, le=20)
+
+
+class FeedPreviewDTO(BaseModel):
+    workspace_id: UUID
+    feed_url: str
+    source_family: Literal["rss_atom"] = "rss_atom"
+    origin: Literal["live"] = "live"
+    retrieved_at: datetime
+    feed_content_digest: str
+    publisher: str
+    policy_review_id: str
+    items: tuple[FeedItem, ...]
+    persisted: Literal[False] = False
+    independent_fact_verification: Literal[False] = False
+    query_method: Literal["literal_all_terms"] = "literal_all_terms"
 
 
 class ClaimCandidate(StrictBody):
@@ -191,4 +213,36 @@ def preview_competitor(
             "Only the bounded visible excerpt was checked. Unmatched claims remain unknown.",
             "This preview is not a saved competitor report or a research run.",
         ],
+    )
+
+
+@router.post("/research/feed/preview", response_model=FeedPreviewDTO)
+def preview_feed(
+    workspace_id: UUID,
+    body: FeedPreviewBody,
+    principal: Principal,
+    store: Store,
+    registry: Registry,
+    response: Response,
+) -> FeedPreviewDTO:
+    store.get_workspace(principal, workspace_id)
+    try:
+        review, document, items = registry.preview_feed(
+            body.url, query=body.query, limit=body.limit
+        )
+    except SourceAccessBlocked as exc:
+        raise ApiFailure("SOURCE_BLOCKED", 403, "Feed is not permitted.") from exc
+    except SourceRateLimited as exc:
+        raise ApiFailure("SOURCE_RATE_LIMITED", 429, "Source request limit reached.") from exc
+    except SourceAcquisitionFailed as exc:
+        raise ApiFailure("SOURCE_UNAVAILABLE", 502, "Feed could not be parsed.") from exc
+    response.headers["Cache-Control"] = "no-store"
+    return FeedPreviewDTO(
+        workspace_id=workspace_id,
+        feed_url=document.url,
+        retrieved_at=document.retrieved_at,
+        feed_content_digest=hashlib.sha256(document.body).hexdigest(),
+        publisher=review.publisher,
+        policy_review_id=review.review_id,
+        items=items,
     )

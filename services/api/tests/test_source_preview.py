@@ -8,8 +8,9 @@ from fastapi.testclient import TestClient
 from pydantic import ValidationError
 
 from app.auth import VerifiedPrincipal, get_verified_principal
+from app.feed_source import parse_feed
 from app.main import create_app
-from app.public_source import FetchedDocument, SourceAccessBlocked
+from app.public_source import FetchedDocument, SourceAccessBlocked, SourceAcquisitionFailed
 from app.settings import RuntimeSettings
 from app.source_registry import ReviewedSource, ReviewedSourceRegistry, SourceRateLimited
 from app.workspace_http import get_workspace_store
@@ -179,7 +180,7 @@ def test_http_authorization_and_real_source_boundaries() -> None:
 
 
 def test_html_parser_assertion_is_sanitized(monkeypatch: pytest.MonkeyPatch) -> None:
-    from app.public_source import SourceAcquisitionFailed, SourceRecord
+    from app.public_source import SourceRecord
 
     def broken_parser(_document: FetchedDocument) -> SourceRecord:
         raise AssertionError("Invalid HTML parser state")
@@ -195,3 +196,98 @@ def test_default_runtime_registry_is_disabled() -> None:
     registry = app.state.source_registry
     with pytest.raises(SourceAccessBlocked):
         registry.preview(URL, "research_preview")
+
+
+def feed_document(url: str) -> FetchedDocument:
+    return FetchedDocument(
+        url,
+        "application/rss+xml",
+        b"""<rss version="2.0"><channel>
+          <item><title>Offline sync</title><link>https://example.org/first</link>
+          <description><![CDATA[<p>Need offline sync.</p><script>hidden</script>]]></description>
+          <pubDate>Tue, 24 Nov 2026 06:00:00 GMT</pubDate></item>
+          <item><title>Duplicate</title><link>https://example.org/first</link>
+          <description>offline sync</description></item>
+          <item><title>Unsafe</title><link>https://127.0.0.1/secret</link>
+          <description>offline sync</description></item>
+          <item><title>Other</title><link>https://example.org/second</link>
+          <description>Another topic.</description></item>
+        </channel></rss>""",
+        NOW,
+    )
+
+
+def test_rss_and_atom_preserve_publication_and_filter_without_following_links() -> None:
+    items = parse_feed(feed_document(URL), query="offline sync", limit=10)
+    assert len(items) == 1
+    assert items[0].source_url == "https://example.org/first"
+    assert items[0].excerpt == "Need offline sync."
+    assert items[0].published_at == NOW
+    assert parse_feed(feed_document(URL), query="not present", limit=10) == ()
+    atom = FetchedDocument(
+        URL,
+        "application/atom+xml",
+        b"""<feed xmlns="http://www.w3.org/2005/Atom">
+        <entry><title>Offline export</title><link href="https://example.org/atom"/>
+        <summary>Export requested</summary><published>2026-11-24T06:00:00Z</published>
+        </entry></feed>""",
+        NOW,
+    )
+    assert parse_feed(atom, query="export", limit=1)[0].published_at == NOW
+
+
+@pytest.mark.parametrize(
+    "body",
+    [
+        b'<!DOCTYPE rss [<!ENTITY x "secret">]><rss version="2.0">&x;</rss>',
+        b"<not-a-feed/>",
+        b"<rss",
+        b"x" * 65537,
+    ],
+)
+def test_malformed_or_unsafe_xml_is_rejected(body: bytes) -> None:
+    with pytest.raises(SourceAcquisitionFailed):
+        parse_feed(FetchedDocument(URL, "application/xml", body, NOW), query="", limit=10)
+
+
+def test_feed_preview_permission_and_http_owner_guard() -> None:
+    owner, outsider = VerifiedPrincipal(uuid4(), None), VerifiedPrincipal(uuid4(), None)
+    workspace = uuid4()
+    calls: list[str] = []
+
+    class Workspaces:
+        def get_workspace(self, principal: VerifiedPrincipal, wid: UUID) -> dict[str, object]:
+            if principal != owner or wid != workspace:
+                raise WorkspaceNotFound()
+            return {"id": workspace}
+
+    def fetch(url: str) -> FetchedDocument:
+        calls.append(url)
+        return feed_document(url)
+
+    registry = ReviewedSourceRegistry((permission(),), fetcher=fetch)
+    with pytest.raises(SourceAccessBlocked):
+        registry.preview_feed(URL, query="", limit=10)
+    assert calls == []
+    app = create_app(RuntimeSettings())
+    app.state.source_registry = ReviewedSourceRegistry(
+        (permission(permissions=["feed_preview"]),), fetcher=fetch
+    )
+    app.dependency_overrides[get_workspace_store] = lambda: Workspaces()
+    app.dependency_overrides[get_verified_principal] = lambda: outsider
+    route = f"/api/v1/workspaces/{workspace}/research/feed/preview"
+    with TestClient(app) as client:
+        body = {"url": URL, "query": "offline", "limit": 5}
+        assert client.post(route, json=body).status_code == 404
+        assert calls == []
+        app.dependency_overrides[get_verified_principal] = lambda: owner
+        response = client.post(route, json=body)
+        assert response.status_code == 200
+        result = response.json()
+        assert result["source_family"] == "rss_atom"
+        assert result["persisted"] is False
+        assert result["independent_fact_verification"] is False
+        assert len(result["items"]) == 1
+        assert calls == [URL]
+        assert client.post(route, json=body).status_code == 429
+        assert calls == [URL]
