@@ -23,7 +23,9 @@ export type EvidenceAssessment = Readonly<{
 
 export class InvalidEvidenceResponse extends Error {
   constructor() {
-    super("Evidence report did not match the verified workspace and saved lead.");
+    super(
+      "Evidence report did not match the verified workspace and saved lead.",
+    );
     this.name = "InvalidEvidenceResponse";
   }
 }
@@ -32,7 +34,11 @@ function record(value: unknown): value is Record<string, unknown> {
   return value !== null && typeof value === "object" && !Array.isArray(value);
 }
 
-function strings(value: unknown, max: number, maxLength: number): value is string[] {
+function strings(
+  value: unknown,
+  max: number,
+  maxLength: number,
+): value is string[] {
   return (
     Array.isArray(value) &&
     value.length <= max &&
@@ -41,7 +47,9 @@ function strings(value: unknown, max: number, maxLength: number): value is strin
 }
 
 function needIds(value: unknown): value is string[] {
-  return strings(value, 8, 8) && value.every((item) => /^need-[1-8]$/.test(item));
+  return (
+    strings(value, 8, 8) && value.every((item) => /^need-[1-8]$/.test(item))
+  );
 }
 
 /** Parse network data as untrusted; user-entered evidence must never be rebranded live. */
@@ -92,7 +100,8 @@ export function parseManualAssessment(
       typeof item.need_id !== "string" ||
       !/^need-[1-8]$/.test(item.need_id) ||
       (item.capability !== null &&
-        (typeof item.capability !== "string" || item.capability.length > 120)) ||
+        (typeof item.capability !== "string" ||
+          item.capability.length > 120)) ||
       !["supports_need", "covers", "contradicts", "unverified"].includes(
         String(item.relation),
       ) ||
@@ -105,7 +114,8 @@ export function parseManualAssessment(
       source_id: lead.id,
       need_id: item.need_id,
       capability: item.capability as string | null,
-      relation: item.relation as EvidenceAssessment["relationships"][number]["relation"],
+      relation:
+        item.relation as EvidenceAssessment["relationships"][number]["relation"],
       explanation: item.explanation,
     };
   });
