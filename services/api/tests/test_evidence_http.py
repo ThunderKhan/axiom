@@ -112,6 +112,27 @@ def test_missing_or_proposed_capability_does_not_become_positive_fit() -> None:
     assert contradictory.unknown_need_ids == ["need-1"]
 
 
+def test_capability_delimiters_preserve_letters_and_split_newlines() -> None:
+    wid = uuid4()
+    saved = lead(wid)
+    report = assess_saved_manual_lead(
+        wid, saved, profile(capabilities="export\noffline sync; search"), request()
+    )
+    assert report.supported_need_ids == ["need-1"]
+    missing = assess_saved_manual_lead(
+        wid, saved, profile(capabilities="export", missing="search\noffline sync"), request()
+    )
+    assert missing.verdict == Verdict.SKIP
+
+
+def test_whitespace_only_saved_source_returns_validation_failure() -> None:
+    wid = uuid4()
+    saved = lead(wid).model_copy(update={"source_excerpt": "   "})
+    with pytest.raises(ApiFailure) as error:
+        assess_saved_manual_lead(wid, saved, profile(), AssessSavedLead(needs=[]))
+    assert error.value.status == 422
+
+
 def test_no_needs_abstains_and_duplicate_capability_names_are_safe() -> None:
     wid = uuid4()
     saved = lead(wid)
@@ -154,7 +175,7 @@ def test_foreign_workspace_unconfirmed_and_nonmatching_citations_denied() -> Non
     "needs",
     [
         [{"requirement": "offline sync", "locator": "offline sync", "intent": "fabricated"}],
-        [{"requirement": " offline\\nsync", "locator": "offline sync", "intent": "buying"}],
+        [{"requirement": " offline\nsync", "locator": "offline sync", "intent": "buying"}],
         [{"requirement": "offline sync", "locator": "offline sync", "intent": "buying",
           "source_origin": "live"}],
         [{"requirement": "offline sync", "locator": "offline sync", "intent": "buying"}] * 9,
