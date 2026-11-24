@@ -151,7 +151,9 @@ export function SourcePreviewPanel({
           value={mode}
           disabled={busy}
           onChange={(event) => {
-            setMode(event.target.value === "competitor" ? "competitor" : "source");
+            setMode(
+              event.target.value === "competitor" ? "competitor" : "source",
+            );
             setConfirmed(false);
             clearResult();
           }}
@@ -228,7 +230,9 @@ export function SourcePreviewPanel({
       {result && (
         <div aria-label="Source preview result">
           <SourceDetails
-            source={result.kind === "source" ? result.source : result.preview.source}
+            source={
+              result.kind === "source" ? result.source : result.preview.source
+            }
           />
           {result.kind === "competitor" && (
             <>
