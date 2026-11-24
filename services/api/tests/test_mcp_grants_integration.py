@@ -40,9 +40,9 @@ def test_durable_consent_resolves_only_current_owner_and_cannot_reactivate(datab
     workspaces.bootstrap(outsider)
     workspace = UUID(
         str(
-            workspaces.create_workspace(
-                owner, name="MCP consent", key=uuid4().hex
-            ).response_body["id"]
+            workspaces.create_workspace(owner, name="MCP consent", key=uuid4().hex).response_body[
+                "id"
+            ]
         )
     )
     client_id = uuid4()

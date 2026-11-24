@@ -26,11 +26,14 @@ class McpGrantStore:
     @staticmethod
     def _owned(session: Session, principal: VerifiedPrincipal, workspace_id: UUID) -> None:
         WorkspaceStore._active(session, principal)
-        if session.scalar(
-            select(Workspace.id).where(
-                Workspace.id == workspace_id, Workspace.owner_user_id == principal.user_id
+        if (
+            session.scalar(
+                select(Workspace.id).where(
+                    Workspace.id == workspace_id, Workspace.owner_user_id == principal.user_id
+                )
             )
-        ) is None:
+            is None
+        ):
             raise McpAccessDenied()
 
     def record_reviewed_consent(
@@ -99,9 +102,7 @@ class McpGrantStore:
                 row.revoked_at is not None,
             )
 
-    def revoke(
-        self, principal: VerifiedPrincipal, workspace_id: UUID, *, client_id: UUID
-    ) -> bool:
+    def revoke(self, principal: VerifiedPrincipal, workspace_id: UUID, *, client_id: UUID) -> bool:
         """One-way, owner-scoped revocation; no scope or identity mutation."""
         with self.database.transaction(principal) as session:
             self._owned(session, principal, workspace_id)
