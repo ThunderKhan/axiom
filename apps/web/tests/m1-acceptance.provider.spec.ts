@@ -367,12 +367,14 @@ test("M1 genuine JWT and two-user cross-tenant API acceptance", async ({
         ).toContainText("offline sync");
 
         const lab = page.getByRole("region", { name: "Counterfactual Lab" });
-        await lab.getByLabel("Qualitative pricing hypothesis").first().fill(
-          "Lower price",
-        );
-        await lab.getByLabel("Positioning hypothesis").last().fill(
-          "Students",
-        );
+        await lab
+          .getByLabel("Qualitative pricing hypothesis")
+          .first()
+          .fill("Lower price");
+        await lab
+          .getByLabel("Positioning hypothesis")
+          .last()
+          .fill("Students");
         await lab.getByRole("button", { name: "Save two alternatives" }).click();
         await expect(lab).toContainText(
           "Both alternatives and their frozen baseline were saved.",
@@ -386,9 +388,13 @@ test("M1 genuine JWT and two-user cross-tenant API acceptance", async ({
         expect(frozen[0].live_source_verified).toBe(false);
 
         await page.getByLabel("Research notes").fill("Acceptance follow-up");
-        await page.getByLabel("Follow-up date and time").fill("2030-01-02T10:00");
+        await page
+          .getByLabel("Follow-up date and time")
+          .fill("2030-01-02T10:00");
         await page.getByRole("button", { name: "Save changes" }).click();
-        await expect(page).toContainText("Your lead has been updated.");
+        await expect(
+          page.getByText("Your lead has been updated.", { exact: true }),
+        ).toBeVisible();
         await page.reload();
         await page.getByRole("button", { name: new RegExp(title) }).click();
         await expect(page.getByLabel("Research notes")).toHaveValue(
@@ -397,7 +403,9 @@ test("M1 genuine JWT and two-user cross-tenant API acceptance", async ({
         await page
           .getByRole("button", { name: "Reopen recent saved comparisons" })
           .click();
-        await expect(page.getByLabel("Saved scenario comparisons")).toBeVisible();
+        await expect(
+          page.getByLabel("Saved scenario comparisons"),
+        ).toBeVisible();
         await expect(page.getByText("Pricing: Lower price")).toBeVisible();
         const reopened = await apiA.get(savedRoute);
         expect(reopened.status()).toBe(200);
