@@ -15,7 +15,9 @@ export type Lead = Readonly<{
   title: string;
   source_url: string;
   source_excerpt: string;
-  source_origin: "user_provided";
+  source_origin: "user_provided" | "live";
+  research_run_id?: string;
+  research_signal_id?: string;
   stage: LeadStage;
   note: string;
   follow_up_at: string | null;
@@ -73,7 +75,13 @@ export function parseLead(value: unknown, workspaceId: string): Lead {
     typeof value.source_excerpt !== "string" ||
     [...value.source_excerpt].length < 1 ||
     [...value.source_excerpt].length > 500 ||
-    value.source_origin !== "user_provided" ||
+    (value.source_origin !== "user_provided" &&
+      value.source_origin !== "live") ||
+    (value.source_origin === "live" &&
+      (!isWorkspaceId(value.research_run_id) ||
+        !isWorkspaceId(value.research_signal_id))) ||
+    (value.source_origin === "user_provided" &&
+      (value.research_run_id != null || value.research_signal_id != null)) ||
     !isLeadStage(value.stage) ||
     typeof value.note !== "string" ||
     [...value.note].length > 2000 ||
@@ -95,7 +103,13 @@ export function parseLead(value: unknown, workspaceId: string): Lead {
     title: value.title,
     source_url: value.source_url,
     source_excerpt: value.source_excerpt,
-    source_origin: "user_provided",
+    source_origin: value.source_origin,
+    ...(value.source_origin === "live"
+      ? {
+          research_run_id: value.research_run_id as string,
+          research_signal_id: value.research_signal_id as string,
+        }
+      : {}),
     stage: value.stage,
     note: value.note,
     follow_up_at: value.follow_up_at,

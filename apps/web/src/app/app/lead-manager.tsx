@@ -371,7 +371,9 @@ function LeadDetail({
           <p className="eyebrow">SAVED OPPORTUNITY</p>
           <h3 id="crm-lead-heading">{lead.title}</h3>
           <p className="crm-meta">
-            Manual source · No live verification claimed
+            {lead.source_origin === "live"
+              ? "Retrieved feed citation · Article and buying intent not independently verified"
+              : "Manual source · No live verification claimed"}
           </p>
           <a href={lead.source_url} target="_blank" rel="noopener noreferrer">
             View original public citation
@@ -459,13 +461,20 @@ function LeadDetail({
           </button>
         </div>
       </form>
-      <ManualEvidenceReport
-        lead={lead}
-        workspaceId={workspaceId}
-        api={api}
-        retry={retry}
-        setRetry={setRetry}
-      />
+      {lead.source_origin === "user_provided" ? (
+        <ManualEvidenceReport
+          lead={lead}
+          workspaceId={workspaceId}
+          api={api}
+          retry={retry}
+          setRetry={setRetry}
+        />
+      ) : (
+        <p className="crm-meta">
+          This citation retains its original research run. Retrieved-source
+          assessments use the research endpoint, not the manual evidence editor.
+        </p>
+      )}
       {message && (
         <p className="workspace-notice" role="status">
           {message}

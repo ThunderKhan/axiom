@@ -38,6 +38,8 @@ def _payload(lead: Lead) -> dict[str, object]:
         "source_url": lead.source_url,
         "source_excerpt": lead.source_excerpt,
         "source_origin": lead.source_origin,
+        "research_run_id": lead.research_run_id,
+        "research_signal_id": lead.research_signal_id,
         "stage": lead.stage,
         "note": lead.note,
         "follow_up_at": lead.follow_up_at.astimezone(UTC) if lead.follow_up_at else None,
@@ -98,6 +100,18 @@ class LeadStore:
         payload: CreateLead,
         key: str,
     ) -> dict[str, object]:
+        return self._create(principal, workspace_id, payload=payload, key=key)
+
+    def _create(
+        self,
+        principal: VerifiedPrincipal,
+        workspace_id: UUID,
+        *,
+        payload: CreateLead,
+        key: str,
+        research_run_id: UUID | None = None,
+        research_signal_id: UUID | None = None,
+    ) -> dict[str, object]:
         try:
             validate_idempotency_key(key)
         except ValueError as exc:
@@ -105,6 +119,11 @@ class LeadStore:
         canonical = json.dumps(
             payload.model_dump(mode="json"), sort_keys=True, separators=(",", ":")
         )
+        if research_run_id is not None and research_signal_id is not None:
+            canonical = json.dumps(
+                {"payload": canonical, "run": str(research_run_id), "signal": str(research_signal_id)},
+                sort_keys=True,
+            )
         fingerprint = hashlib.sha256(canonical.encode("utf-8")).hexdigest()
         with self.database.transaction(principal) as session:
             self._owned(session, principal, workspace_id)
@@ -117,6 +136,9 @@ class LeadStore:
                     title=payload.title,
                     source_url=payload.source_url,
                     source_excerpt=payload.source_excerpt,
+                    source_origin="live" if research_run_id is not None else "user_provided",
+                    research_run_id=research_run_id,
+                    research_signal_id=research_signal_id,
                     stage=payload.stage,
                     note=payload.note,
                     follow_up_at=payload.follow_up_at,

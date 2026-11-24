@@ -209,6 +209,9 @@ class Database:
                                 ('leads', 'title', 'INSERT'),
                                 ('leads', 'source_url', 'INSERT'),
                                 ('leads', 'source_excerpt', 'INSERT'),
+                                ('leads', 'source_origin', 'INSERT'),
+                                ('leads', 'research_run_id', 'INSERT'),
+                                ('leads', 'research_signal_id', 'INSERT'),
                                 ('leads', 'stage', 'INSERT'),
                                 ('leads', 'note', 'INSERT'),
                                 ('leads', 'follow_up_at', 'INSERT'),
@@ -305,6 +308,14 @@ class Database:
                             )
                             AND NOT has_table_privilege(
                                 current_user, 'axiom.lead_events', 'DELETE'
+                            )
+                            AND NOT EXISTS (
+                                SELECT 1 FROM (VALUES ('source_url'), ('source_excerpt'),
+                                    ('source_origin'), ('research_run_id'), ('research_signal_id'))
+                                    AS immutable(column_name)
+                                WHERE has_column_privilege(
+                                    current_user, 'axiom.leads', immutable.column_name, 'UPDATE'
+                                )
                             )
                             AND NOT has_table_privilege(
                                 current_user, 'axiom.leads', 'DELETE'

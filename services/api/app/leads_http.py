@@ -22,7 +22,9 @@ class LeadDTO(BaseModel):
     title: str
     source_url: str
     source_excerpt: str
-    source_origin: Literal["user_provided"]
+    source_origin: Literal["user_provided", "live"]
+    research_run_id: UUID | None = None
+    research_signal_id: UUID | None = None
     stage: LeadStage
     note: str
     follow_up_at: datetime | None

@@ -43,3 +43,19 @@ verify the article or demand. The assessment is recomputed, not persisted.
 The PostgreSQL fixture test checks invalid locators, missing signals,
 historical profile stability and foreign workspace denial. This is not
 yet CRM provenance linkage or deployed live acceptance.
+
+
+## CRM provenance linkage (M7)
+
+POST /api/v1/workspaces/{workspace_id}/research/runs/{run_id}/signals/{signal_id}/save
+saves a selected stored signal, never caller-supplied source fields. The
+existing CRM idempotency key and same-workspace source URL uniqueness apply.
+The source origin is live retrieval, not independent verification of
+article claims or demand. A composite workspace/run foreign key and
+immutable run/signal identifiers preserve the source association. The
+ordinary manual-create contract cannot set these fields. Lead and creation
+activity commit atomically. Retrieved leads can be reopened, edited and
+archived via the existing CRM; their separate research assessment is not a
+manual-source report. Browser research-run creation and selection UI, saved
+assessment/counterfactual integration, external MCP write audit and remote
+OAuth transport remain outstanding.

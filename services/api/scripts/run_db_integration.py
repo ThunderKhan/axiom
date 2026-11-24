@@ -95,6 +95,7 @@ def main() -> int:
         "m3_0001_leads",
         "m4_0001_scenarios",
         "m5_0001_mcp_consent",
+        "m6_0001_research_runs",
         HEAD_REVISION,
     ):
         raise RuntimeError("Unexpected migration state in isolated test database")
