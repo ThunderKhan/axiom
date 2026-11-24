@@ -143,9 +143,7 @@ def assess_saved_manual_lead(
             (source,), needs, tuple(capabilities_by_name.values()), launched=answers.stage == "live"
         )
     except EvidenceInputError as exc:
-        raise ApiFailure(
-            "VALIDATION_FAILED", 422, "Citation does not match saved source."
-        ) from exc
+        raise ApiFailure("VALIDATION_FAILED", 422, "Citation does not match saved source.") from exc
 
     # The founder entered both the text and the intent. Never promote this to a
     # verified acquisition signal even if declared feature coverage would fit.
