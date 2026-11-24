@@ -23,7 +23,10 @@ import {
   type LeadStage,
 } from "../../lib/lead-contract";
 import { publicApiBaseUrl } from "../../lib/public-api";
-import type { EvidenceAssessment, ManualNeed } from "../../lib/evidence-contract";
+import type {
+  EvidenceAssessment,
+  ManualNeed,
+} from "../../lib/evidence-contract";
 import { createBrowserAuthClient } from "../../lib/supabase/browser";
 import {
   subscribeToLocalSignOutStarted,
@@ -86,7 +89,9 @@ function ManualEvidenceReport({
     const requested = requirement.trim();
     const cited = locator.trim();
     if (!requested || !cited || requested.length > 120 || cited.length > 200) {
-      setStatus("Enter a bounded requirement and exact phrase from the saved excerpt.");
+      setStatus(
+        "Enter a bounded requirement and exact phrase from the saved excerpt.",
+      );
       return;
     }
     const controller = new AbortController();
@@ -111,7 +116,8 @@ function ManualEvidenceReport({
         setStatus(
           error instanceof LeadApiError && error.code === "PROFILE_INCOMPLETE"
             ? "Confirm this workspace's product profile before assessing evidence."
-            : error instanceof LeadApiError && error.code === "VALIDATION_FAILED"
+            : error instanceof LeadApiError &&
+                error.code === "VALIDATION_FAILED"
               ? "The required phrase must appear in the saved source excerpt."
               : "The report could not be verified. Review the source and try again.",
         );
@@ -139,7 +145,9 @@ function ManualEvidenceReport({
           disabled={busy}
           placeholder="Use an exact capability from your profile"
         />
-        <label htmlFor="evidence-locator">Exact phrase in the saved excerpt</label>
+        <label htmlFor="evidence-locator">
+          Exact phrase in the saved excerpt
+        </label>
         <input
           id="evidence-locator"
           required
@@ -153,7 +161,9 @@ function ManualEvidenceReport({
           id="evidence-intent"
           value={intent}
           disabled={busy}
-          onChange={(event) => setIntent(event.target.value as ManualNeed["intent"])}
+          onChange={(event) =>
+            setIntent(event.target.value as ManualNeed["intent"])
+          }
         >
           <option value="unknown">Unknown</option>
           <option value="discussion">General discussion</option>
@@ -164,15 +174,23 @@ function ManualEvidenceReport({
           {busy ? "Assessing…" : "Assess saved citation"}
         </button>
       </form>
-      {status && <p role="status" className="workspace-notice">{status}</p>}
+      {status && (
+        <p role="status" className="workspace-notice">
+          {status}
+        </p>
+      )}
       {assessment && (
         <div aria-label="Assessment report">
-          <p><strong>Outcome:</strong> {assessment.verdict.replaceAll("_", " ")}</p>
+          <p>
+            <strong>Outcome:</strong> {assessment.verdict.replaceAll("_", " ")}
+          </p>
           <p className="crm-meta">
             Manual source · Report not persisted · No live evidence verified
           </p>
           <h4>Source-linked relationships</h4>
-          {assessment.relationships.length === 0 && <p>No sourced needs linked.</p>}
+          {assessment.relationships.length === 0 && (
+            <p>No sourced needs linked.</p>
+          )}
           <ul>
             {assessment.relationships.map((relation, index) => (
               <li key={index}>
