@@ -895,3 +895,102 @@ input:focus-visible,
     border-radius: 16px;
   }
 }
+
+.evidence-graph {
+  margin: 1.2rem 0;
+  padding: 1rem;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--bg);
+}
+
+.evidence-graph-source {
+  display: grid;
+  gap: 0.3rem;
+  margin-top: 1rem;
+  padding: 0.8rem;
+  border: 1px solid var(--green);
+  border-radius: 12px;
+  background: var(--tint);
+  overflow-wrap: anywhere;
+}
+
+.evidence-graph-source a {
+  color: var(--green);
+}
+
+.evidence-graph-edges {
+  list-style: none;
+  margin: 0 0 0 0.75rem;
+  padding: 0 0 0 0.85rem;
+  border-left: 2px solid var(--green);
+}
+
+.evidence-graph-edges li {
+  position: relative;
+  border: 0;
+  padding: 0.6rem 0 0;
+}
+
+.evidence-graph-edges li::before {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: -0.85rem;
+  width: 0.85rem;
+  border-top: 2px solid var(--green);
+}
+
+.evidence-edge {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+  width: 100%;
+  padding: 0.65rem;
+  color: var(--ink);
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  text-align: left;
+  font: inherit;
+  cursor: pointer;
+  overflow-wrap: anywhere;
+}
+
+.evidence-edge-label {
+  width: 100%;
+  color: var(--text);
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+
+.evidence-node {
+  min-width: 0;
+  padding: 0.35rem 0.55rem;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: var(--band);
+}
+
+.evidence-edge[aria-pressed="true"] {
+  border-color: var(--green);
+  background: var(--tint);
+}
+
+.evidence-edge:focus-visible {
+  outline: 3px solid var(--green);
+  outline-offset: 3px;
+}
+
+.evidence-inspector {
+  margin-top: 1rem;
+  padding: 0.8rem;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--surface);
+}
+
+.evidence-inspector p {
+  overflow-wrap: anywhere;
+}
