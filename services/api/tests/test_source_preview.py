@@ -178,13 +178,14 @@ def test_http_authorization_and_real_source_boundaries() -> None:
         assert calls == [URL]
 
 
-def test_malformed_html_parser_error_is_sanitized() -> None:
-    from app.public_source import SourceAcquisitionFailed
+def test_html_parser_assertion_is_sanitized(monkeypatch: pytest.MonkeyPatch) -> None:
+    from app.public_source import SourceAcquisitionFailed, SourceRecord
 
-    def fetch(url: str) -> FetchedDocument:
-        return FetchedDocument(url, "text/html", b"<![foo]><p>Product</p>", NOW)
+    def broken_parser(_document: FetchedDocument) -> SourceRecord:
+        raise AssertionError("Invalid HTML parser state")
 
-    registry = ReviewedSourceRegistry((permission(),), fetcher=fetch)
+    monkeypatch.setattr("app.source_registry.normalize_fetched_document", broken_parser)
+    registry = ReviewedSourceRegistry((permission(),), fetcher=document)
     with pytest.raises(SourceAcquisitionFailed):
         registry.preview(URL, "research_preview")
 
