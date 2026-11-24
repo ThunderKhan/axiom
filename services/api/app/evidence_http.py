@@ -287,6 +287,15 @@ def preview_scenarios(
     """Compare alternatives without accepting a fabricated baseline or persisting results."""
     lead = LeadDTO.model_validate(leads.read(principal, workspace_id, lead_id))
     profile = ProfileStateDTO.model_validate(profiles.read(principal, workspace_id))
+    return build_comparison(workspace_id, lead, profile, payload)[1]
+
+
+def build_comparison(
+    workspace_id: UUID,
+    lead: LeadDTO,
+    profile: ProfileStateDTO,
+    payload: CompareSavedLead,
+) -> tuple[FrozenEvidence, ScenarioPreviewDTO]:
     if lead.version != payload.expected_lead_version or (
         profile.confirmed is not None
         and profile.confirmed.revision != payload.expected_profile_revision
@@ -306,7 +315,7 @@ def preview_scenarios(
         comparison = compare_scenarios(snapshot, alternatives)
     except (ScenarioInputError, EvidenceInputError) as exc:
         raise ApiFailure("VALIDATION_FAILED", 422, "Invalid scenario assumptions.") from exc
-    return ScenarioPreviewDTO(
+    return snapshot, ScenarioPreviewDTO(
         workspace_id=workspace_id,
         lead_id=lead.id,
         lead_version=lead.version,
