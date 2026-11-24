@@ -72,8 +72,7 @@ function texts(value: unknown): value is string[] {
 }
 
 function coverage(raw: unknown, leadId: string): Coverage[] {
-  if (!Array.isArray(raw) || raw.length > 8)
-    throw new InvalidScenarioResponse();
+  if (!Array.isArray(raw) || raw.length > 8) throw new InvalidScenarioResponse();
   const result = raw.map((item: unknown) => {
     if (
       !record(item) ||
@@ -182,7 +181,9 @@ export function parseSavedComparison(
     (raw.lead_version !== request.expected_lead_version ||
       raw.confirmed_profile_revision !== request.expected_profile_revision ||
       request.scenarios.length !== scenarios.length ||
-      request.scenarios.some((item, index) => item.name !== scenarios[index].name))
+      request.scenarios.some(
+        (item, index) => item.name !== scenarios[index].name,
+      ))
   )
     throw new InvalidScenarioResponse();
   return {
