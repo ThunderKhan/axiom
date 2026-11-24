@@ -57,7 +57,6 @@ def test_fastapi_import_and_versioned_openapi() -> None:
             assert "409" in paths[route]["post"]["responses"]
 
 
-
 def test_liveness_is_genuine_http_response() -> None:
     with TestClient(create_app(RuntimeSettings())) as client:
         response = client.get("/api/v1/health/live")
