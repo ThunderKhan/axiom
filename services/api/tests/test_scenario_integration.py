@@ -105,9 +105,7 @@ def test_saved_comparison_reopens_and_preserves_frozen_baseline(database: Databa
         )
         assert conflict.status_code == 409
         leads.patch(owner, wid, lid, payload=PatchLead(expected_version=1, note="New note"))
-        stale = client.post(
-            route, json=body, headers={"Idempotency-Key": "new-" + uuid4().hex}
-        )
+        stale = client.post(route, json=body, headers={"Idempotency-Key": "new-" + uuid4().hex})
         assert stale.status_code == 409
         assert client.get(route).json()["items"] == [saved]
         app.dependency_overrides[get_verified_principal] = lambda: outsider
