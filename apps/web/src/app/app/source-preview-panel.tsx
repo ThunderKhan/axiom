@@ -6,12 +6,14 @@ import {
   claimKinds,
   type ClaimKind,
   type CompetitorPreview,
+  type FeedPreview,
   type SourcePreview,
 } from "../../lib/source-preview-contract";
 
 type Api = ReturnType<typeof createLeadApi>;
 type Result =
   | { kind: "source"; source: SourcePreview }
+  | { kind: "feed"; preview: FeedPreview }
   | { kind: "competitor"; preview: CompetitorPreview };
 
 function failureMessage(error: unknown): string {
@@ -26,6 +28,46 @@ function failureMessage(error: unknown): string {
       return "Your workspace access could not be verified.";
   }
   return "No verified preview is available. Check the URL and try again.";
+}
+
+function FeedDetails({ preview }: { preview: FeedPreview }) {
+  return (
+    <div className="crm-history">
+      <h4>Feed results</h4>
+      <p className="crm-meta">
+        {preview.publisher} · Retrieved{" "}
+        <time dateTime={preview.retrieved_at}>
+          {new Date(preview.retrieved_at).toLocaleString()}
+        </time>
+      </p>
+      <p className="crm-meta">Review: {preview.policy_review_id}</p>
+      <p className="crm-meta">
+        Literal search of one bounded feed. Not independently verified or saved.
+      </p>
+      {preview.items.length === 0 && <p>No matching entries in this feed.</p>}
+      <ul>
+        {preview.items.map((item) => (
+          <li key={item.source_id}>
+            <strong>{item.title}</strong>
+            <p className="crm-meta">
+              Published:{" "}
+              {item.published_at
+                ? new Date(item.published_at).toLocaleString()
+                : "Unknown"}
+            </p>
+            <blockquote className="crm-evidence">{item.excerpt}</blockquote>
+            <a
+              href={item.source_url}
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              Open article citation
+            </a>
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
 }
 
 function SourceDetails({ source }: { source: SourcePreview }) {
@@ -55,8 +97,9 @@ export function SourcePreviewPanel({
   api: Api;
   workspaceId: string;
 }) {
-  const [mode, setMode] = useState<"source" | "competitor">("source");
+  const [mode, setMode] = useState<"source" | "competitor" | "feed">("source");
   const [url, setUrl] = useState("");
+  const [query, setQuery] = useState("");
   const [name, setName] = useState("");
   const [confirmed, setConfirmed] = useState(false);
   const [phrases, setPhrases] = useState<Record<ClaimKind, string>>({
@@ -107,7 +150,17 @@ export function SourcePreviewPanel({
     clearResult();
     try {
       const next: Result =
-        mode === "source"
+        mode === "feed"
+          ? {
+              kind: "feed",
+              preview: await api.previewFeed(
+                workspaceId,
+                requested,
+                query.trim(),
+                controller.signal,
+              ),
+            }
+          : mode === "source"
           ? {
               kind: "source",
               source: await api.previewSource(
@@ -152,13 +205,18 @@ export function SourcePreviewPanel({
           disabled={busy}
           onChange={(event) => {
             setMode(
-              event.target.value === "competitor" ? "competitor" : "source",
+              event.target.value === "competitor"
+                ? "competitor"
+                : event.target.value === "feed"
+                  ? "feed"
+                  : "source",
             );
             setConfirmed(false);
             clearResult();
           }}
         >
           <option value="source">Public source preview</option>
+          <option value="feed">Reviewed RSS / Atom feed</option>
           <option value="competitor">Competitor claim preview</option>
         </select>
         <label htmlFor="source-preview-url">Exact reviewed HTTPS URL</label>
@@ -175,6 +233,21 @@ export function SourcePreviewPanel({
             clearResult();
           }}
         />
+        {mode === "feed" && (
+          <>
+            <label htmlFor="feed-query">Filter terms (optional)</label>
+            <input
+              id="feed-query"
+              value={query}
+              maxLength={120}
+              disabled={busy}
+              onChange={(event) => {
+                setQuery(event.target.value);
+                clearResult();
+              }}
+            />
+          </>
+        )}
         {mode === "competitor" && (
           <>
             <label htmlFor="source-preview-name">Competitor name</label>
@@ -229,11 +302,15 @@ export function SourcePreviewPanel({
       {message && <p role="status">{message}</p>}
       {result && (
         <div aria-label="Source preview result">
-          <SourceDetails
-            source={
-              result.kind === "source" ? result.source : result.preview.source
-            }
-          />
+          {result.kind === "feed" ? (
+            <FeedDetails preview={result.preview} />
+          ) : (
+            <SourceDetails
+              source={
+                result.kind === "source" ? result.source : result.preview.source
+              }
+            />
+          )}
           {result.kind === "competitor" && (
             <>
               <h4>{result.preview.competitor_name} — publisher claims</h4>
