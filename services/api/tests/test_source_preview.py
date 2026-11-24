@@ -178,6 +178,17 @@ def test_http_authorization_and_real_source_boundaries() -> None:
         assert calls == [URL]
 
 
+def test_malformed_html_parser_error_is_sanitized() -> None:
+    from app.public_source import SourceAcquisitionFailed
+
+    def fetch(url: str) -> FetchedDocument:
+        return FetchedDocument(url, "text/html", b"<![foo]><p>Product</p>", NOW)
+
+    registry = ReviewedSourceRegistry((permission(),), fetcher=fetch)
+    with pytest.raises(SourceAcquisitionFailed):
+        registry.preview(URL, "research_preview")
+
+
 def test_default_runtime_registry_is_disabled() -> None:
     app = create_app(RuntimeSettings(reviewed_sources=()))
     registry = app.state.source_registry
