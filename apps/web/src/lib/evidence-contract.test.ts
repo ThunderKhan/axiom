@@ -3,6 +3,10 @@ import { describe, it } from "node:test";
 import { createLeadApi } from "./lead-api.ts";
 import type { Lead } from "./lead-contract.ts";
 import {
+  InvalidScenarioResponse,
+  parseSavedComparison,
+} from "./scenario-contract.ts";
+import {
   InvalidEvidenceResponse,
   parseManualAssessment,
 } from "./evidence-contract.ts";
@@ -147,5 +151,123 @@ describe("manual source report boundary", () => {
     );
     assert.equal(outcome.verdict, "research_further");
     assert.equal(calls, 1);
+  });
+});
+
+describe("saved counterfactual comparisons", () => {
+  const fingerprint = "a".repeat(64);
+  const requirement = {
+    source_id: leadId,
+    need_id: "need-1",
+    requirement: "offline sync",
+    state: "declared_supported",
+  };
+  const saved = {
+    id: "44444444-4444-4444-8444-444444444444",
+    workspace_id: workspace,
+    lead_id: leadId,
+    lead_version: 1,
+    confirmed_profile_revision: 1,
+    source_url: lead.source_url,
+    source_excerpt: lead.source_excerpt,
+    source_origin: "user_provided",
+    source_recorded_at: lead.created_at,
+    created_at: lead.created_at,
+    persisted_comparison: true,
+    live_source_verified: false,
+    comparison: {
+      baseline_fingerprint: fingerprint,
+      baseline_verdict: "research_further",
+      baseline_requirements: [requirement],
+      scenarios: ["Add sync", "Remove sync"].map((name) => ({
+        name,
+        baseline_fingerprint: fingerprint,
+        projected_verdict: "research_further",
+        assumptions: {
+          name,
+          features: [{ name: "offline sync", action: "add" }],
+          pricing: "Lower price",
+          positioning: null,
+        },
+        requirements: [requirement],
+        unsupported_assumptions: [],
+        limitations: ["Hypothetical only"],
+      })),
+    },
+  };
+
+  it("reopens a historical baseline without changing its revision", () => {
+    const result = parseSavedComparison(saved, workspace, lead);
+    assert.equal(result.lead_version, 1);
+    assert.equal(result.comparison.scenarios.length, 2);
+    assert.equal(
+      result.comparison.scenarios[0].assumptions.pricing,
+      "Lower price",
+    );
+  });
+
+  it("rejects a consistently substituted need in a new save response", () => {
+    const request = {
+      needs: [
+        {
+          requirement: "offline sync",
+          locator: "offline sync",
+          intent: "buying" as const,
+        },
+      ],
+      expected_lead_version: 1,
+      expected_profile_revision: 1,
+      scenarios: saved.comparison.scenarios.map((scenario) => ({
+        ...scenario.assumptions,
+        features: [{ name: "offline sync", action: "add" as const }],
+      })),
+    };
+    assert.equal(
+      parseSavedComparison(saved, workspace, lead, request).id,
+      saved.id,
+    );
+    const wrong = { ...requirement, requirement: "team chat" };
+    const substituted = {
+      ...saved,
+      comparison: {
+        ...saved.comparison,
+        baseline_requirements: [wrong],
+        scenarios: saved.comparison.scenarios.map((scenario) => ({
+          ...scenario,
+          requirements: [wrong],
+        })),
+      },
+    };
+    assert.throws(
+      () => parseSavedComparison(substituted, workspace, lead, request),
+      InvalidScenarioResponse,
+    );
+  });
+
+  it("rejects foreign records, forged provenance and mismatched snapshots", () => {
+    for (const invalid of [
+      { ...saved, workspace_id: leadId },
+      { ...saved, persisted_comparison: false },
+      { ...saved, live_source_verified: true },
+      { ...saved, lead_version: 3 },
+      {
+        ...saved,
+        comparison: {
+          ...saved.comparison,
+          scenarios: [
+            ...saved.comparison.scenarios.slice(0, 1),
+            {
+              ...saved.comparison.scenarios[1],
+              baseline_fingerprint: "b".repeat(64),
+            },
+          ],
+        },
+      },
+    ]) {
+      assert.throws(
+        () => parseSavedComparison(invalid, workspace, lead),
+        InvalidScenarioResponse,
+      );
+    }
   });
 });

@@ -156,6 +156,7 @@ function isSafeArticleUrl(value: unknown): value is string {
   try {
     const url = new URL(value);
     return (
+      value.startsWith("https://") &&
       url.protocol === "https:" &&
       !url.username &&
       !url.password &&
@@ -205,7 +206,7 @@ export function parseFeedPreview(
       !bounded(item.source_id, 32) ||
       !/^[a-f0-9]{32}$/.test(item.source_id) ||
       !isSafeArticleUrl(item.source_url) ||
-      seen.has(item.source_url) ||
+      seen.has(new URL(item.source_url).href) ||
       ids.has(item.source_id) ||
       !bounded(item.title, 180) ||
       !item.title.trim() ||
@@ -216,7 +217,7 @@ export function parseFeedPreview(
           !Number.isFinite(Date.parse(item.published_at))))
     )
       throw new InvalidSourcePreview();
-    seen.add(item.source_url);
+    seen.add(new URL(item.source_url).href);
     ids.add(item.source_id);
     return {
       source_id: item.source_id,

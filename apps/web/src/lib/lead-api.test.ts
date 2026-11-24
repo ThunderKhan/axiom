@@ -382,6 +382,17 @@ describe("reviewed feed browser contract", () => {
       { ...response, items: [item, item] },
       {
         ...response,
+        items: [
+          item,
+          { ...item, source_id: "c".repeat(32), source_url: "https://example.org:443/post" },
+        ],
+      },
+      {
+        ...response,
+        items: [{ ...item, source_url: "https:example.org/post" }],
+      },
+      {
+        ...response,
         items: [{ ...item, source_url: "https://127.0.0.1/private" }],
       },
       {
