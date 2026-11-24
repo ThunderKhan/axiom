@@ -47,9 +47,11 @@ def test_fastapi_import_and_versioned_openapi() -> None:
         assert set(paths["/api/v1/workspaces/{workspace_id}/leads/{lead_id}/assessment"]) == {
             "post"
         }
-        assert set(paths["/api/v1/workspaces/{workspace_id}/leads/{lead_id}/scenario-comparison/preview"]) == {
-            "post"
-        }
+        comparison_path = (
+            "/api/v1/workspaces/{workspace_id}/leads/{lead_id}/"
+            "scenario-comparison/preview"
+        )
+        assert set(paths[comparison_path]) == {"post"}
         assert set(paths["/api/v1/workspaces/{workspace_id}/research/public-url/preview"]) == {
             "post"
         }
