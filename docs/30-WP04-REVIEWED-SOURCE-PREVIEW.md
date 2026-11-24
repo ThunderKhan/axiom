@@ -99,3 +99,32 @@ must pass. Actual approved source acquisition, two permitted source families,
 durable source/signal/report storage, real discovery ranking, browser
 acceptance and deployment verification remain release-blocking. This is not
 the full approved asynchronous discovery/teardown contract.
+
+## Candidate public feed transport probe — 24 November 2026
+
+NIST advertises its cybersecurity feed at
+https://www.nist.gov/news-events/cybersecurity/rss.xml via its
+[official RSS directory](https://www.nist.gov/coo/nist-rss-feeds).
+Its [copyright policy](https://www.nist.gov/copyrights-disclaimers)
+permits redistribution of public information except marked copyrighted
+content, with appropriate credits. The published
+[robots rules](https://www.nist.gov/robots.txt) do not disallow the
+exact feed path at the time of review.
+
+A separate, secret-free workflow runs one bounded real fetch through
+the existing pinned-IP HTTPS acquisition and feed parser. It logs only
+the number of usable entries or an explicit blocked result, not article
+content. It does not enable a registry entry, infer buying intent,
+assert third-party excerpt rights, or prove deployment connectivity.
+The local execution environment could not resolve the publisher host;
+the repository probe is the independent real-network verification.
+NIST standards/news are contextual research, not HN demand evidence.
+A successful probe cannot satisfy the two-family live research gate.
+
+**Probe update:** the cybersecurity feed returned no usable entries in runs
+45371448132 and 45372284976. Test the separately advertised general news
+feed at https://www.nist.gov/news-events/news/rss.xml (same public-information
+policy and reviewed robots rules). This is a separate candidate, not a second
+source family; no retention or deployment permission is granted.
+
+**Actual transport evidence:** [run 45383594767](https://github.com/ThunderKhan/axiom/actions/runs/45383594767), head `06d276e3da113dfd7d02966d06365e31a3ce9a01`, passed with 10 usable general-news feed entries. No content was retained or displayed, no buying intent was inferred, and no deployed registry or storage permission is implied.
