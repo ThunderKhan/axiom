@@ -268,6 +268,9 @@ describe("reviewed source preview", () => {
       (await api.previewSource(workspace, lead.source_url, signal)).excerpt,
       source.excerpt,
     );
+    response = { ...source, excerpt: "😀" + "x".repeat(499) };
+    const unicode = await api.previewSource(workspace, lead.source_url, signal);
+    assert.equal(Array.from(unicode.excerpt).length, 500);
     for (const changes of [
       { workspace_id: subject },
       { origin: "seeded" },
