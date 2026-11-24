@@ -225,7 +225,6 @@ describe("authenticated CRM API client", () => {
   });
 });
 
-
 describe("reviewed source preview", () => {
   const source = {
     workspace_id: workspace,
@@ -284,10 +283,10 @@ describe("reviewed source preview", () => {
   });
 
   it("accepts only requested, observed claims and explicit unknowns", async () => {
-    const candidates = [{ kind: "features", locator: "Offline export" }] as const;
+    const candidates = [{ kind: "features", locator: "Offline" }] as const;
     const claim = {
       ...candidates[0],
-      text: "Offline export",
+      text: "Offline",
       source_id: source.source_id,
       status: "publisher_claim_observed",
     };
