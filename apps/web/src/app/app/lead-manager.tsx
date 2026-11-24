@@ -35,6 +35,7 @@ import {
 
 import { SourcePreviewPanel } from "./source-preview-panel";
 import { ScenarioPanel } from "./scenario-panel";
+import { EvidenceGraph } from "./evidence-graph";
 
 function safeMessage(error: unknown): string {
   if (error instanceof LeadApiError) {
@@ -193,6 +194,7 @@ function ManualEvidenceReport({
           <p className="crm-meta">
             Manual source · Report not persisted · No live evidence verified
           </p>
+          <EvidenceGraph assessment={assessment} lead={lead} />
           <h4>Source-linked relationships</h4>
           {assessment.relationships.length === 0 && (
             <p>No sourced needs linked.</p>
