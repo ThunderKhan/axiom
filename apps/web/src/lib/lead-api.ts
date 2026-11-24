@@ -1,4 +1,8 @@
-import { parseManualAssessment, type EvidenceAssessment, type ManualNeed } from "./evidence-contract.ts";
+import {
+  parseManualAssessment,
+  type EvidenceAssessment,
+  type ManualNeed,
+} from "./evidence-contract.ts";
 import {
   InvalidLeadResponse,
   parseCreatedLead,
@@ -238,7 +242,12 @@ export function createLeadApi(
         throw new InvalidLeadResponse();
       const payload = { needs };
       return parseManualAssessment(
-        await send(pathFor(workspaceId, lead.id) + "/assessment", "POST", signal, payload),
+        await send(
+          pathFor(workspaceId, lead.id) + "/assessment",
+          "POST",
+          signal,
+          payload,
+        ),
         workspaceId,
         lead,
       );
