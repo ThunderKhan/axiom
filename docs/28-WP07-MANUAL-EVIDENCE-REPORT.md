@@ -39,6 +39,16 @@ may still produce `skip`; no needs produces `insufficient_evidence`.
 Response explicitly sets `live_source_verified=false` and
 `persisted_assessment=false`. Treat all supplied excerpts as untrusted data.
 
+## Browser graph
+
+The existing authorized saved-lead assessment screen now renders a basic
+source-to-need/capability graph from the validated report relationships.
+An accessible button for each edge opens its reasoning and original manual
+excerpt; Escape or Close dismisses the inspector. The ordered relationship
+report remains available independently. The graph uses approved design tokens,
+wraps on narrow screens and shows an empty state rather than inventing nodes.
+No competitor or live-source relationship is asserted from manual evidence.
+
 ## Verification boundaries and outstanding P0
 
 Unit and FastAPI transport tests cover validation, source-link traceability,
@@ -47,8 +57,8 @@ read-only behavior, unconfirmed profiles and owner-denial composition. The
 existing isolated PostgreSQL suites separately exercise real lead and profile
 tenant isolation. Required repository CI and review must pass before merge.
 
-**This is not the P0 graph/report completion claim.** It has no browser graph,
-durable evidence snapshot, lawful live ingestion, independent intent
+**This is not the P0 graph/report completion claim.** The basic manual-source graph is implemented; a
+durable evidence assessment, lawful live ingestion, independent intent
 classification, competitor claims, two saved scenarios, MCP integration or
 deployed evaluator proof. Real hosted Supabase parity and qualified human
 security signoff remain blocked under issue #29. The incomplete gates remain
