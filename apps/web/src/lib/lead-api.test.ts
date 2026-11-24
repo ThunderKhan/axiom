@@ -384,7 +384,11 @@ describe("reviewed feed browser contract", () => {
         ...response,
         items: [
           item,
-          { ...item, source_id: "c".repeat(32), source_url: "https://example.org:443/post" },
+          {
+            ...item,
+            source_id: "c".repeat(32),
+            source_url: "https://example.org:443/post",
+          },
         ],
       },
       {
