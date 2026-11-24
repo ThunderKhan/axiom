@@ -12,8 +12,8 @@ from sqlalchemy.exc import DBAPIError
 
 from app.auth import DelegatedPrincipal, VerifiedPrincipal
 from app.database import Database
-from app.mcp_access import McpAccess, McpAccessDenied, list_saved_leads
 from app.leads_store import LeadStore
+from app.mcp_access import McpAccess, McpAccessDenied, list_saved_leads
 from app.mcp_grants import McpGrantStore
 from app.settings import RuntimeSettings
 from app.workspace_store import WorkspaceStore
@@ -40,7 +40,9 @@ def test_durable_consent_resolves_only_current_owner_and_cannot_reactivate(datab
     workspaces.bootstrap(outsider)
     workspace = UUID(
         str(
-            workspaces.create_workspace(owner, name="MCP consent", key=uuid4().hex).response_body["id"]
+            workspaces.create_workspace(
+                owner, name="MCP consent", key=uuid4().hex
+            ).response_body["id"]
         )
     )
     client_id = uuid4()
