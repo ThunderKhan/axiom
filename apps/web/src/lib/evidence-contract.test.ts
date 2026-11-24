@@ -183,6 +183,12 @@ describe("saved counterfactual comparisons", () => {
         name,
         baseline_fingerprint: fingerprint,
         projected_verdict: "research_further",
+        assumptions: {
+          name,
+          features: [{ name: "offline sync", action: "add" }],
+          pricing: "Lower price",
+          positioning: null,
+        },
         requirements: [requirement],
         unsupported_assumptions: [],
         limitations: ["Hypothetical only"],
@@ -194,6 +200,10 @@ describe("saved counterfactual comparisons", () => {
     const result = parseSavedComparison(saved, workspace, lead);
     assert.equal(result.lead_version, 1);
     assert.equal(result.comparison.scenarios.length, 2);
+    assert.equal(
+      result.comparison.scenarios[0].assumptions.pricing,
+      "Lower price",
+    );
   });
 
   it("rejects foreign records, forged provenance and mismatched snapshots", () => {
