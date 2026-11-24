@@ -14,6 +14,13 @@ import {
   type LeadStage,
 } from "./lead-contract.ts";
 import { validatePublicApiBaseUrl } from "./public-api.ts";
+import {
+  parseCompetitorPreview,
+  parseSourcePreview,
+  type ClaimCandidate,
+  type CompetitorPreview,
+  type SourcePreview,
+} from "./source-preview-contract.ts";
 import { isWorkspaceId } from "./workspace-contract.ts";
 
 type AuthToken = (subject: string) => Promise<string>;
@@ -57,6 +64,9 @@ const allowedCodes = new Set([
   "LEAD_ALREADY_SAVED",
   "PROFILE_INCOMPLETE",
   "DATABASE_UNAVAILABLE",
+  "SOURCE_BLOCKED",
+  "SOURCE_RATE_LIMITED",
+  "SOURCE_UNAVAILABLE",
 ]);
 
 function serverCode(raw: unknown, status: number): string {
@@ -151,7 +161,48 @@ export function createLeadApi(
     return data;
   }
 
+  function sourcePath(workspaceId: string): string {
+    if (!isWorkspaceId(workspaceId)) throw new InvalidLeadResponse();
+    return "/api/v1/workspaces/" + encodeURIComponent(workspaceId);
+  }
+
   return {
+    async previewSource(
+      workspaceId: string,
+      url: string,
+      signal: AbortSignal,
+    ): Promise<SourcePreview> {
+      return parseSourcePreview(
+        await send(
+          sourcePath(workspaceId) + "/research/public-url/preview",
+          "POST",
+          signal,
+          { url },
+        ),
+        workspaceId,
+        url,
+      );
+    },
+    async previewCompetitor(
+      workspaceId: string,
+      url: string,
+      name: string,
+      candidates: readonly ClaimCandidate[],
+      signal: AbortSignal,
+    ): Promise<CompetitorPreview> {
+      return parseCompetitorPreview(
+        await send(
+          sourcePath(workspaceId) + "/competitors/preview",
+          "POST",
+          signal,
+          { url, name, confirmed: true, candidates },
+        ),
+        workspaceId,
+        url,
+        name,
+        candidates,
+      );
+    },
     async list(workspaceId: string, signal: AbortSignal): Promise<Lead[]> {
       return parseLeadList(
         await send(pathFor(workspaceId) + "?limit=100", "GET", signal),
