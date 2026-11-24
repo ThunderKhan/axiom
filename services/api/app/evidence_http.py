@@ -287,12 +287,12 @@ def preview_scenarios(
     """Compare alternatives without accepting a fabricated baseline or persisting results."""
     lead = LeadDTO.model_validate(leads.read(principal, workspace_id, lead_id))
     profile = ProfileStateDTO.model_validate(profiles.read(principal, workspace_id))
-    snapshot = manual_evidence_snapshot(workspace_id, lead, profile, payload)
-    if (
-        lead.version != payload.expected_lead_version
-        or snapshot.profile_revision != payload.expected_profile_revision
+    if lead.version != payload.expected_lead_version or (
+        profile.confirmed is not None
+        and profile.confirmed.revision != payload.expected_profile_revision
     ):
         raise ApiFailure("VERSION_CONFLICT", 409, "Refresh the baseline before comparing.")
+    snapshot = manual_evidence_snapshot(workspace_id, lead, profile, payload)
     try:
         alternatives = tuple(
             Scenario(
