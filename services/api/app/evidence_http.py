@@ -86,7 +86,11 @@ class EvidenceReportDTO(BaseModel):
 
 def _declared_names(value: str) -> set[str]:
     # Only delimiters the founder explicitly supplied; no semantic extraction.
-    return {" ".join(item.casefold().split()) for item in _CAPABILITY_SEPARATOR.split(value) if item.strip()}
+    return {
+        " ".join(item.casefold().split())
+        for item in _CAPABILITY_SEPARATOR.split(value)
+        if item.strip()
+    }
 
 
 def assess_saved_manual_lead(
@@ -135,9 +139,13 @@ def assess_saved_manual_lead(
         for index, item in enumerate(request.needs, start=1)
     )
     try:
-        assessment = assess((source,), needs, tuple(capabilities_by_name.values()), launched=answers.stage == "live")
+        assessment = assess(
+            (source,), needs, tuple(capabilities_by_name.values()), launched=answers.stage == "live"
+        )
     except EvidenceInputError as exc:
-        raise ApiFailure("VALIDATION_FAILED", 422, "Citation does not match saved source.") from exc
+        raise ApiFailure(
+            "VALIDATION_FAILED", 422, "Citation does not match saved source."
+        ) from exc
 
     # The founder entered both the text and the intent. Never promote this to a
     # verified acquisition signal even if declared feature coverage would fit.
@@ -164,13 +172,18 @@ def assess_saved_manual_lead(
         hypothetical_need_ids=list(assessment.hypothetical_need_ids),
         missing_need_ids=list(assessment.missing_need_ids),
         unknown_need_ids=list(assessment.unknown_need_ids),
-        relationships=[RelationshipDTO.model_validate({
-            "source_id": item.source_id,
-            "need_id": item.need_id,
-            "capability": item.capability,
-            "relation": item.relation,
-            "explanation": item.explanation,
-        }) for item in assessment.relationships],
+        relationships=[
+            RelationshipDTO.model_validate(
+                {
+                    "source_id": item.source_id,
+                    "need_id": item.need_id,
+                    "capability": item.capability,
+                    "relation": item.relation,
+                    "explanation": item.explanation,
+                }
+            )
+            for item in assessment.relationships
+        ],
         report_lines=report,
     )
 
