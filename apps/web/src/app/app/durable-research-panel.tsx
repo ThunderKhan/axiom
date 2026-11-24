@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState, type FormEvent } from "react";
 import { LeadApiError, type createLeadApi } from "../../lib/lead-api";
 import type { Lead } from "../../lib/lead-contract";
-import type { ResearchRequest, ResearchRun } from "../../lib/research-contract";
+import type { ResearchRequest, ResearchRun, SignalAssessment } from "../../lib/research-contract";
 
 type Api = ReturnType<typeof createLeadApi>;
 
@@ -36,6 +36,10 @@ export function DurableResearchPanel({
   const [query, setQuery] = useState("");
   const [runId, setRunId] = useState("");
   const [run, setRun] = useState<ResearchRun | null>(null);
+  const [selected, setSelected] = useState<string | null>(null);
+  const [requirement, setRequirement] = useState("");
+  const [locator, setLocator] = useState("");
+  const [report, setReport] = useState<SignalAssessment | null>(null);
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState("");
   const pending = useRef<AbortController | null>(null);
@@ -81,6 +85,8 @@ export function DurableResearchPanel({
       if (signal.aborted) return;
       setRetry(null);
       setRun(result);
+      setSelected(null);
+      setReport(null);
       setRunId(result.run_id);
       setMessage("Research run saved. No buying intent inferred.");
     });
@@ -92,7 +98,22 @@ export function DurableResearchPanel({
       const result = await api.reopenResearch(workspaceId, runId.trim(), signal);
       if (signal.aborted) return;
       setRun(result);
+      setSelected(null);
+      setReport(null);
       setMessage("Saved research reopened.");
+    });
+  };
+
+  const chosen = run?.items.find((item) => item.signal_id === selected);
+  const assess = (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    if (!run || !chosen) return;
+    void execute(async (signal) => {
+      setReport(null);
+      const next = await api.assessResearchSignal(
+        workspaceId, run, chosen, requirement.trim(), locator.trim(), signal,
+      );
+      if (!signal.aborted) setReport(next);
     });
   };
 
@@ -166,12 +187,50 @@ export function DurableResearchPanel({
                   Original article citation
                 </a>
                 <button type="button" className="workspace-secondary" disabled={busy}
+                  onClick={() => {
+                    setSelected(item.signal_id);
+                    setRequirement("");
+                    setLocator("");
+                    setReport(null);
+                  }}>
+                  Assess citation
+                </button>
+                <button type="button" className="workspace-secondary" disabled={busy}
                   onClick={() => save(item)}>
                   Save citation to CRM
                 </button>
               </li>
             ))}
           </ul>
+          {chosen && (
+            <form className="crm-form" onSubmit={assess}>
+              <h4>Assess {chosen.title}</h4>
+              <blockquote className="crm-evidence">{chosen.excerpt}</blockquote>
+              <label htmlFor="signal-requirement">Requirement in the excerpt</label>
+              <input id="signal-requirement" required maxLength={120} value={requirement}
+                disabled={busy} onChange={(event) => {
+                  setRequirement(event.target.value);
+                  setReport(null);
+                }} />
+              <label htmlFor="signal-locator">Exact supporting phrase</label>
+              <input id="signal-locator" required maxLength={200} value={locator}
+                disabled={busy} onChange={(event) => {
+                  setLocator(event.target.value);
+                  setReport(null);
+                }} />
+              <button className="workspace-secondary" type="submit" disabled={busy}>
+                Assess against original founder profile
+              </button>
+              {report && (
+                <div aria-label="Retrieved evidence assessment">
+                  <h4>{report.verdict.replaceAll("_", " ")}</h4>
+                  <p>Compatibility: {report.compatibility}. Intent: unknown.</p>
+                  <p className="crm-meta">Computed report; article claims not independently verified.</p>
+                  <ul>{report.report_lines.map((line, index) => <li key={index}>{line}</li>)}</ul>
+                </div>
+              )}
+            </form>
+          )}
         </div>
       )}
     </section>

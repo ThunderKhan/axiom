@@ -90,3 +90,60 @@ export function parseResearchRun(
     items,
   };
 }
+
+
+export type SignalAssessment = Readonly<{
+  verdict: "research_further" | "skip" | "insufficient_evidence";
+  compatibility: "supported" | "contradicted" | "partial" | "unknown";
+  report_lines: readonly string[];
+}>;
+
+export function parseSignalAssessment(
+  raw: unknown,
+  workspaceId: string,
+  run: ResearchRun,
+  item: ResearchRun["items"][number],
+): SignalAssessment {
+  if (
+    !record(raw) ||
+    raw.workspace_id !== workspaceId ||
+    raw.run_id !== run.run_id ||
+    raw.signal_id !== item.signal_id ||
+    raw.profile_revision !== run.profile_revision ||
+    raw.profile_version_id !== run.profile_version_id ||
+    raw.source_url !== item.source_url ||
+    raw.source_excerpt !== item.excerpt ||
+    raw.source_origin !== "live" ||
+    raw.policy_review_id !== run.policy_review_id ||
+    raw.retrieved_at !== run.retrieved_at ||
+    raw.article_independently_verified !== false ||
+    raw.persisted_assessment !== false ||
+    !record(raw.assessment)
+  )
+    throw new InvalidSourcePreview();
+  const value = raw.assessment;
+  if (
+    (value.verdict !== "research_further" &&
+      value.verdict !== "skip" &&
+      value.verdict !== "insufficient_evidence") ||
+    value.intent !== "unknown" ||
+    (value.compatibility !== "supported" &&
+      value.compatibility !== "contradicted" &&
+      value.compatibility !== "partial" &&
+      value.compatibility !== "unknown") ||
+    !Array.isArray(value.report_lines) ||
+    value.report_lines.length > 40 ||
+    !value.report_lines.every(
+      (line: unknown) => typeof line === "string" && line.length <= 2500,
+    ) ||
+    !Array.isArray(value.source_ids) ||
+    value.source_ids.length !== 1 ||
+    value.source_ids[0] !== item.signal_id
+  )
+    throw new InvalidSourcePreview();
+  return {
+    verdict: value.verdict,
+    compatibility: value.compatibility,
+    report_lines: value.report_lines as string[],
+  };
+}

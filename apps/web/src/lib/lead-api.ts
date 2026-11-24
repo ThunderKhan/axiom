@@ -31,8 +31,10 @@ import {
 import { isWorkspaceId } from "./workspace-contract.ts";
 import {
   parseResearchRun,
+  parseSignalAssessment,
   type ResearchRequest,
   type ResearchRun,
+  type SignalAssessment,
 } from "./research-contract.ts";
 
 type AuthToken = (subject: string) => Promise<string>;
@@ -202,6 +204,39 @@ export function createLeadApi(
       return parseResearchRun(
         await send(sourcePath(workspaceId) + "/research/runs/" + runId, "GET", signal),
         workspaceId, runId,
+      );
+    },
+    async assessResearchSignal(
+      workspaceId: string,
+      run: ResearchRun,
+      item: ResearchRun["items"][number],
+      requirement: string,
+      locator: string,
+      signal: AbortSignal,
+    ): Promise<SignalAssessment> {
+      if (
+        !isWorkspaceId(run.run_id) ||
+        !isWorkspaceId(item.signal_id) ||
+        !requirement.trim() ||
+        !locator.trim() ||
+        [...requirement].length > 120 ||
+        [...locator].length > 200
+      )
+        throw new InvalidLeadResponse();
+      const path =
+        sourcePath(workspaceId) +
+        "/research/runs/" +
+        run.run_id +
+        "/signals/" +
+        item.signal_id +
+        "/assessment";
+      return parseSignalAssessment(
+        await send(path, "POST", signal, {
+          needs: [{ requirement, locator, intent: "unknown" }],
+        }),
+        workspaceId,
+        run,
+        item,
       );
     },
     async saveResearchSignal(
