@@ -5,7 +5,7 @@ from __future__ import annotations
 from datetime import UTC, datetime, timedelta
 from uuid import UUID
 
-from sqlalchemy import select, update
+from sqlalchemy import func, select, update
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.orm import Session
 
@@ -115,7 +115,7 @@ class McpGrantStore:
                     McpClientGrant.resource == self.resource,
                     McpClientGrant.revoked_at.is_(None),
                 )
-                .values(revoked_at=datetime.now(UTC))
+                .values(revoked_at=func.clock_timestamp())
                 .returning(McpClientGrant.client_id)
             ).scalar_one_or_none()
             return changed is not None
