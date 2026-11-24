@@ -54,7 +54,8 @@ function ComparisonDetails({ saved }: { saved: SavedComparison }) {
         <section key={scenario.name} className="crm-history">
           <h4>{scenario.name}</h4>
           <p>
-            Hypothetical verdict: {scenario.projected_verdict.replaceAll("_", " ")}
+            Hypothetical verdict:{" "}
+            {scenario.projected_verdict.replaceAll("_", " ")}
           </p>
           <ul>
             {scenario.requirements.map((need, index) => (
@@ -69,7 +70,9 @@ function ComparisonDetails({ saved }: { saved: SavedComparison }) {
           <h5>Unsupported assumptions and limitations</h5>
           <ul>
             {[...scenario.unsupported_assumptions, ...scenario.limitations].map(
-              (line, index) => <li key={index}>{line}</li>,
+              (line, index) => (
+                <li key={index}>{line}</li>
+              ),
             )}
           </ul>
         </section>
@@ -98,7 +101,10 @@ export function ScenarioPanel({
   const [notice, setNotice] = useState("");
   const [busy, setBusy] = useState(false);
   const pending = useRef<AbortController | null>(null);
-  const retry = useRef<{ key: string; payload: ScenarioRequest } | null>(null);
+  const [retry, setRetry] = useState<{
+    key: string;
+    payload: ScenarioRequest;
+  } | null>(null);
   useEffect(() => () => pending.current?.abort(), []);
 
   const update = (index: number, patch: Partial<Draft>) => {
@@ -123,7 +129,9 @@ export function ScenarioPanel({
         setItems(records);
         setSelected(records[0]?.id ?? null);
         setNotice(
-          records.length ? "Saved comparisons loaded." : "No saved comparisons yet.",
+          records.length
+            ? "Saved comparisons loaded."
+            : "No saved comparisons yet.",
         );
       }
     } catch {
@@ -138,15 +146,19 @@ export function ScenarioPanel({
   const save = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     if (pending.current) return;
-    let attempt = retry.current;
+    let attempt = retry;
     if (!attempt) {
       if (!baseline) return;
       const scenarios = drafts.map((draft) => assumptions(draft, baseline.need));
       if (
-        scenarios.some((item) => !item.name || (!item.pricing && !item.positioning)) ||
+        scenarios.some(
+          (item) => !item.name || (!item.pricing && !item.positioning),
+        ) ||
         scenarios[0].name.toLowerCase() === scenarios[1].name.toLowerCase()
       ) {
-        setNotice("Use distinct names and a qualitative assumption for each alternative.");
+        setNotice(
+          "Use distinct names and a qualitative assumption for each alternative.",
+        );
         return;
       }
       attempt = {
@@ -158,7 +170,7 @@ export function ScenarioPanel({
           scenarios,
         },
       };
-      retry.current = attempt;
+      setRetry(attempt);
     }
     const controller = new AbortController();
     pending.current = controller;
@@ -173,7 +185,7 @@ export function ScenarioPanel({
         controller.signal,
       );
       if (controller.signal.aborted) return;
-      retry.current = null;
+      setRetry(null);
       setItems((previous) => [
         saved,
         ...previous.filter((item) => item.id !== saved.id),
@@ -187,14 +199,16 @@ export function ScenarioPanel({
         error.status >= 400 &&
         error.status < 500
       ) {
-        retry.current = null;
+        setRetry(null);
         setNotice(
           error.code === "VERSION_CONFLICT"
             ? "Baseline changed. Assess the current citation again before saving."
             : "The comparison was rejected. Review your inputs and access.",
         );
       } else {
-        setNotice("Save outcome uncertain. Retry the exact same request and key.");
+        setNotice(
+          "Save outcome uncertain. Retry the exact same request and key.",
+        );
       }
     } finally {
       pending.current = null;
@@ -203,7 +217,7 @@ export function ScenarioPanel({
   };
 
   const viewed = items.find((item) => item.id === selected);
-  const locked = busy || retry.current !== null;
+  const locked = busy || retry !== null;
   return (
     <section className="crm-history" aria-label="Counterfactual Lab">
       <h4>Counterfactual Lab</h4>
@@ -226,7 +240,9 @@ export function ScenarioPanel({
                   required
                   maxLength={80}
                   value={draft.name}
-                  onChange={(event) => update(index, { name: event.target.value })}
+                  onChange={(event) =>
+                    update(index, { name: event.target.value })
+                  }
                 />
               </label>
               <label>
@@ -248,7 +264,9 @@ export function ScenarioPanel({
                 <input
                   maxLength={300}
                   value={draft.pricing}
-                  onChange={(event) => update(index, { pricing: event.target.value })}
+                  onChange={(event) =>
+                    update(index, { pricing: event.target.value })
+                  }
                 />
               </label>
               <label>
@@ -264,7 +282,11 @@ export function ScenarioPanel({
             </fieldset>
           ))}
           <button className="workspace-primary" disabled={busy} type="submit">
-            {busy ? "Working…" : retry.current ? "Retry exact save" : "Save two alternatives"}
+            {busy
+              ? "Working…"
+              : retry
+                ? "Retry exact save"
+                : "Save two alternatives"}
           </button>
         </form>
       ) : (
@@ -289,7 +311,9 @@ export function ScenarioPanel({
                 aria-pressed={selected === item.id}
                 onClick={() => setSelected(item.id)}
               >
-                {item.comparison.scenarios.map((scenario) => scenario.name).join(" / ")}
+                {item.comparison.scenarios
+                  .map((scenario) => scenario.name)
+                  .join(" / ")}
                 {" · "}
                 {new Date(item.created_at).toLocaleString()}
               </button>
