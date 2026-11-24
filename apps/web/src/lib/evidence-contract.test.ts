@@ -206,6 +206,44 @@ describe("saved counterfactual comparisons", () => {
     );
   });
 
+  it("rejects a consistently substituted need in a new save response", () => {
+    const request = {
+      needs: [
+        {
+          requirement: "offline sync",
+          locator: "offline sync",
+          intent: "buying" as const,
+        },
+      ],
+      expected_lead_version: 1,
+      expected_profile_revision: 1,
+      scenarios: saved.comparison.scenarios.map((scenario) => ({
+        ...scenario.assumptions,
+        features: [{ name: "offline sync", action: "add" as const }],
+      })),
+    };
+    assert.equal(
+      parseSavedComparison(saved, workspace, lead, request).id,
+      saved.id,
+    );
+    const wrong = { ...requirement, requirement: "team chat" };
+    const substituted = {
+      ...saved,
+      comparison: {
+        ...saved.comparison,
+        baseline_requirements: [wrong],
+        scenarios: saved.comparison.scenarios.map((scenario) => ({
+          ...scenario,
+          requirements: [wrong],
+        })),
+      },
+    };
+    assert.throws(
+      () => parseSavedComparison(substituted, workspace, lead, request),
+      InvalidScenarioResponse,
+    );
+  });
+
   it("rejects foreign records, forged provenance and mismatched snapshots", () => {
     for (const invalid of [
       { ...saved, workspace_id: leadId },
