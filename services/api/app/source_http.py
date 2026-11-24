@@ -125,6 +125,7 @@ router = APIRouter(
         401: {"model": ErrorDTO},
         403: {"model": ErrorDTO},
         404: {"model": ErrorDTO},
+        409: {"model": ErrorDTO},
         422: {"model": ErrorDTO},
         429: {"model": ErrorDTO},
         502: {"model": ErrorDTO},
