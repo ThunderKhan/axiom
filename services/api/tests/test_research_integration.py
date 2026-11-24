@@ -122,6 +122,24 @@ def test_persist_replay_reopen_and_deny_foreign_feed_runs(database: Database) ->
         detail = route + "/" + saved["run_id"]
         assert client.get(detail).json() == saved
         signal = saved["result"]["items"][0]["signal_id"]
+        save_route = detail + "/signals/" + signal + "/save"
+        save_headers = {"Idempotency-Key": uuid4().hex}
+        lead_response = client.post(save_route, headers=save_headers)
+        assert lead_response.status_code == 201
+        lead = lead_response.json()
+        assert lead["source_origin"] == "live"
+        assert lead["research_run_id"] == saved["run_id"]
+        assert lead["research_signal_id"] == signal
+        assert lead["source_excerpt"] == saved["result"]["items"][0]["excerpt"]
+        again = client.post(save_route, headers=save_headers)
+        assert again.status_code == 200
+        assert again.json()["id"] == lead["id"]
+        leads = f"/api/v1/workspaces/{workspace}/leads"
+        reopened = client.get(leads + "/" + lead["id"])
+        assert reopened.status_code == 200
+        assert reopened.json()["research_signal_id"] == signal
+        duplicate = client.post(save_route, headers={"Idempotency-Key": uuid4().hex})
+        assert duplicate.status_code == 409
         assessment_route = detail + "/signals/" + signal + "/assessment"
         need = {"requirement": "offline sync", "locator": "Offline sync", "intent": "buying"}
         assessment = client.post(assessment_route, json={"needs": [need]})
@@ -154,6 +172,7 @@ def test_persist_replay_reopen_and_deny_foreign_feed_runs(database: Database) ->
         assert client.post(assessment_route, json={"needs": [need]}).json() == report
         app.dependency_overrides[get_verified_principal] = lambda: outsider
         assert client.get(detail).status_code == 404
+        assert client.post(save_route, headers=save_headers).status_code == 404
         assert client.post(assessment_route, json={"needs": [need]}).status_code == 404
     with database.transaction(outsider) as session:
         assert session.scalar(text("SELECT count(*) FROM axiom.research_runs")) == 0

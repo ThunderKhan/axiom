@@ -1,6 +1,6 @@
 # M1 — Hosted Supabase Postgres, RLS and Pooler Verification
 
-**Status:** OPERATOR PROCEDURE / NOT EXECUTED · **Scope:** hosted M1 parity and current M6 schema readiness · **Approval gate:** [Issue #29](https://github.com/ThunderKhan/axiom/issues/29)
+**Status:** OPERATOR PROCEDURE / NOT EXECUTED · **Scope:** hosted M1 parity and current M7 schema readiness · **Approval gate:** [Issue #29](https://github.com/ThunderKhan/axiom/issues/29)
 
 This runbook does **not** certify the hosted database. The successful
 [real-provider run #44850664291](https://github.com/ThunderKhan/axiom/actions/runs/44850664291)
@@ -106,7 +106,7 @@ insert or fake `version_num` manually** or replay copied DDL and call
 it a migration.
 
 Verify, via **read-only** SQL, that:
-- revision equals the **exact current code head `m6_0001_research_runs`**
+- revision equals the **exact current code head `m7_0001_lead_provenance`**
   at the reviewed November 24 checkpoint; re-check `HEAD_REVISION` before execution;
 - exactly **ten** reviewed `axiom` application tables exist with RLS enabled;
 - exactly **twenty-four** reviewed owner-scoped policies target `axiom_runtime`
