@@ -30,6 +30,8 @@ def test_fastapi_import_and_versioned_openapi() -> None:
             "/api/v1/workspaces/{workspace_id}/leads/{lead_id}/scenario-comparisons",
             "/api/v1/workspaces/{workspace_id}/research/public-url/preview",
             "/api/v1/workspaces/{workspace_id}/research/feed/preview",
+            "/api/v1/workspaces/{workspace_id}/research/runs",
+            "/api/v1/workspaces/{workspace_id}/research/runs/{run_id}",
             "/api/v1/workspaces/{workspace_id}/competitors/preview",
         }
         workspace = schema.json()["paths"]["/api/v1/workspaces"]

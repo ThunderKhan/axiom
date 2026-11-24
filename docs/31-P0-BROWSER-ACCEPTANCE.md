@@ -28,7 +28,7 @@ Remove-Item Env:E2E_P0_ACCEPTANCE
 Required existing variables and safety gate: see
 [hosted parity runbook](22-M1-HOSTED-DATABASE-PARITY-RUNBOOK.md) and
 `playwright.provider.config.ts`. The latest migration head is
-`m5_0001_mcp_consent`; do not apply local disposable test role scripts to hosted.
+`m6_0001_research_runs`; do not apply local disposable test role scripts to hosted.
 The earlier M1 provider test alone does not prove this test passes.
 
 This extension creates a workspace-scoped confirmed product profile through

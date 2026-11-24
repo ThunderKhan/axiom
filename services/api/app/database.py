@@ -71,7 +71,7 @@ class Database:
                     return False
                 role_safe = conn.scalar(
                     text(
-                        """SELECT count(*) = 9 AND bool_and(
+                        """SELECT count(*) = 10 AND bool_and(
                             NOT r.rolsuper AND NOT r.rolbypassrls
                             AND NOT r.rolcreatedb AND NOT r.rolcreaterole
                             AND NOT has_schema_privilege(current_user, 'axiom', 'CREATE')
@@ -88,7 +88,8 @@ class Database:
                            AND c.relname IN (
                                'app_users', 'workspaces', 'workspace_create_idempotency',
                                'product_profiles', 'profile_versions',
-                               'leads', 'lead_events', 'scenario_comparisons', 'mcp_client_grants'
+                               'leads', 'lead_events', 'scenario_comparisons',
+                               'mcp_client_grants', 'research_runs'
                            )
                            AND c.relkind = 'r'"""
                     )
@@ -99,7 +100,7 @@ class Database:
                     text(
                         """SELECT
                             (SELECT count(*) FROM pg_policies
-                             WHERE schemaname = 'axiom') = 22
+                             WHERE schemaname = 'axiom') = 24
                             AND NOT EXISTS (
                                 SELECT 1 FROM (
                                     VALUES
@@ -128,7 +129,9 @@ class Database:
                                      'scenario_comparisons_own_insert', 'INSERT'),
                                     ('mcp_client_grants', 'mcp_grants_own_read', 'SELECT'),
                                     ('mcp_client_grants', 'mcp_grants_own_insert', 'INSERT'),
-                                    ('mcp_client_grants', 'mcp_grants_own_revoke', 'UPDATE')
+                                    ('mcp_client_grants', 'mcp_grants_own_revoke', 'UPDATE'),
+                                    ('research_runs', 'research_runs_own_read', 'SELECT'),
+                                    ('research_runs', 'research_runs_own_insert', 'INSERT')
                                 ) AS required(table_name, policy_name, command)
                                 LEFT JOIN pg_policies p
                                   ON p.schemaname = 'axiom'
@@ -242,7 +245,13 @@ class Database:
                                 ('mcp_client_grants', 'resource', 'INSERT'),
                                 ('mcp_client_grants', 'scopes', 'INSERT'),
                                 ('mcp_client_grants', 'expires_at', 'INSERT'),
-                                ('mcp_client_grants', 'revoked_at', 'UPDATE')
+                                ('mcp_client_grants', 'revoked_at', 'UPDATE'),
+                                ('research_runs', 'id', 'INSERT'),
+                                ('research_runs', 'workspace_id', 'INSERT'),
+                                ('research_runs', 'profile_revision', 'INSERT'),
+                                ('research_runs', 'create_key', 'INSERT'),
+                                ('research_runs', 'create_fingerprint', 'INSERT'),
+                                ('research_runs', 'result', 'INSERT')
                                 ) AS required(table_name, column_name, action)
                             )
                             AND has_table_privilege(
@@ -275,6 +284,15 @@ class Database:
                                       current_user, 'axiom.mcp_client_grants',
                                       column_name, 'UPDATE'
                                   )
+                            )
+                            AND has_table_privilege(
+                                current_user, 'axiom.research_runs', 'SELECT'
+                            )
+                            AND NOT has_any_column_privilege(
+                                current_user, 'axiom.research_runs', 'UPDATE'
+                            )
+                            AND NOT has_table_privilege(
+                                current_user, 'axiom.research_runs', 'DELETE'
                             )
                             AND NOT has_any_column_privilege(
                                 current_user, 'axiom.scenario_comparisons', 'UPDATE'
