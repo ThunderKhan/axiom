@@ -41,7 +41,10 @@ def document(url: str) -> FetchedDocument:
     return FetchedDocument(
         url,
         "text/html",
-        b"<title>Example</title><script>Invented price</script><p>Offline export.</p>",
+        (
+            b"<title>Example</title><script>Invented price</script>"
+            b"<template><p>Invented price</p></template><p>Offline export.</p>"
+        ),
         NOW,
     )
 
