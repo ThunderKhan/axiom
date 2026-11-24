@@ -73,7 +73,8 @@ function texts(value: unknown): value is string[] {
 }
 
 function coverage(raw: unknown, leadId: string): Coverage[] {
-  if (!Array.isArray(raw) || raw.length > 8) throw new InvalidScenarioResponse();
+  if (!Array.isArray(raw) || raw.length > 8)
+    throw new InvalidScenarioResponse();
   const result = raw.map((item: unknown) => {
     if (
       !record(item) ||

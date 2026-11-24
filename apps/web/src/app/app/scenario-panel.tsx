@@ -123,7 +123,9 @@ export function ScenarioPanel({
 
   const update = (index: number, patch: Partial<Draft>) => {
     setDrafts((previous) =>
-      previous.map((draft, i) => (i === index ? { ...draft, ...patch } : draft)),
+      previous.map((draft, i) =>
+        i === index ? { ...draft, ...patch } : draft,
+      ),
     );
   };
 
@@ -163,7 +165,9 @@ export function ScenarioPanel({
     let attempt = retry;
     if (!attempt) {
       if (!baseline) return;
-      const scenarios = drafts.map((draft) => assumptions(draft, baseline.need));
+      const scenarios = drafts.map((draft) =>
+        assumptions(draft, baseline.need),
+      );
       if (
         scenarios.some(
           (item) => !item.name || (!item.pricing && !item.positioning),

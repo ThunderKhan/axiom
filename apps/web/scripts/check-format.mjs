@@ -26,7 +26,7 @@ if (!different.stdout || tracked.status !== 0 || !tracked.stdout) {
 const allowed = new Set(tracked.stdout.split("\0"));
 const files = different.stdout
   .split(/\r?\n/)
-  .filter((file) => allowed.has(file))
+  .filter((file) => file && allowed.has(file))
   .slice(0, 20);
 const directory = mkdtempSync(join(tmpdir(), "axiom-format-"));
 try {
