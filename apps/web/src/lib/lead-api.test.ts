@@ -284,9 +284,7 @@ describe("reviewed source preview", () => {
   });
 
   it("accepts only requested, observed claims and explicit unknowns", async () => {
-    const candidates = [
-      { kind: "features", locator: "Offline export" },
-    ] as const;
+    const candidates = [{ kind: "features", locator: "Offline export" }] as const;
     const claim = {
       ...candidates[0],
       text: "Offline export",
