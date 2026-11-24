@@ -73,6 +73,7 @@ def test_migration_schema_indexes_rls_and_role_separation(database: Database) ->
             "lead_events",
             "scenario_comparisons",
             "mcp_client_grants",
+            "research_runs",
         }
         assert all(row.relrowsecurity for row in rows)
         assert conn.scalar(text("SELECT current_user")) == "axiom_runtime"
@@ -85,7 +86,7 @@ def test_migration_schema_indexes_rls_and_role_separation(database: Database) ->
             )
             == 1
         )
-        assert conn.scalar(text("SELECT count(*) FROM pg_policies WHERE schemaname='axiom'")) == 22
+        assert conn.scalar(text("SELECT count(*) FROM pg_policies WHERE schemaname='axiom'")) == 24
         assert not conn.scalar(text("SELECT has_schema_privilege(current_user,'axiom','CREATE')"))
 
 

@@ -22,7 +22,7 @@ from app.public_source import (
     normalize_fetched_document,
 )
 
-Purpose = Literal["research_preview", "competitor_preview", "feed_preview"]
+Purpose = Literal["research_preview", "competitor_preview", "feed_preview", "feed_persist"]
 Fetcher = Callable[[str], FetchedDocument]
 _PREVIEW_CONTENT_TYPES = frozenset({"text/html", "application/xhtml+xml", "text/plain"})
 
@@ -38,10 +38,11 @@ class ReviewedSource(BaseModel):
     review_id: str = Field(min_length=1, max_length=120)
     reviewer: str = Field(min_length=1, max_length=120)
     reviewed_on: date
-    permissions: tuple[Purpose, ...] = Field(min_length=1, max_length=3)
+    permissions: tuple[Purpose, ...] = Field(min_length=1, max_length=4)
     access_permitted: Literal[True]
     excerpt_redisplay_permitted: Literal[True]
     robots_reviewed: Literal[True]
+    retention_reviewed: bool = False
     minimum_interval_seconds: int = Field(default=60, ge=10, le=3600)
 
     @field_validator("url", "terms_url")
@@ -85,6 +86,8 @@ class ReviewedSource(BaseModel):
             raise ValueError("Source review date cannot be in the future")
         if len(set(self.permissions)) != len(self.permissions):
             raise ValueError("Duplicate permissions")
+        if "feed_persist" in self.permissions and not self.retention_reviewed:
+            raise ValueError("Persistent research requires separately reviewed retention rights")
         return self
 
 
@@ -164,4 +167,10 @@ class ReviewedSourceRegistry:
         self, url: str, *, query: str, limit: int
     ) -> tuple[ReviewedSource, FetchedDocument, tuple[FeedItem, ...]]:
         with self._reviewed_document(url, "feed_preview") as (review, document):
+            return review, document, parse_feed(document, query=query, limit=limit)
+
+    def retrieve_feed_for_storage(
+        self, url: str, *, query: str, limit: int
+    ) -> tuple[ReviewedSource, FetchedDocument, tuple[FeedItem, ...]]:
+        with self._reviewed_document(url, "feed_persist") as (review, document):
             return review, document, parse_feed(document, query=query, limit=limit)
