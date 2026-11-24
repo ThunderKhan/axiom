@@ -260,58 +260,60 @@ export function ScenarioPanel({
           </p>
           {retry && (
             <p role="status">
-              Pending save: {retry.payload.scenarios.map((s) => s.name).join(" / ")}.
-              The original request is retained for this lead.
+              Pending save:{" "}
+              {retry.payload.scenarios.map((s) => s.name).join(" / ")}. The
+              original request is retained for this lead.
             </p>
           )}
-          {!retry && drafts.map((draft, index) => (
-            <fieldset className="crm-form" key={index} disabled={locked}>
-              <legend>Alternative {index + 1}</legend>
-              <label>
-                Name
-                <input
-                  required
-                  maxLength={80}
-                  value={draft.name}
-                  onChange={(e) => update(index, { name: e.target.value })}
-                />
-              </label>
-              <label>
-                Capability change
-                <select
-                  value={draft.action}
-                  onChange={(event) =>
-                    update(index, {
-                      action: event.target.value === "add" ? "add" : "remove",
-                    })
-                  }
-                >
-                  <option value="add">Add cited capability</option>
-                  <option value="remove">Remove cited capability</option>
-                </select>
-              </label>
-              <label>
-                Qualitative pricing hypothesis
-                <input
-                  maxLength={300}
-                  value={draft.pricing}
-                  onChange={(event) =>
-                    update(index, { pricing: event.target.value })
-                  }
-                />
-              </label>
-              <label>
-                Positioning hypothesis
-                <input
-                  maxLength={300}
-                  value={draft.positioning}
-                  onChange={(event) =>
-                    update(index, { positioning: event.target.value })
-                  }
-                />
-              </label>
-            </fieldset>
-          ))}
+          {!retry &&
+            drafts.map((draft, index) => (
+              <fieldset className="crm-form" key={index} disabled={locked}>
+                <legend>Alternative {index + 1}</legend>
+                <label>
+                  Name
+                  <input
+                    required
+                    maxLength={80}
+                    value={draft.name}
+                    onChange={(e) => update(index, { name: e.target.value })}
+                  />
+                </label>
+                <label>
+                  Capability change
+                  <select
+                    value={draft.action}
+                    onChange={(event) =>
+                      update(index, {
+                        action: event.target.value === "add" ? "add" : "remove",
+                      })
+                    }
+                  >
+                    <option value="add">Add cited capability</option>
+                    <option value="remove">Remove cited capability</option>
+                  </select>
+                </label>
+                <label>
+                  Qualitative pricing hypothesis
+                  <input
+                    maxLength={300}
+                    value={draft.pricing}
+                    onChange={(event) =>
+                      update(index, { pricing: event.target.value })
+                    }
+                  />
+                </label>
+                <label>
+                  Positioning hypothesis
+                  <input
+                    maxLength={300}
+                    value={draft.positioning}
+                    onChange={(event) =>
+                      update(index, { positioning: event.target.value })
+                    }
+                  />
+                </label>
+              </fieldset>
+            ))}
           <button className="workspace-primary" disabled={busy} type="submit">
             {busy
               ? "Working…"
