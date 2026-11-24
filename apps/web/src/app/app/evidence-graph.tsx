@@ -23,7 +23,10 @@ export function EvidenceGraph({
   const relation =
     selected === null ? null : assessment.relationships[selected];
   return (
-    <section className="evidence-graph" aria-label="Evidence relationship graph">
+    <section
+      className="evidence-graph"
+      aria-label="Evidence relationship graph"
+    >
       <h4>Evidence graph</h4>
       <p className="crm-meta">
         Select a relationship to inspect its reasoning and original citation.
@@ -51,6 +54,9 @@ export function EvidenceGraph({
                   className="evidence-edge"
                   aria-pressed={selected === index}
                   onClick={() => setSelected(index)}
+                  onKeyDown={(event) => {
+                    if (event.key === "Escape") setSelected(null);
+                  }}
                 >
                   <span className="evidence-edge-label">
                     {relationLabels[edge.relation]}
@@ -83,9 +89,7 @@ export function EvidenceGraph({
         >
           <h4>{relationLabels[relation.relation]}</h4>
           <p>{relation.explanation}</p>
-          <blockquote className="crm-evidence">
-            {lead.source_excerpt}
-          </blockquote>
+          <blockquote className="crm-evidence">{lead.source_excerpt}</blockquote>
           <p className="crm-meta">
             Saved{" "}
             <time dateTime={lead.created_at}>
