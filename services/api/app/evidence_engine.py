@@ -222,9 +222,10 @@ def assess(
                 )
             )
             report.append(f"{need.requirement}: declared compatible.")
+        timestamp_label = "saved_at" if source.origin == "user_provided" else "retrieved_at"
         report.append(
             f"Source {source.id}: {source.url}; origin={source.origin}; "
-            f"retrieved={source.retrieved_at.isoformat()}."
+            f"{timestamp_label}={source.retrieved_at.isoformat()}."
         )
     intent: Intent = "unknown"
     if any(need.intent == "buying" for need in needs):
