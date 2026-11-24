@@ -98,7 +98,8 @@ by `m2_0001_profiles` (two profile tables and five additional owner-scoped
 policies/grants), then `m3_0001_leads` (two CRM tables and five policies)
 `m4_0001_scenarios` (one immutable comparison table and two policies),
 `m5_0001_mcp_consent` (one grant table and three policies),
-and `m6_0001_research_runs` (one run table and two policies).
+`m6_0001_research_runs` (one run table and two policies), and
+`m7_0001_lead_provenance` (immutable lead provenance and tenant-bound run FK).
 **The Nov 21 M1 evidence was collected at the older
 three-table/seven-policy revision; it is historical, not a current-head pass.**
 Alembic must create/update its real `public.alembic_version`; **never
@@ -197,7 +198,7 @@ only if all mandated acceptance gates pass. Otherwise label M1
 
 ## Historical WP-03 / M2 compatibility addendum — 23 November 2026
 
-The historical five-table expectation below is superseded by the M6 chain
+The historical five-table expectation below is superseded by the M7 chain
 and ten-table/twenty-four-policy checks in section 3. The M1 verifier checks
 current schema readiness plus M1 isolation; it is not a substitute for
 current CRM/scenario domain and browser acceptance.

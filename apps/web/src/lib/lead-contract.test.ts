@@ -70,7 +70,8 @@ describe("CRM response and provenance integrity", () => {
       InvalidLeadResponse,
     );
     assert.throws(
-      () => parseLead({ ...retrieved, source_origin: "user_provided" }, workspace),
+      () =>
+        parseLead({ ...retrieved, source_origin: "user_provided" }, workspace),
       InvalidLeadResponse,
     );
   });

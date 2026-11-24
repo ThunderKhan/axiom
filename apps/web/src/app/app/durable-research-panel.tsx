@@ -39,7 +39,7 @@ export function DurableResearchPanel({
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState("");
   const pending = useRef<AbortController | null>(null);
-  const retry = useRef<{ request: ResearchRequest; key: string } | null>(null);
+  const [retry, setRetry] = useState<{ request: ResearchRequest; key: string } | null>(null);
   const saves = useRef(new Map<string, string>());
   useEffect(() => () => pending.current?.abort(), []);
 
@@ -67,7 +67,7 @@ export function DurableResearchPanel({
       if (parsed.protocol !== "https:" || parsed.username || parsed.password ||
           parsed.search || parsed.hash || (parsed.port && parsed.port !== "443"))
         throw new Error("Invalid reviewed URL");
-      let attempt = retry.current;
+      let attempt = retry;
       if (!attempt) {
         const profile = await api.confirmedProfileId(workspaceId, signal);
         if (signal.aborted) return;
@@ -75,11 +75,11 @@ export function DurableResearchPanel({
           request: { profile_version_id: profile, url: requested, query: query.trim(), limit: 10 },
           key: crypto.randomUUID(),
         };
-        retry.current = attempt;
+        setRetry(attempt);
       }
       const result = await api.discoverFeed(workspaceId, attempt.request, attempt.key, signal);
       if (signal.aborted) return;
-      retry.current = null;
+      setRetry(null);
       setRun(result);
       setRunId(result.run_id);
       setMessage("Research run saved. No buying intent inferred.");
@@ -119,19 +119,19 @@ export function DurableResearchPanel({
       <form className="crm-form" onSubmit={discover}>
         <label htmlFor="durable-feed-url">Exact approved feed URL</label>
         <input id="durable-feed-url" type="url" required maxLength={2048}
-          value={url} disabled={busy || retry.current !== null}
+          value={url} disabled={busy || retry !== null}
           onChange={(event) => setUrl(event.target.value)} />
         <label htmlFor="durable-feed-query">Literal filter terms</label>
         <input id="durable-feed-query" maxLength={120} value={query}
-          disabled={busy || retry.current !== null}
+          disabled={busy || retry !== null}
           onChange={(event) => setQuery(event.target.value)} />
         <button className="workspace-secondary" disabled={busy} type="submit">
-          {retry.current ? "Retry same research request" : "Retrieve and save research"}
+          {retry ? "Retry same research request" : "Retrieve and save research"}
         </button>
-        {retry.current && (
+        {retry && (
           <button className="workspace-secondary" type="button" disabled={busy}
             onClick={() => {
-              retry.current = null;
+              setRetry(null);
               setMessage("Previous request may have completed. A new request uses a new key.");
             }}>
             Start a different request

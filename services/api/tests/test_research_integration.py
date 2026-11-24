@@ -135,6 +135,19 @@ def test_persist_replay_reopen_and_deny_foreign_feed_runs(database: Database) ->
         assert again.status_code == 200
         assert again.json()["id"] == lead["id"]
         leads = f"/api/v1/workspaces/{workspace}/leads"
+        forged = client.post(
+            leads,
+            json={
+                "title": "Forged",
+                "source_url": "https://example.org/forged",
+                "source_excerpt": "Untrusted",
+                "source_origin": "live",
+                "research_run_id": saved["run_id"],
+                "research_signal_id": signal,
+            },
+            headers={"Idempotency-Key": uuid4().hex},
+        )
+        assert forged.status_code == 422
         reopened = client.get(leads + "/" + lead["id"])
         assert reopened.status_code == 200
         assert reopened.json()["research_signal_id"] == signal
@@ -179,3 +192,6 @@ def test_persist_replay_reopen_and_deny_foreign_feed_runs(database: Database) ->
     with pytest.raises(DBAPIError):
         with database.transaction(owner) as session:
             session.execute(text("UPDATE axiom.research_runs SET result = '{}'::jsonb"))
+    with pytest.raises(DBAPIError):
+        with database.transaction(owner) as session:
+            session.execute(text("UPDATE axiom.leads SET research_signal_id = NULL"))
