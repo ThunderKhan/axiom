@@ -250,7 +250,6 @@ class ResearchStore:
                 raise WorkspaceNotFound()
             return _dto(row)
 
-
     def save_signal(
         self,
         principal: VerifiedPrincipal,

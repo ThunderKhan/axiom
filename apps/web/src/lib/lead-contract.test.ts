@@ -57,6 +57,24 @@ describe("CRM response and provenance integrity", () => {
     );
   });
 
+  it("accepts retrieved provenance only with both server identifiers", () => {
+    const retrieved = {
+      ...saved,
+      source_origin: "live",
+      research_run_id: other,
+      research_signal_id: leadId,
+    };
+    assert.deepEqual(parseLead(retrieved, workspace), retrieved);
+    assert.throws(
+      () => parseLead({ ...retrieved, research_signal_id: null }, workspace),
+      InvalidLeadResponse,
+    );
+    assert.throws(
+      () => parseLead({ ...retrieved, source_origin: "user_provided" }, workspace),
+      InvalidLeadResponse,
+    );
+  });
+
   it("denies workspace mismatch, fake verification and unsafe origin claims", () => {
     for (const data of [
       { ...saved, workspace_id: other },

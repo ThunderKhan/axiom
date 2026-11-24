@@ -75,9 +75,11 @@ export function parseLead(value: unknown, workspaceId: string): Lead {
     typeof value.source_excerpt !== "string" ||
     [...value.source_excerpt].length < 1 ||
     [...value.source_excerpt].length > 500 ||
-    (value.source_origin !== "user_provided" && value.source_origin !== "live") ||
+    (value.source_origin !== "user_provided" &&
+      value.source_origin !== "live") ||
     (value.source_origin === "live" &&
-      (!isWorkspaceId(value.research_run_id) || !isWorkspaceId(value.research_signal_id))) ||
+      (!isWorkspaceId(value.research_run_id) ||
+        !isWorkspaceId(value.research_signal_id))) ||
     (value.source_origin === "user_provided" &&
       (value.research_run_id != null || value.research_signal_id != null)) ||
     !isLeadStage(value.stage) ||
