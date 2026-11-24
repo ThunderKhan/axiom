@@ -125,9 +125,10 @@ export function parseCompetitorPreview(
   const unknowns = claimKinds.filter(
     (item) => !claims.some((claim) => claim.kind === item),
   );
+  const returnedUnknowns: unknown[] = raw.unknowns;
   if (
-    raw.unknowns.length !== unknowns.length ||
-    !unknowns.every((item, index) => raw.unknowns[index] === item)
+    returnedUnknowns.length !== unknowns.length ||
+    !unknowns.every((item, index) => returnedUnknowns[index] === item)
   )
     throw new InvalidSourcePreview();
   return { source, competitor_name: name, claims, unknowns };
