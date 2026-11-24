@@ -12,9 +12,12 @@ import {
  * Every credential stays in process memory; traces, media and HTML are disabled.
  * NOT a fixture/JWT simulation. The API and database must already be running.
  */
-test("M1 genuine JWT and two-user cross-tenant API acceptance", async ({
-  browser,
-}, testInfo) => {
+const p0Enabled = process.env.E2E_P0_ACCEPTANCE === "1";
+const acceptanceTitle = p0Enabled
+  ? "P0 genuine founder browser and two-user tenant acceptance"
+  : "M1 genuine JWT and two-user cross-tenant API acceptance";
+
+test(acceptanceTitle, async ({ browser }, testInfo) => {
   if (
     testInfo.project.use.trace !== "off" ||
     testInfo.project.use.screenshot !== "off" ||
@@ -31,6 +34,7 @@ test("M1 genuine JWT and two-user cross-tenant API acceptance", async ({
     throw new Error("M1 real-provider acceptance is not explicitly authorized");
   }
 
+  if (p0Enabled) test.setTimeout(180_000);
   const apiOrigin = process.env.NEXT_PUBLIC_API_BASE_URL!;
   const issuer = process.env.M1_ACCEPTANCE_ISSUER!;
   const emailA = process.env.E2E_SUPABASE_EMAIL!;
@@ -297,6 +301,122 @@ test("M1 genuine JWT and two-user cross-tenant API acceptance", async ({
         401,
         "AUTH_REQUIRED",
       );
+
+      // Optional current-schema acceptance extends M1 with real founder actions.
+      // The synthetic citation is explicitly manual, never a live provider result.
+      if (p0Enabled) {
+        const prefix = "/api/v1/workspaces/" + a2;
+        const profile = await apiA.put(prefix + "/profile/draft", {
+          data: {
+            expected_revision: 0,
+            draft_step: 0,
+            answers: {
+              stage: "live",
+              name: "Acceptance notes product",
+              problem: "Offline notes",
+              audience: "Students",
+              capabilities: "offline sync",
+            },
+          },
+        });
+        expect(profile.status()).toBe(200);
+        const confirmed = await apiA.post(prefix + "/profile/confirm", {
+          data: { expected_revision: 1 },
+        });
+        expect(confirmed.status()).toBe(200);
+        expect((await confirmed.json()).confirmed_revision).toBe(1);
+        await ownerA.page.goto("/app?workspace=" + a2);
+
+        const title = "Manual acceptance " + idSuffix;
+        const citation = "https://example.org/acceptance/" + idSuffix;
+        const page = ownerA.page;
+        await page.getByLabel("Opportunity title").fill(title);
+        await page.getByLabel("Public HTTPS source URL").fill(citation);
+        await page
+          .getByLabel("Source excerpt (manually entered)")
+          .fill("A student needs offline sync for notes.");
+        await page.getByRole("button", { name: "Save opportunity" }).click();
+        await expect(
+          page.getByRole("heading", { name: title, exact: true }),
+        ).toBeVisible();
+        const records = await apiA.get(prefix + "/leads?limit=100");
+        expect(records.status()).toBe(200);
+        const matches = (await records.json()).items.filter(
+          (item: { source_url: string }) => item.source_url === citation,
+        );
+        expect(matches).toHaveLength(1);
+        const leadRoute = prefix + "/leads/" + matches[0].id;
+        expect(matches[0].source_origin).toBe("user_provided");
+
+        await page.getByLabel("Required capability").fill("offline sync");
+        await page
+          .getByLabel("Exact phrase in the saved excerpt")
+          .fill("offline sync");
+        await page
+          .getByLabel("Intent (your interpretation)")
+          .selectOption("buying");
+        await page
+          .getByRole("button", { name: "Assess saved citation" })
+          .click();
+        await expect(page.getByLabel("Assessment report")).toContainText(
+          "research further",
+        );
+        const graph = page.getByRole("region", { name: "Evidence graph" });
+        await expect(graph).toBeVisible();
+        await graph.getByRole("button").first().click();
+        await expect(
+          graph.getByLabel("Selected relationship details"),
+        ).toContainText("offline sync");
+
+        const lab = page.getByRole("region", { name: "Counterfactual Lab" });
+        await lab
+          .getByLabel("Qualitative pricing hypothesis")
+          .first()
+          .fill("Lower price");
+        await lab.getByLabel("Positioning hypothesis").last().fill("Students");
+        await lab
+          .getByRole("button", { name: "Save two alternatives" })
+          .click();
+        await expect(lab).toContainText(
+          "Both alternatives and their frozen baseline were saved.",
+        );
+        const savedRoute = leadRoute + "/scenario-comparisons";
+        const saved = await apiA.get(savedRoute);
+        expect(saved.status()).toBe(200);
+        const frozen = (await saved.json()).items;
+        expect(frozen).toHaveLength(1);
+        expect(frozen[0].comparison.scenarios).toHaveLength(2);
+        expect(frozen[0].live_source_verified).toBe(false);
+
+        await page.getByLabel("Research notes").fill("Acceptance follow-up");
+        await page
+          .getByLabel("Follow-up date and time")
+          .fill("2030-01-02T10:00");
+        await page.getByRole("button", { name: "Save changes" }).click();
+        await expect(
+          page.getByText("Your lead has been updated.", { exact: true }),
+        ).toBeVisible();
+        await page.reload();
+        await page.getByRole("button", { name: new RegExp(title) }).click();
+        await expect(page.getByLabel("Research notes")).toHaveValue(
+          "Acceptance follow-up",
+        );
+        await expect(page.getByLabel("Follow-up date and time")).toHaveValue(
+          "2030-01-02T10:00",
+        );
+        await page
+          .getByRole("button", { name: "Reopen recent saved comparisons" })
+          .click();
+        await expect(
+          page.getByLabel("Saved scenario comparisons"),
+        ).toBeVisible();
+        await expect(page.getByText("Pricing: Lower price")).toBeVisible();
+        const reopened = await apiA.get(savedRoute);
+        expect(reopened.status()).toBe(200);
+        expect((await reopened.json()).items).toEqual(frozen);
+        await assertError(await apiB.get(leadRoute), 404, "NOT_FOUND");
+        await assertError(await apiB.get(savedRoute), 404, "NOT_FOUND");
+      }
 
       // B's authenticated browser must not reauthorize A's forged deep link.
       await ownerB.page.goto("/app?workspace=" + a1);

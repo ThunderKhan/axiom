@@ -1,6 +1,6 @@
 # M1 — Hosted Supabase Postgres, RLS and Pooler Verification
 
-**Status:** OPERATOR PROCEDURE / NOT EXECUTED · **Scope:** Axiom M1 only · **Approval gate:** [Issue #29](https://github.com/ThunderKhan/axiom/issues/29)
+**Status:** OPERATOR PROCEDURE / NOT EXECUTED · **Scope:** hosted M1 parity and current M4 schema readiness · **Approval gate:** [Issue #29](https://github.com/ThunderKhan/axiom/issues/29)
 
 This runbook does **not** certify the hosted database. The successful
 [real-provider run #44850664291](https://github.com/ThunderKhan/axiom/actions/runs/44850664291)
@@ -92,27 +92,29 @@ uv run --frozen alembic upgrade head
 uv run --frozen alembic check
 ```
 
-These are the repository's version-controlled migration chain on the
-WP-03 branch: `m1_0001_schema` (three M1 tables),
+The current version-controlled migration chain is `m1_0001_schema` (three M1 tables),
 `m1_0002_rls` (seven M1 policies and minimum runtime grants), followed
 by `m2_0001_profiles` (two profile tables and five additional owner-scoped
-policies/grants). **The Nov 21 M1 evidence was collected at the older
+policies/grants), then `m3_0001_leads` (two CRM tables and five policies)
+and `m4_0001_scenarios` (one immutable comparison table and two policies).
+**The Nov 21 M1 evidence was collected at the older
 three-table/seven-policy revision; it is historical, not a current-head pass.**
 Alembic must create/update its real `public.alembic_version`; **never
 insert or fake `version_num` manually** or replay copied DDL and call
 it a migration.
 
 Verify, via **read-only** SQL, that:
-- revision equals the **exact current code head `m2_0001_profiles`** after
-  WP-03 merges (do not accept stale `m1_0002_rls` as release-ready);
-- exactly **five** reviewed `axiom` application tables exist with RLS enabled;
-- exactly **twelve** reviewed owner-scoped policies target `axiom_runtime`
+- revision equals the **exact current code head `m4_0001_scenarios`**
+  at the reviewed November 24 checkpoint; re-check `HEAD_REVISION` before execution;
+- exactly **eight** reviewed `axiom` application tables exist with RLS enabled;
+- exactly **nineteen** reviewed owner-scoped policies target `axiom_runtime`
   and include correct `USING`/`WITH CHECK` clauses;
 - `axiom.current_subject()` exists, is `SECURITY INVOKER`, and is
   granted only as approved;
 - runtime can read only necessary tables and insert/update the
   explicitly permitted columns; it cannot CREATE, DELETE a workspace,
-  or update `owner_user_id`;
+  or update `owner_user_id`; it cannot update/delete confirmed profile versions,
+  lead events or saved scenario comparisons;
 - `anon` and `authenticated` cannot access `axiom` domain tables.
   
 Stop if role ownership, revision, policy count or grants differ.
@@ -190,6 +192,11 @@ the operator evidence, and close [issue #29](https://github.com/ThunderKhan/axio
 only if all mandated acceptance gates pass. Otherwise label M1
 **INCOMPLETE VERIFICATION** or **REQUIRES HUMAN REVIEW**.
 
-## WP-03 / M2 compatibility addendum — 23 November 2026
+## Historical WP-03 / M2 compatibility addendum — 23 November 2026
+
+The historical five-table expectation below is superseded by the M4 chain
+and eight-table/nineteen-policy checks in section 3. The M1 verifier checks
+current schema readiness plus M1 isolation; it is not a substitute for
+current CRM/scenario domain and browser acceptance.
 
 The held M1 hosted-DB gate [issue #29](https://github.com/ThunderKhan/axiom/issues/29) cannot be considered complete by inspecting only the old three M1 tables: the next integrated revision introduces two profile tables and five additional owner-scoped RLS policies. After WP-03 is merged, run **ordered genuine Alembic upgrade head as the dedicated migration identity** only after private credentials/backup/qualified operator approval and full prereview. Validate the latest five-table/twelve-policy state, forbid UPDATE/DELETE on confirmed `profile_versions`, then rerun both supported real pooler modes as `axiom_runtime` and appropriate profile cross-owner security tests. No hosted migration or direct database work is authorized solely by this doc change; the previously recorded provider Auth tests remain separate from hosted schema/parity.
