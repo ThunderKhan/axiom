@@ -8,8 +8,16 @@ It uses actual browser sign-in and actual FastAPI/database requests. Never
 run it with production accounts or traced CI; no screenshots, video or
 bearer-token artifacts may be generated.
 
+The existing protected **M1 real-provider security acceptance** GitHub
+Actions workflow now has a `p0_founder_acceptance` boolean input. Set it
+to true, enter the exact reviewed SHA, and confirm nonproduction authorization.
+The report validator requires the distinct P0 test title; ordinary M1-only
+success cannot satisfy the extended test mode. It uses the same isolated CI
+PostgreSQL database, never a hosted migration shortcut. The environment must
+retain its required reviewer and secret controls.
+
 With the current migrated API and private nonproduction settings in place,
-run from `apps/web`:
+local operators can also run from `apps/web`:
 
 ```powershell
 $env:E2E_P0_ACCEPTANCE = '1'

@@ -31,6 +31,16 @@ REQUIRED_TEST_TITLES = frozenset(
         "M1 genuine JWT and two-user cross-tenant API acceptance",
     }
 )
+M1_TENANT_TITLE = "M1 genuine JWT and two-user cross-tenant API acceptance"
+P0_TENANT_TITLE = "P0 genuine founder browser and two-user tenant acceptance"
+
+
+def required_titles(p0_enabled: bool = False) -> frozenset[str]:
+    if not p0_enabled:
+        return REQUIRED_TEST_TITLES
+    return (REQUIRED_TEST_TITLES - {M1_TENANT_TITLE}) | {P0_TENANT_TITLE}
+
+
 REQUIRED = (
     "M1_ACCEPTANCE_HEAD_SHA",
     "M1_ACCEPTANCE_ISSUER",
@@ -90,6 +100,8 @@ def preflight(env: Mapping[str, str], head: str) -> None:
         raise AcceptanceBlocked("Explicit authorized nonproduction opt-in is missing")
     if env.get("E2E_M1_ACCEPTANCE") != "1" or env.get("E2E_WORKSPACE_API_READY") != "1":
         raise AcceptanceBlocked("The full M1 provider suite is not enabled")
+    if env.get("E2E_P0_ACCEPTANCE", "0") not in {"0", "1"}:
+        raise AcceptanceBlocked("Invalid P0 acceptance mode")
     missing = [name for name in REQUIRED if not env.get(name)]
     if missing:
         raise AcceptanceBlocked("Missing required environment variable names: " + ", ".join(missing))
@@ -144,14 +156,15 @@ def require_real_database_readiness() -> None:
         raise AcceptanceBlocked("API did not verify database role, schema and RLS readiness")
 
 
-def validated_report(document: Any) -> int:
+def validated_report(document: Any, *, p0_enabled: bool = False) -> int:
     """Only the required named tests executed and passed, with no skipped tests."""
+    required = required_titles(p0_enabled)
     if not isinstance(document, dict) or not isinstance(document.get("stats"), dict):
         raise AcceptanceBlocked("Playwright JSON evidence is missing")
     stats = document["stats"]
     if (
         type(stats.get("expected")) is not int
-        or stats["expected"] < len(REQUIRED_TEST_TITLES)
+        or stats["expected"] < len(required)
         or stats.get("unexpected") != 0
         or stats.get("skipped") != 0
         or stats.get("flaky") != 0
@@ -186,7 +199,7 @@ def validated_report(document: Any) -> int:
     walk(document.get("suites"))
     if len(titles) != stats["expected"] or len(set(titles)) != len(titles):
         raise AcceptanceBlocked("Playwright test counts or identities do not agree")
-    if set(titles) != REQUIRED_TEST_TITLES:
+    if set(titles) != required:
         raise AcceptanceBlocked("Required real-provider test is missing or replaced")
     return len(titles)
 
@@ -205,7 +218,7 @@ SAFE_PROVIDER_TEST_FILES = {
 }
 
 
-def sanitized_provider_outcomes(output: bytes) -> str:
+def sanitized_provider_outcomes(output: bytes, *, p0_enabled: bool = False) -> str:
     """Summarize expected Playwright test outcomes without revealing private diagnostics."""
     try:
         report = json.loads(output)
@@ -214,7 +227,12 @@ def sanitized_provider_outcomes(output: bytes) -> str:
     if not isinstance(report, dict):
         return "M1 provider outcomes: report unavailable (private diagnostics withheld)"
 
-    observations: dict[str, list[str]] = {title: [] for title, _ in SAFE_PROVIDER_LABELS}
+    labels = (
+        tuple((P0_TENANT_TITLE if title == M1_TENANT_TITLE else title, code)
+              for title, code in SAFE_PROVIDER_LABELS)
+        if p0_enabled else SAFE_PROVIDER_LABELS
+    )
+    observations: dict[str, list[str]] = {title: [] for title, _ in labels}
 
     def visit(suites: Any) -> None:
         if not isinstance(suites, list):
@@ -262,7 +280,7 @@ def sanitized_provider_outcomes(output: bytes) -> str:
                                 raw_file = location.get("file")
                                 line = location.get("line")
                                 label = next(
-                                    (code for name, code in SAFE_PROVIDER_LABELS if name == title),
+                                    (code for name, code in labels if name == title),
                                     None,
                                 )
                                 if (
@@ -280,7 +298,7 @@ def sanitized_provider_outcomes(output: bytes) -> str:
 
     visit(report.get("suites"))
     parts = []
-    for title, label in SAFE_PROVIDER_LABELS:
+    for title, label in labels:
         seen = observations[title]
         outcome = seen[0] if len(seen) == 1 else ("not_run" if not seen else "incomplete")
         parts.append(f"{label}={outcome}")
@@ -289,6 +307,7 @@ def sanitized_provider_outcomes(output: bytes) -> str:
 
 def run_provider(env: Mapping[str, str], *, head: str) -> None:
     preflight(env, head)
+    p0_enabled = env.get("E2E_P0_ACCEPTANCE") == "1"
     require_clean_checkout()
     require_real_database_readiness()
     command = [
@@ -308,17 +327,20 @@ def run_provider(env: Mapping[str, str], *, head: str) -> None:
     if result.returncode != 0:
         # The report itself can contain secrets. Print only fixed test IDs and
         # enumerated statuses parsed from its in-memory JSON, never raw content.
-        print(sanitized_provider_outcomes(result.stdout), file=sys.stderr)
+        print(sanitized_provider_outcomes(result.stdout, p0_enabled=p0_enabled), file=sys.stderr)
         raise AcceptanceBlocked("Real-provider suite failed; private diagnostics withheld")
     try:
         report = json.loads(result.stdout)
     except (UnicodeError, ValueError) as exc:
         raise AcceptanceBlocked("No parseable real-provider test execution report") from exc
-    count = validated_report(report)
+    count = validated_report(report, p0_enabled=p0_enabled)
     if verified_head() != head:
         raise AcceptanceBlocked("Repository SHA changed during real-provider verification")
     print(f"PASS: {count} real-provider Playwright tests at SHA {head}.")
     print("Evidence class: authorized nonproduction Supabase Auth + isolated FastAPI/PostgreSQL/RLS.")
+    if p0_enabled:
+        print("P0 extension: manual citation, evidence graph, saved scenarios, follow-up, reload and tenant denial.")
+        print("NOT VERIFIED: live third-party source retrieval or external MCP client acceptance.")
     print("NOT VERIFIED: managed Supabase database parity, provider revocation SLA, deployed HTTPS, human signoff.")
 
 
@@ -384,6 +406,15 @@ def self_test() -> None:
 
     valid = test_report(sorted(REQUIRED_TEST_TITLES))
     assert validated_report(valid) == len(REQUIRED_TEST_TITLES)
+    p0_report = test_report(sorted(required_titles(True)))
+    assert validated_report(p0_report, p0_enabled=True) == len(REQUIRED_TEST_TITLES)
+    for report, mode in ((valid, True), (p0_report, False)):
+        try:
+            validated_report(report, p0_enabled=mode)
+        except AcceptanceBlocked:
+            pass
+        else:
+            raise AssertionError("Mismatched acceptance mode was accepted")
     bad = [
         {},
         test_report([]),

@@ -9,6 +9,11 @@ on:
         description: "Exact reviewed 40-character PR HEAD SHA to test"
         required: true
         type: string
+      p0_founder_acceptance:
+        description: "Also exercise the current founder CRM/graph/scenario browser flow"
+        required: true
+        default: false
+        type: boolean
       nonproduction_authorized:
         description: "I confirm an isolated authorized nonproduction Supabase project"
         required: true
@@ -35,6 +40,7 @@ jobs:
       M1_ACCEPTANCE_HEAD_SHA: ${{ inputs.expected_head_sha }}
       M1_ACCEPTANCE_NONPRODUCTION: ${{ inputs.nonproduction_authorized && 'I_CONFIRM_NONPRODUCTION' || 'NOT_AUTHORIZED' }}
       E2E_M1_ACCEPTANCE: '1'
+      E2E_P0_ACCEPTANCE: ${{ inputs.p0_founder_acceptance && '1' || '0' }}
       E2E_WORKSPACE_API_READY: '1'
       NEXT_PUBLIC_SUPABASE_URL: ${{ vars.M1_NONPRODUCTION_SUPABASE_URL }}
       NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.M1_NONPRODUCTION_PUBLISHABLE_KEY }}
@@ -147,4 +153,8 @@ jobs:
           echo "### M1 nonproduction technical acceptance" >> "$GITHUB_STEP_SUMMARY"
           echo "Tested commit: $GITHUB_SHA" >> "$GITHUB_STEP_SUMMARY"
           echo "Executed: actual Supabase Auth, browser, FastAPI and isolated PostgreSQL/RLS." >> "$GITHUB_STEP_SUMMARY"
+          if [ "$E2E_P0_ACCEPTANCE" = "1" ]; then
+            echo "P0 extension: manual citation, graph, saved scenarios, follow-up and tenant denial." >> "$GITHUB_STEP_SUMMARY"
+            echo "NOT VERIFIED here: live third-party sources and external MCP client." >> "$GITHUB_STEP_SUMMARY"
+          fi
           echo "NOT VERIFIED here: managed Supabase database/pooler parity, production HTTPS, qualified human security review." >> "$GITHUB_STEP_SUMMARY"

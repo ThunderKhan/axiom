@@ -12,9 +12,12 @@ import {
  * Every credential stays in process memory; traces, media and HTML are disabled.
  * NOT a fixture/JWT simulation. The API and database must already be running.
  */
-test("M1 genuine JWT and two-user cross-tenant API acceptance", async ({
-  browser,
-}, testInfo) => {
+const p0Enabled = process.env.E2E_P0_ACCEPTANCE === "1";
+const acceptanceTitle = p0Enabled
+  ? "P0 genuine founder browser and two-user tenant acceptance"
+  : "M1 genuine JWT and two-user cross-tenant API acceptance";
+
+test(acceptanceTitle, async ({ browser }, testInfo) => {
   if (
     testInfo.project.use.trace !== "off" ||
     testInfo.project.use.screenshot !== "off" ||
@@ -31,7 +34,6 @@ test("M1 genuine JWT and two-user cross-tenant API acceptance", async ({
     throw new Error("M1 real-provider acceptance is not explicitly authorized");
   }
 
-  const p0Enabled = process.env.E2E_P0_ACCEPTANCE === "1";
   if (p0Enabled) test.setTimeout(180_000);
   const apiOrigin = process.env.NEXT_PUBLIC_API_BASE_URL!;
   const issuer = process.env.M1_ACCEPTANCE_ISSUER!;
