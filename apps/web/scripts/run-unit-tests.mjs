@@ -34,6 +34,7 @@ args.push(
   "src/lib/profile-questions.test.ts",
   "src/lib/lead-contract.test.ts",
   "src/lib/lead-api.test.ts",
+  "src/lib/evidence-contract.test.ts",
 );
 
 const result = spawnSync(process.execPath, args, {
