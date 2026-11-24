@@ -100,9 +100,7 @@ def test_saved_comparison_reopens_and_preserves_frozen_baseline(database: Databa
         replay = client.post(route, json=body, headers={"Idempotency-Key": key})
         assert replay.status_code == 200
         assert replay.json() == saved
-        conflict = client.post(
-            route, json={**body, "needs": []}, headers={"Idempotency-Key": key}
-        )
+        conflict = client.post(route, json={**body, "needs": []}, headers={"Idempotency-Key": key})
         assert conflict.status_code == 409
         leads.patch(owner, wid, lid, payload=PatchLead(expected_version=1, note="New note"))
         stale = client.post(route, json=body, headers={"Idempotency-Key": "new-" + uuid4().hex})
