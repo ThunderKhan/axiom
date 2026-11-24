@@ -71,7 +71,7 @@ class Database:
                     return False
                 role_safe = conn.scalar(
                     text(
-                        """SELECT count(*) = 7 AND bool_and(
+                        """SELECT count(*) = 8 AND bool_and(
                             NOT r.rolsuper AND NOT r.rolbypassrls
                             AND NOT r.rolcreatedb AND NOT r.rolcreaterole
                             AND NOT has_schema_privilege(current_user, 'axiom', 'CREATE')
@@ -88,7 +88,7 @@ class Database:
                            AND c.relname IN (
                                'app_users', 'workspaces', 'workspace_create_idempotency',
                                'product_profiles', 'profile_versions',
-                               'leads', 'lead_events'
+                               'leads', 'lead_events', 'scenario_comparisons'
                            )
                            AND c.relkind = 'r'"""
                     )
@@ -99,7 +99,7 @@ class Database:
                     text(
                         """SELECT
                             (SELECT count(*) FROM pg_policies
-                             WHERE schemaname = 'axiom') = 17
+                             WHERE schemaname = 'axiom') = 19
                             AND NOT EXISTS (
                                 SELECT 1 FROM (
                                     VALUES
@@ -121,7 +121,11 @@ class Database:
                                     ('leads', 'leads_own_insert', 'INSERT'),
                                     ('leads', 'leads_own_update', 'UPDATE'),
                                     ('lead_events', 'lead_events_own_read', 'SELECT'),
-                                    ('lead_events', 'lead_events_own_insert', 'INSERT')
+                                    ('lead_events', 'lead_events_own_insert', 'INSERT'),
+                                    ('scenario_comparisons',
+                                     'scenario_comparisons_own_read', 'SELECT'),
+                                    ('scenario_comparisons',
+                                     'scenario_comparisons_own_insert', 'INSERT')
                                 ) AS required(table_name, policy_name, command)
                                 LEFT JOIN pg_policies p
                                   ON p.schemaname = 'axiom'
@@ -219,7 +223,16 @@ class Database:
                                 ('lead_events', 'lead_id', 'INSERT'),
                                 ('lead_events', 'actor_id', 'INSERT'),
                                 ('lead_events', 'event_type', 'INSERT'),
-                                ('lead_events', 'changed_fields', 'INSERT')
+                                ('lead_events', 'changed_fields', 'INSERT'),
+                                ('scenario_comparisons', 'id', 'INSERT'),
+                                ('scenario_comparisons', 'workspace_id', 'INSERT'),
+                                ('scenario_comparisons', 'lead_id', 'INSERT'),
+                                ('scenario_comparisons', 'lead_version', 'INSERT'),
+                                ('scenario_comparisons', 'profile_revision', 'INSERT'),
+                                ('scenario_comparisons', 'create_key', 'INSERT'),
+                                ('scenario_comparisons', 'create_fingerprint', 'INSERT'),
+                                ('scenario_comparisons', 'snapshot', 'INSERT'),
+                                ('scenario_comparisons', 'result', 'INSERT')
                                 ) AS required(table_name, column_name, action)
                             )
                             AND has_table_privilege(
@@ -233,6 +246,15 @@ class Database:
                             )
                             AND has_table_privilege(
                                 current_user, 'axiom.lead_events', 'SELECT'
+                            )
+                            AND has_table_privilege(
+                                current_user, 'axiom.scenario_comparisons', 'SELECT'
+                            )
+                            AND NOT has_any_column_privilege(
+                                current_user, 'axiom.scenario_comparisons', 'UPDATE'
+                            )
+                            AND NOT has_table_privilege(
+                                current_user, 'axiom.scenario_comparisons', 'DELETE'
                             )
                             AND NOT has_table_privilege(
                                 current_user, 'axiom.lead_events', 'UPDATE'
