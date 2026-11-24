@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from datetime import UTC, datetime
+from typing import Literal
 from uuid import UUID, uuid4
 
 import pytest
@@ -18,6 +19,7 @@ from app.profile_contract import ProfileAnswers
 from app.profile_http import ConfirmedProfileDTO, ProfileStateDTO, get_profile_store
 from app.profile_store import ProfileIncomplete
 from app.settings import RuntimeSettings
+from app.workspace_http import ApiFailure
 from app.workspace_store import WorkspaceNotFound
 
 NOW = datetime(2026, 11, 24, tzinfo=UTC)
@@ -43,7 +45,7 @@ def lead(workspace_id: UUID) -> LeadDTO:
 
 
 def profile(
-    *, stage: str = "live", capabilities: str = "offline sync", missing: str = ""
+    *, stage: Literal["idea", "live"] = "live", capabilities: str = "offline sync", missing: str = ""
 ) -> ProfileStateDTO:
     answers = ProfileAnswers(
         stage=stage,
@@ -128,8 +130,9 @@ def test_no_needs_abstains_and_duplicate_capability_names_are_safe() -> None:
 
 def test_foreign_workspace_unconfirmed_and_nonmatching_citations_denied() -> None:
     wid = uuid4()
-    with pytest.raises(Exception, match="Workspace resource not found"):
+    with pytest.raises(ApiFailure) as wrong_workspace:
         assess_saved_manual_lead(uuid4(), lead(wid), profile(), request())
+    assert wrong_workspace.value.status == 404
     unconfirmed = ProfileStateDTO(
         draft_revision=0,
         draft_step=0,
@@ -139,8 +142,6 @@ def test_foreign_workspace_unconfirmed_and_nonmatching_citations_denied() -> Non
     )
     with pytest.raises(ProfileIncomplete):
         assess_saved_manual_lead(wid, lead(wid), unconfirmed, request())
-    from app.workspace_http import ApiFailure
-
     with pytest.raises(ApiFailure) as error:
         assess_saved_manual_lead(wid, lead(wid), profile(), request("export"))
     assert error.value.status == 422
