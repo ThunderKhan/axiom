@@ -25,6 +25,7 @@ type Coverage = {
 type Alternative = {
   name: string;
   projected_verdict: string;
+  assumptions: ScenarioAssumption;
   requirements: Coverage[];
   unsupported_assumptions: string[];
   limitations: string[];
@@ -97,6 +98,31 @@ function coverage(raw: unknown, leadId: string): Coverage[] {
   return result;
 }
 
+function parseAssumptions(raw: unknown, name: string): ScenarioAssumption {
+  if (
+    !record(raw) ||
+    raw.name !== name ||
+    !Array.isArray(raw.features) ||
+    raw.features.length < 1 ||
+    raw.features.length > 8 ||
+    (raw.pricing !== null && !bounded(raw.pricing, 300)) ||
+    (raw.positioning !== null && !bounded(raw.positioning, 300)) ||
+    (raw.pricing === null && raw.positioning === null)
+  )
+    throw new InvalidScenarioResponse();
+  const features = raw.features.map((item: unknown) => {
+    if (
+      !record(item) ||
+      !bounded(item.name, 120) ||
+      !item.name.trim() ||
+      (item.action !== "add" && item.action !== "remove")
+    )
+      throw new InvalidScenarioResponse();
+    return { name: item.name, action: item.action } as const;
+  });
+  return { name, features, pricing: raw.pricing, positioning: raw.positioning };
+}
+
 export function parseSavedComparison(
   raw: unknown,
   workspaceId: string,
@@ -166,6 +192,7 @@ export function parseSavedComparison(
     return {
       name: item.name,
       projected_verdict: item.projected_verdict,
+      assumptions: parseAssumptions(item.assumptions, item.name),
       requirements,
       unsupported_assumptions: item.unsupported_assumptions,
       limitations: item.limitations,
@@ -181,9 +208,20 @@ export function parseSavedComparison(
     (raw.lead_version !== request.expected_lead_version ||
       raw.confirmed_profile_revision !== request.expected_profile_revision ||
       request.scenarios.length !== scenarios.length ||
-      request.scenarios.some(
-        (item, index) => item.name !== scenarios[index].name,
-      ))
+      request.scenarios.some((item, index) => {
+        const saved = scenarios[index].assumptions;
+        return (
+          item.name !== saved.name ||
+          item.pricing !== saved.pricing ||
+          item.positioning !== saved.positioning ||
+          item.features.length !== saved.features.length ||
+          item.features.some(
+            (feature, i) =>
+              feature.name !== saved.features[i].name ||
+              feature.action !== saved.features[i].action,
+          )
+        );
+      }))
   )
     throw new InvalidScenarioResponse();
   return {
