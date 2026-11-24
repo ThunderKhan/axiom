@@ -34,6 +34,7 @@ import {
 } from "../../lib/auth-sync";
 
 import { SourcePreviewPanel } from "./source-preview-panel";
+import { DurableResearchPanel } from "./durable-research-panel";
 import { ScenarioPanel, type ScenarioRetry } from "./scenario-panel";
 import { EvidenceGraph } from "./evidence-graph";
 
@@ -675,8 +676,8 @@ export function LeadManager({
           <p className="eyebrow">WORKSPACE ACTIONS</p>
           <h3 id="crm-heading">Saved opportunities</h3>
           <p className="crm-meta">
-            Source links and excerpts here are supplied by you, not fetched or
-            verified by Axiom. Records are private to this authorized workspace.
+            Manual and reviewed feed citations are labeled separately. Records are
+            private to this authorized workspace; source claims are not independently verified.
           </p>
         </div>
         <button
@@ -698,6 +699,14 @@ export function LeadManager({
       {state === "ready" && (
         <>
           <SourcePreviewPanel api={api} workspaceId={workspaceId} />
+          <DurableResearchPanel
+            api={api}
+            workspaceId={workspaceId}
+            onSaved={(lead) => {
+              setItems((previous) => [lead, ...previous.filter((item) => item.id !== lead.id)]);
+              setSelectedId(lead.id);
+            }}
+          />
           <div className="crm-layout">
             <div className="crm-list">
               <h4>Most recent saved leads</h4>
