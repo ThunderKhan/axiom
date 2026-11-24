@@ -60,7 +60,7 @@ class McpAccess:
         self, actor: DelegatedPrincipal, workspace_id: UUID, tool: Tool
     ) -> VerifiedPrincipal:
         required = _REQUIRED.get(tool)
-        if required is None:
+        if required is None or not required.issubset(actor.scopes):
             raise McpAccessDenied()
         user_id = actor.principal.user_id
         grant = self._resolve(user_id, actor.client_id, workspace_id)

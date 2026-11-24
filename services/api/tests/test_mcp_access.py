@@ -1,5 +1,6 @@
 """Domain scope policy tests; not an external OAuth/MCP transport test."""
 
+from dataclasses import replace
 from datetime import UTC, datetime, timedelta
 from unittest.mock import Mock
 from uuid import uuid4
@@ -14,7 +15,9 @@ RESOURCE = "https://api.example.org/mcp"
 
 
 def test_read_scope_workspace_binding_and_revocation_are_checked_on_each_call() -> None:
-    actor = DelegatedPrincipal(VerifiedPrincipal(uuid4(), uuid4()), uuid4(), RESOURCE)
+    actor = DelegatedPrincipal(
+        VerifiedPrincipal(uuid4(), uuid4()), uuid4(), RESOURCE, frozenset({"crm:read", "crm:write"})
+    )
     workspace = uuid4()
     valid = ClientGrant(
         actor.principal.user_id,
@@ -32,6 +35,9 @@ def test_read_scope_workspace_binding_and_revocation_are_checked_on_each_call() 
     assert list_saved_leads(actor, workspace, access=access, leads=leads) == {"items": []}
     leads.list.assert_called_once_with(actor.principal, workspace, stage=None, limit=20)
     leads.reset_mock()
+    narrow = replace(actor, scopes=frozenset({"research:run"}))
+    with pytest.raises(McpAccessDenied):
+        list_saved_leads(narrow, workspace, access=access, leads=leads)
     for wrong_workspace in (uuid4(),):
         with pytest.raises(McpAccessDenied):
             list_saved_leads(actor, wrong_workspace, access=access, leads=leads)
@@ -46,7 +52,9 @@ def test_read_scope_workspace_binding_and_revocation_are_checked_on_each_call() 
 
 
 def test_even_explicit_write_scope_cannot_enable_unreviewed_write_tool() -> None:
-    actor = DelegatedPrincipal(VerifiedPrincipal(uuid4(), uuid4()), uuid4(), RESOURCE)
+    actor = DelegatedPrincipal(
+        VerifiedPrincipal(uuid4(), uuid4()), uuid4(), RESOURCE, frozenset({"crm:read", "crm:write"})
+    )
     workspace = uuid4()
     grant = ClientGrant(
         actor.principal.user_id,

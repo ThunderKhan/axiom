@@ -57,6 +57,7 @@ class DelegatedPrincipal:
     principal: VerifiedPrincipal
     client_id: UUID
     resource: str
+    scopes: frozenset[str]
 
 
 class _NoRedirects(HTTPRedirectHandler):
@@ -291,7 +292,15 @@ class JwtVerifier:
             raise AuthFailure() from exc
         if client_id.int == 0 or principal.session_id is None:
             raise AuthFailure()
-        return DelegatedPrincipal(principal, client_id, resource)
+        raw_scopes = claims.get("scope")
+        if (
+            not isinstance(raw_scopes, str)
+            or not 1 <= len(raw_scopes) <= 512
+            or not re.fullmatch(r"[a-zA-Z0-9:_-]+(?: [a-zA-Z0-9:_-]+)*", raw_scopes)
+        ):
+            raise AuthFailure()
+        scopes = frozenset(raw_scopes.split(" "))
+        return DelegatedPrincipal(principal, client_id, resource, scopes)
 
 
 def extract_bearer(request: FastAPIRequest) -> str:

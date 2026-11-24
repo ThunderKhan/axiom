@@ -445,11 +445,12 @@ def test_delegated_tokens_require_distinct_resource_and_client(rsa_key) -> None:
     service = verifier(rsa_key)
     resource = "https://api.example.org/mcp"
     client_id = str(uuid4())
-    delegated = token(rsa_key, aud=resource, client_id=client_id)
+    delegated = token(rsa_key, aud=resource, client_id=client_id, scope="crm:read")
     verified = service.verify_delegated(delegated, resource)
     assert verified.principal.user_id == UUID(SUB)
     assert verified.client_id == UUID(client_id)
     assert verified.resource == resource
+    assert verified.scopes == frozenset({"crm:read"})
     with pytest.raises(AuthFailure):
         service.verify(delegated)
     with pytest.raises(AuthFailure):
@@ -458,8 +459,11 @@ def test_delegated_tokens_require_distinct_resource_and_client(rsa_key) -> None:
         token(rsa_key),
         token(rsa_key, aud=resource),
         token(rsa_key, aud=resource, client_id="not-a-uuid"),
-        token(rsa_key, aud=resource, client_id=client_id, session_id=None),
-        token(rsa_key, aud=resource, client_id=client_id, exp=1),
+        token(rsa_key, aud=resource, client_id=client_id),
+        token(rsa_key, aud=resource, client_id=client_id, scope=["crm:read"]),
+        token(rsa_key, aud=resource, client_id=client_id, scope="crm:read  crm:write"),
+        token(rsa_key, aud=resource, client_id=client_id, scope="crm:read", session_id=None),
+        token(rsa_key, aud=resource, client_id=client_id, scope="crm:read", exp=1),
         token(rsa_key, aud=[resource, "authenticated"], client_id=client_id),
     ):
         with pytest.raises(AuthFailure):
