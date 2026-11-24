@@ -34,6 +34,7 @@ import {
 } from "../../lib/auth-sync";
 
 import { SourcePreviewPanel } from "./source-preview-panel";
+import { ScenarioPanel } from "./scenario-panel";
 
 function safeMessage(error: unknown): string {
   if (error instanceof LeadApiError) {
@@ -77,6 +78,7 @@ function ManualEvidenceReport({
   const [locator, setLocator] = useState("");
   const [intent, setIntent] = useState<ManualNeed["intent"]>("unknown");
   const [assessment, setAssessment] = useState<EvidenceAssessment | null>(null);
+  const [assessedNeed, setAssessedNeed] = useState<ManualNeed | null>(null);
   const [status, setStatus] = useState("");
   const [busy, setBusy] = useState(false);
   const pending = useRef<AbortController | null>(null);
@@ -100,6 +102,7 @@ function ManualEvidenceReport({
     pending.current?.abort();
     pending.current = controller;
     setAssessment(null);
+    setAssessedNeed(null);
     setStatus("");
     setBusy(true);
     try {
@@ -111,6 +114,7 @@ function ManualEvidenceReport({
       );
       if (!controller.signal.aborted) {
         setAssessment(report);
+        setAssessedNeed({ requirement: requested, locator: cited, intent });
         setStatus("Read-only assessment complete. Nothing was saved or sent.");
       }
     } catch (error) {
@@ -210,6 +214,19 @@ function ManualEvidenceReport({
           </ul>
         </div>
       )}
+      <ScenarioPanel
+        api={api}
+        workspaceId={workspaceId}
+        lead={lead}
+        baseline={
+          assessment && assessedNeed
+            ? {
+                need: assessedNeed,
+                profileRevision: assessment.confirmed_profile_revision,
+              }
+            : null
+        }
+      />
     </section>
   );
 }
