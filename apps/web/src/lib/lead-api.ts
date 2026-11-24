@@ -29,6 +29,13 @@ import {
   type SourcePreview,
 } from "./source-preview-contract.ts";
 import { isWorkspaceId } from "./workspace-contract.ts";
+import {
+  parseResearchRun,
+  parseSignalAssessment,
+  type ResearchRequest,
+  type ResearchRun,
+  type SignalAssessment,
+} from "./research-contract.ts";
 
 type AuthToken = (subject: string) => Promise<string>;
 type Method = "GET" | "POST" | "PATCH" | "DELETE";
@@ -174,6 +181,82 @@ export function createLeadApi(
   }
 
   return {
+    async confirmedProfileId(workspaceId: string, signal: AbortSignal): Promise<string> {
+      const raw = await send(sourcePath(workspaceId) + "/profile", "GET", signal);
+      if (
+        raw === null || typeof raw !== "object" || !("confirmed" in raw) ||
+        raw.confirmed === null || typeof raw.confirmed !== "object" ||
+        !("id" in raw.confirmed) || !isWorkspaceId(raw.confirmed.id)
+      ) throw new LeadApiError("PROFILE_INCOMPLETE", 409);
+      return raw.confirmed.id;
+    },
+    async discoverFeed(
+      workspaceId: string, request: ResearchRequest, key: string, signal: AbortSignal,
+    ): Promise<ResearchRun> {
+      if (!isWorkspaceId(request.profile_version_id) || !/^[A-Za-z0-9][A-Za-z0-9_-]{7,127}$/.test(key))
+        throw new InvalidLeadResponse();
+      const raw = await send(sourcePath(workspaceId) + "/research/runs", "POST", signal, request, key);
+      try { return parseResearchRun(raw, workspaceId, request); }
+      catch { throw new LeadApiError("NETWORK_UNCERTAIN", 0); }
+    },
+    async reopenResearch(workspaceId: string, runId: string, signal: AbortSignal): Promise<ResearchRun> {
+      if (!isWorkspaceId(runId)) throw new InvalidLeadResponse();
+      return parseResearchRun(
+        await send(sourcePath(workspaceId) + "/research/runs/" + runId, "GET", signal),
+        workspaceId, runId,
+      );
+    },
+    async assessResearchSignal(
+      workspaceId: string,
+      run: ResearchRun,
+      item: ResearchRun["items"][number],
+      requirement: string,
+      locator: string,
+      signal: AbortSignal,
+    ): Promise<SignalAssessment> {
+      if (
+        !isWorkspaceId(run.run_id) ||
+        !isWorkspaceId(item.signal_id) ||
+        !requirement.trim() ||
+        !locator.trim() ||
+        [...requirement].length > 120 ||
+        [...locator].length > 200
+      )
+        throw new InvalidLeadResponse();
+      const path =
+        sourcePath(workspaceId) +
+        "/research/runs/" +
+        run.run_id +
+        "/signals/" +
+        item.signal_id +
+        "/assessment";
+      return parseSignalAssessment(
+        await send(path, "POST", signal, {
+          needs: [{ requirement, locator, intent: "unknown" }],
+        }),
+        workspaceId,
+        run,
+        item,
+      );
+    },
+    async saveResearchSignal(
+      workspaceId: string, runId: string, item: ResearchRun["items"][number], key: string,
+      signal: AbortSignal,
+    ): Promise<Lead> {
+      if (!isWorkspaceId(runId) || !isWorkspaceId(item.signal_id) ||
+          !/^[A-Za-z0-9][A-Za-z0-9_-]{7,127}$/.test(key)) throw new InvalidLeadResponse();
+      const raw = await send(
+        sourcePath(workspaceId) + "/research/runs/" + runId + "/signals/" + item.signal_id + "/save",
+        "POST", signal, undefined, key,
+      );
+      try {
+        const lead = parseCreatedLead(raw, workspaceId);
+        if (lead.source_origin !== "live" || lead.research_run_id !== runId ||
+            lead.research_signal_id !== item.signal_id || lead.source_url !== item.source_url ||
+            lead.source_excerpt !== item.excerpt) throw new InvalidLeadResponse();
+        return lead;
+      } catch { throw new LeadApiError("NETWORK_UNCERTAIN", 0); }
+    },
     async previewSource(
       workspaceId: string,
       url: string,
