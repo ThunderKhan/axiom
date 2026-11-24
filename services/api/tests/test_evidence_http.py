@@ -237,7 +237,9 @@ def test_http_scenario_preview_uses_owned_versioned_baseline() -> None:
     bob = VerifiedPrincipal(uuid4(), None)
 
     class Leads:
-        def read(self, principal: VerifiedPrincipal, workspace: UUID, lid: UUID) -> dict[str, object]:
+        def read(
+            self, principal: VerifiedPrincipal, workspace: UUID, lid: UUID
+        ) -> dict[str, object]:
             if principal != alice or workspace != wid or lid != saved.id:
                 raise WorkspaceNotFound()
             return saved.model_dump()
@@ -286,6 +288,7 @@ def test_http_scenario_preview_uses_owned_versioned_baseline() -> None:
         assert client.post(route, json={**body, "expected_lead_version": 1}).status_code == 409
         assert client.post(route, json={**body, "expected_profile_revision": 2}).status_code == 409
         assert client.post(route, json={**body, "source_origin": "live"}).status_code == 422
-        assert client.post(route, json={**body, "scenarios": body["scenarios"][:1]}).status_code == 422
+        too_few = client.post(route, json={**body, "scenarios": body["scenarios"][:1]})
+        assert too_few.status_code == 422
         app.dependency_overrides[get_verified_principal] = lambda: bob
         assert client.post(route, json=body).status_code == 404
