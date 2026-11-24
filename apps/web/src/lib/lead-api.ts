@@ -21,9 +21,11 @@ import {
 } from "./scenario-contract.ts";
 import {
   parseCompetitorPreview,
+  parseFeedPreview,
   parseSourcePreview,
   type ClaimCandidate,
   type CompetitorPreview,
+  type FeedPreview,
   type SourcePreview,
 } from "./source-preview-contract.ts";
 import { isWorkspaceId } from "./workspace-contract.ts";
@@ -186,6 +188,25 @@ export function createLeadApi(
         ),
         workspaceId,
         url,
+      );
+    },
+    async previewFeed(
+      workspaceId: string,
+      url: string,
+      query: string,
+      signal: AbortSignal,
+    ): Promise<FeedPreview> {
+      const limit = 10;
+      return parseFeedPreview(
+        await send(
+          sourcePath(workspaceId) + "/research/feed/preview",
+          "POST",
+          signal,
+          { url, query, limit },
+        ),
+        workspaceId,
+        url,
+        limit,
       );
     },
     async previewCompetitor(

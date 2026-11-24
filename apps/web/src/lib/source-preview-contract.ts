@@ -133,3 +133,105 @@ export function parseCompetitorPreview(
     throw new InvalidSourcePreview();
   return { source, competitor_name: name, claims, unknowns };
 }
+
+export type FeedItem = Readonly<{
+  source_id: string;
+  source_url: string;
+  title: string;
+  excerpt: string;
+  published_at: string | null;
+}>;
+
+export type FeedPreview = Readonly<{
+  feed_url: string;
+  publisher: string;
+  policy_review_id: string;
+  retrieved_at: string;
+  items: readonly FeedItem[];
+}>;
+
+function isSafeArticleUrl(value: unknown): value is string {
+  if (!bounded(value, 2048) || !/^[!-~]+$/.test(value) || value.includes("\\"))
+    return false;
+  try {
+    const url = new URL(value);
+    return (
+      value.startsWith("https://") &&
+      url.protocol === "https:" &&
+      !url.username &&
+      !url.password &&
+      !url.search &&
+      !url.hash &&
+      (!url.port || url.port === "443") &&
+      /^[a-z0-9-]+(?:\.[a-z0-9-]+)*\.[a-z]{2,63}$/.test(url.hostname) &&
+      !/\.(local|localhost|internal|test|invalid)$/.test(url.hostname)
+    );
+  } catch {
+    return false;
+  }
+}
+
+export function parseFeedPreview(
+  raw: unknown,
+  workspaceId: string,
+  url: string,
+  limit: number,
+): FeedPreview {
+  if (
+    !record(raw) ||
+    raw.workspace_id !== workspaceId ||
+    raw.feed_url !== url ||
+    raw.source_family !== "rss_atom" ||
+    raw.origin !== "live" ||
+    raw.persisted !== false ||
+    raw.independent_fact_verification !== false ||
+    raw.query_method !== "literal_all_terms" ||
+    !bounded(raw.feed_content_digest, 64) ||
+    !/^[a-f0-9]{64}$/.test(raw.feed_content_digest) ||
+    !bounded(raw.retrieved_at, 64) ||
+    !Number.isFinite(Date.parse(raw.retrieved_at)) ||
+    !bounded(raw.publisher, 120) ||
+    !raw.publisher.trim() ||
+    !bounded(raw.policy_review_id, 120) ||
+    !raw.policy_review_id.trim() ||
+    !Array.isArray(raw.items) ||
+    raw.items.length > limit
+  )
+    throw new InvalidSourcePreview();
+  const seen = new Set<string>();
+  const ids = new Set<string>();
+  const items = raw.items.map((item: unknown) => {
+    if (
+      !record(item) ||
+      !bounded(item.source_id, 32) ||
+      !/^[a-f0-9]{32}$/.test(item.source_id) ||
+      !isSafeArticleUrl(item.source_url) ||
+      seen.has(new URL(item.source_url).href) ||
+      ids.has(item.source_id) ||
+      !bounded(item.title, 180) ||
+      !item.title.trim() ||
+      !bounded(item.excerpt, 500) ||
+      !item.excerpt.trim() ||
+      (item.published_at !== null &&
+        (!bounded(item.published_at, 64) ||
+          !Number.isFinite(Date.parse(item.published_at))))
+    )
+      throw new InvalidSourcePreview();
+    seen.add(new URL(item.source_url).href);
+    ids.add(item.source_id);
+    return {
+      source_id: item.source_id,
+      source_url: item.source_url,
+      title: item.title,
+      excerpt: item.excerpt,
+      published_at: item.published_at,
+    };
+  });
+  return {
+    feed_url: url,
+    publisher: raw.publisher,
+    policy_review_id: raw.policy_review_id,
+    retrieved_at: raw.retrieved_at,
+    items,
+  };
+}

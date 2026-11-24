@@ -326,3 +326,89 @@ describe("reviewed source preview", () => {
     await assert.rejects(preview, InvalidSourcePreview);
   });
 });
+
+describe("reviewed feed browser contract", () => {
+  it("uses an authenticated bounded feed request and rejects unsafe entries", async () => {
+    const url = "https://example.org/feed.xml";
+    const item = {
+      source_id: "a".repeat(32),
+      source_url: "https://example.org/post",
+      title: "Offline sync",
+      excerpt: "Offline sync is useful.",
+      published_at: null,
+    };
+    const response = {
+      workspace_id: workspace,
+      feed_url: url,
+      source_family: "rss_atom",
+      origin: "live",
+      persisted: false,
+      independent_fact_verification: false,
+      query_method: "literal_all_terms",
+      feed_content_digest: "b".repeat(64),
+      publisher: "Fixture publisher",
+      policy_review_id: "fixture",
+      retrieved_at: lead.created_at,
+      items: [item],
+    };
+    let body: unknown = response;
+    const api = createLeadApi(
+      "https://api.example.test",
+      subject,
+      async () => token,
+      async (requested, options) => {
+        assert.equal(
+          String(requested),
+          "https://api.example.test/api/v1/workspaces/" +
+            workspace +
+            "/research/feed/preview",
+        );
+        assert.equal(options?.method, "POST");
+        assert.equal(options?.credentials, "omit");
+        assert.deepEqual(JSON.parse(String(options?.body)), {
+          url,
+          query: "offline",
+          limit: 10,
+        });
+        return Response.json(body);
+      },
+    );
+    const preview = await api.previewFeed(workspace, url, "offline", signal);
+    assert.equal(preview.items.length, 1);
+    for (const bad of [
+      { ...response, workspace_id: leadId },
+      { ...response, origin: "seeded" },
+      { ...response, persisted: true },
+      { ...response, items: [item, item] },
+      {
+        ...response,
+        items: [
+          item,
+          {
+            ...item,
+            source_id: "c".repeat(32),
+            source_url: "https://example.org:443/post",
+          },
+        ],
+      },
+      {
+        ...response,
+        items: [{ ...item, source_url: "https:example.org/post" }],
+      },
+      {
+        ...response,
+        items: [{ ...item, source_url: "https://127.0.0.1/private" }],
+      },
+      {
+        ...response,
+        items: [{ ...item, source_url: "javascript:alert(1)" }],
+      },
+    ]) {
+      body = bad;
+      await assert.rejects(
+        api.previewFeed(workspace, url, "offline", signal),
+        InvalidSourcePreview,
+      );
+    }
+  });
+});
