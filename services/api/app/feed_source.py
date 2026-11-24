@@ -58,7 +58,7 @@ def _citation(raw: str) -> str | None:
             or parsed.port not in (None, 443)
             or parsed.query
             or parsed.fragment
-            or not re.fullmatch(r"[a-z0-9-]+(?:\\.[a-z0-9-]+)*\\.[a-z]{2,63}", host)
+            or not re.fullmatch(r"[a-z0-9-]+(?:\.[a-z0-9-]+)*\.[a-z]{2,63}", host)
             or host.endswith((".local", ".localhost", ".internal", ".test", ".invalid"))
         ):
             return None
