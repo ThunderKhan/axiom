@@ -2,7 +2,9 @@
 
 from __future__ import annotations
 
-from app.feed_source import parse_feed
+from xml.etree import ElementTree as ET
+
+from app.feed_source import _citation, _plain, parse_feed
 from app.public_source import (
     SourceAccessBlocked,
     SourceAcquisitionFailed,
@@ -23,10 +25,21 @@ def main() -> int:
         print("BLOCKED: fixed NIST feed did not pass the real acquisition boundary.")
         return 1
     if not items:
-        print("BLOCKED: no usable entries in the bounded retrieved feed.")
+        # parse_feed already validated the bounded document and denied DTDs.
+        root = ET.fromstring(document.body.decode(document.charset))  # noqa: S314
+        entries = root.findall("channel/item")[:128]
+        safe_links = sum(_citation(entry.findtext("link", "")) is not None for entry in entries)
+        titles = sum(bool(_plain(entry.find("title"), 180)) for entry in entries)
+        excerpts = sum(bool(_plain(entry.find("description"), 500)) for entry in entries)
+        print(
+            f"BLOCKED: {len(entries)} RSS entries; {safe_links} safe links; "
+            f"{titles} titles; {excerpts} usable excerpts."
+        )
         return 1
     print(f"PASS: real NIST feed acquisition and parsing; {len(items)} usable entries.")
-    print("Not evidence of purchase intent, permission for third-party excerpts or deployed access.")
+    print(
+        "Not evidence of purchase intent, permission for third-party excerpts or deployed access."
+    )
     return 0
 
 
