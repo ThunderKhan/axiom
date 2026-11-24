@@ -14,6 +14,11 @@ import {
   type LeadStage,
 } from "./lead-contract.ts";
 import { validatePublicApiBaseUrl } from "./public-api.ts";
+import {
+  parseSavedComparison,
+  type SavedComparison,
+  type ScenarioRequest,
+} from "./scenario-contract.ts";
 import { isWorkspaceId } from "./workspace-contract.ts";
 
 type AuthToken = (subject: string) => Promise<string>;
@@ -250,6 +255,55 @@ export function createLeadApi(
         ),
         workspaceId,
         lead,
+      );
+    },
+    async saveComparison(
+      workspaceId: string,
+      lead: Lead,
+      payload: ScenarioRequest,
+      key: string,
+      signal: AbortSignal,
+    ): Promise<SavedComparison> {
+      if (
+        lead.workspace_id !== workspaceId ||
+        lead.version !== payload.expected_lead_version ||
+        !/^[A-Za-z0-9][A-Za-z0-9_-]{7,127}$/.test(key)
+      )
+        throw new InvalidLeadResponse();
+      const response = await send(
+        pathFor(workspaceId, lead.id) + "/scenario-comparisons",
+        "POST",
+        signal,
+        payload,
+        key,
+      );
+      try {
+        return parseSavedComparison(response, workspaceId, lead, payload);
+      } catch {
+        throw new LeadApiError("NETWORK_UNCERTAIN", 0);
+      }
+    },
+    async listComparisons(
+      workspaceId: string,
+      lead: Lead,
+      signal: AbortSignal,
+    ): Promise<SavedComparison[]> {
+      if (lead.workspace_id !== workspaceId) throw new InvalidLeadResponse();
+      const raw = await send(
+        pathFor(workspaceId, lead.id) + "/scenario-comparisons?limit=5",
+        "GET",
+        signal,
+      );
+      if (
+        raw === null ||
+        typeof raw !== "object" ||
+        !("items" in raw) ||
+        !Array.isArray(raw.items) ||
+        raw.items.length > 5
+      )
+        throw new InvalidLeadResponse();
+      return raw.items.map((item: unknown) =>
+        parseSavedComparison(item, workspaceId, lead),
       );
     },
     async history(
