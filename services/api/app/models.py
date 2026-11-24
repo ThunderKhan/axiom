@@ -26,7 +26,7 @@ from sqlalchemy.dialects.postgresql import UUID as PgUUID
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 
 SCHEMA = "axiom"
-HEAD_REVISION = "m3_0001_leads"
+HEAD_REVISION = "m4_0001_scenarios"
 # PostgreSQL's U& literal enumerates Python str.strip() whitespace codepoints.
 _TRIM = (
     r"U&'\0009\000A\000B\000C\000D\001C\001D\001E\001F\0020\0085\0"
@@ -297,4 +297,67 @@ Index(
     LeadEvent.workspace_id,
     LeadEvent.lead_id,
     LeadEvent.created_at.desc(),
+)
+
+
+class ScenarioComparison(Base):
+    """Append-only comparison and exact evidence snapshot for one owned lead."""
+
+    __tablename__ = "scenario_comparisons"
+    __table_args__ = (
+        ForeignKeyConstraint(
+            ["workspace_id", "lead_id"],
+            ["axiom.leads.workspace_id", "axiom.leads.id"],
+            ondelete="RESTRICT",
+            name="fk_scenario_comparison_lead",
+        ),
+        ForeignKeyConstraint(
+            ["workspace_id", "profile_revision"],
+            ["axiom.profile_versions.workspace_id", "axiom.profile_versions.revision"],
+            ondelete="RESTRICT",
+            name="fk_scenario_comparison_profile",
+        ),
+        UniqueConstraint(
+            "workspace_id", "create_key", name="uq_scenario_comparison_workspace_key"
+        ),
+        CheckConstraint("lead_version >= 1", name="ck_scenario_comparison_lead_version"),
+        CheckConstraint("profile_revision >= 1", name="ck_scenario_comparison_profile_revision"),
+        CheckConstraint(
+            "char_length(create_key) BETWEEN 8 AND 128 "
+            "AND create_key ~ '^[A-Za-z0-9][A-Za-z0-9_-]*$'",
+            name="ck_scenario_comparison_key",
+        ),
+        CheckConstraint(
+            "char_length(create_fingerprint) = 64 AND create_fingerprint ~ '^[0-9a-f]+$'",
+            name="ck_scenario_comparison_fingerprint",
+        ),
+        CheckConstraint(
+            "jsonb_typeof(snapshot) = 'object' AND octet_length(snapshot::text) <= 65536",
+            name="ck_scenario_comparison_snapshot",
+        ),
+        CheckConstraint(
+            "jsonb_typeof(result) = 'object' AND octet_length(result::text) <= 262144",
+            name="ck_scenario_comparison_result",
+        ),
+    )
+
+    id: Mapped[UUID] = mapped_column(PgUUID(as_uuid=True), primary_key=True)
+    workspace_id: Mapped[UUID] = mapped_column(PgUUID(as_uuid=True), nullable=False)
+    lead_id: Mapped[UUID] = mapped_column(PgUUID(as_uuid=True), nullable=False)
+    lead_version: Mapped[int] = mapped_column(BigInteger, nullable=False)
+    profile_revision: Mapped[int] = mapped_column(BigInteger, nullable=False)
+    create_key: Mapped[str] = mapped_column(String(128), nullable=False)
+    create_fingerprint: Mapped[str] = mapped_column(String(64), nullable=False)
+    snapshot: Mapped[dict[str, object]] = mapped_column(JSONB, nullable=False)
+    result: Mapped[dict[str, object]] = mapped_column(JSONB, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, server_default=func.now()
+    )
+
+
+Index(
+    "ix_scenario_comparison_workspace_lead_created",
+    ScenarioComparison.workspace_id,
+    ScenarioComparison.lead_id,
+    ScenarioComparison.created_at.desc(),
 )
