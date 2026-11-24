@@ -77,6 +77,14 @@ jobs:
         run: python -m pip install --disable-pip-version-check uv==0.10.0
       - name: Execute required application checks when code is present
         run: python ci/quality_gate.py application
+      # Temporary read-only diagnostic output of the pinned formatter.
+      # This runs only AFTER a failed required check and cannot make CI green.
+      - name: Show exact Prettier patch after failure
+        if: failure()
+        working-directory: apps/web
+        run: |
+          ./node_modules/.bin/prettier --write src/app/app/lead-manager.tsx src/lib/lead-api.ts src/lib/evidence-contract.ts src/lib/evidence-contract.test.ts
+          git diff --no-ext-diff -- src/app/app/lead-manager.tsx src/lib/lead-api.ts src/lib/evidence-contract.ts src/lib/evidence-contract.test.ts
       - name: Mandatory real PostgreSQL migration and RLS isolation gate
         working-directory: services/api
         env:
