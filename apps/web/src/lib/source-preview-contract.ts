@@ -33,7 +33,7 @@ function record(value: unknown): value is Record<string, unknown> {
 }
 
 function bounded(value: unknown, max: number): value is string {
-  return typeof value === "string" && value.length <= max;
+  return typeof value === "string" && Array.from(value).length <= max;
 }
 
 function kind(value: unknown): value is ClaimKind {
