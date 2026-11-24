@@ -21,6 +21,7 @@ from app.leads_http import router as leads_router
 from app.leads_store import InvalidLeadInput, LeadAlreadySaved
 from app.profile_http import router as profile_router
 from app.profile_store import ProfileIncomplete
+from app.scenario_http import router as scenario_router
 from app.settings import RuntimeSettings, load_settings
 from app.source_http import router as source_router
 from app.source_registry import ReviewedSourceRegistry
@@ -155,6 +156,7 @@ def create_app(settings: RuntimeSettings | None = None) -> FastAPI:
     application.include_router(profile_router)
     application.include_router(leads_router)
     application.include_router(evidence_router)
+    application.include_router(scenario_router)
     application.include_router(source_router)
 
     @application.get("/api/v1/health/live", response_model=Liveness, tags=["health"])

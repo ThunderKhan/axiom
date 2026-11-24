@@ -27,6 +27,7 @@ def test_fastapi_import_and_versioned_openapi() -> None:
             "/api/v1/workspaces/{workspace_id}/leads/{lead_id}/activity",
             "/api/v1/workspaces/{workspace_id}/leads/{lead_id}/assessment",
             "/api/v1/workspaces/{workspace_id}/leads/{lead_id}/scenario-comparison/preview",
+            "/api/v1/workspaces/{workspace_id}/leads/{lead_id}/scenario-comparisons",
             "/api/v1/workspaces/{workspace_id}/research/public-url/preview",
             "/api/v1/workspaces/{workspace_id}/competitors/preview",
         }
@@ -49,6 +50,7 @@ def test_fastapi_import_and_versioned_openapi() -> None:
         }
         comparison_prefix = "/api/v1/workspaces/{workspace_id}/leads/{lead_id}"
         assert set(paths[f"{comparison_prefix}/scenario-comparison/preview"]) == {"post"}
+        assert set(paths[f"{comparison_prefix}/scenario-comparisons"]) == {"get", "post"}
         assert set(paths["/api/v1/workspaces/{workspace_id}/research/public-url/preview"]) == {
             "post"
         }
