@@ -11,6 +11,9 @@ def main() -> int:
         # Fixed, trusted executable/args; never a shell or user-controlled command.
         result = subprocess.run(args, check=False)  # noqa: S603
         if result.returncode != 0:
+            if args[1] == "format":
+                # Show exact formatter suggestions without changing tracked files.
+                subprocess.run(("ruff", "format", "--diff", "."), check=False)  # noqa: S603
             return result.returncode
     return 0
 
