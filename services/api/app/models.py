@@ -26,7 +26,7 @@ from sqlalchemy.dialects.postgresql import UUID as PgUUID
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 
 SCHEMA = "axiom"
-HEAD_REVISION = "m4_0001_scenarios"
+HEAD_REVISION = "m5_0001_mcp_consent"
 # PostgreSQL's U& literal enumerates Python str.strip() whitespace codepoints.
 _TRIM = (
     r"U&'\0009\000A\000B\000C\000D\001C\001D\001E\001F\0020\0085\0"
@@ -359,3 +359,44 @@ Index(
     ScenarioComparison.lead_id,
     ScenarioComparison.created_at.desc(),
 )
+
+
+class McpClientGrant(Base):
+    """Durable read-only consent; a revoked grant cannot be reactivated."""
+
+    __tablename__ = "mcp_client_grants"
+    __table_args__ = (
+        CheckConstraint(
+            "jsonb_typeof(scopes) = 'array' AND jsonb_array_length(scopes) BETWEEN 1 AND 3 "
+            "AND scopes <@ '[\"research:run\",\"evidence:read\",\"crm:read\"]'::jsonb",
+            name="ck_mcp_grant_scopes",
+        ),
+        CheckConstraint(
+            "char_length(resource) BETWEEN 1 AND 256 AND resource LIKE 'https://%/mcp'",
+            name="ck_mcp_grant_resource",
+        ),
+        CheckConstraint("expires_at > created_at", name="ck_mcp_grant_expiry"),
+        CheckConstraint(
+            "revoked_at IS NULL OR revoked_at >= created_at",
+            name="ck_mcp_grant_revocation",
+        ),
+    )
+
+    user_id: Mapped[UUID] = mapped_column(
+        PgUUID(as_uuid=True),
+        ForeignKey("axiom.app_users.id", ondelete="RESTRICT"),
+        primary_key=True,
+    )
+    client_id: Mapped[UUID] = mapped_column(PgUUID(as_uuid=True), primary_key=True)
+    workspace_id: Mapped[UUID] = mapped_column(
+        PgUUID(as_uuid=True),
+        ForeignKey("axiom.workspaces.id", ondelete="RESTRICT"),
+        primary_key=True,
+    )
+    resource: Mapped[str] = mapped_column(String(256), primary_key=True)
+    scopes: Mapped[list[str]] = mapped_column(JSONB, nullable=False)
+    expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, server_default=func.now()
+    )
+    revoked_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))

@@ -93,6 +93,7 @@ def main() -> int:
         "m1_0002_rls",
         "m2_0001_profiles",
         "m3_0001_leads",
+        "m4_0001_scenarios",
         HEAD_REVISION,
     ):
         raise RuntimeError("Unexpected migration state in isolated test database")
@@ -138,6 +139,7 @@ def main() -> int:
         "tests/test_profile_integration.py",
         "tests/test_leads_integration.py",
         "tests/test_scenario_integration.py",
+        "tests/test_mcp_grants_integration.py",
         env=env,
     )
     return 0

@@ -49,7 +49,7 @@ class ClientGrant:
     revoked: bool
 
 
-GrantResolver = Callable[[UUID, UUID, UUID], ClientGrant | None]
+GrantResolver = Callable[[DelegatedPrincipal, UUID], ClientGrant | None]
 
 
 class McpAccess:
@@ -63,7 +63,7 @@ class McpAccess:
         if required is None or not required.issubset(actor.scopes):
             raise McpAccessDenied()
         user_id = actor.principal.user_id
-        grant = self._resolve(user_id, actor.client_id, workspace_id)
+        grant = self._resolve(actor, workspace_id)
         if (
             grant is None
             or grant.user_id != user_id
