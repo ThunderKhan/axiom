@@ -31,7 +31,7 @@ from app.profile_store import ProfileIncomplete, ProfileStore
 from app.workspace_http import ApiFailure, ErrorDTO, StrictBody
 
 Intent = Literal["buying", "seeking_solution", "discussion", "unknown"]
-_CAPABILITY_SEPARATOR = re.compile(r"[,;\\n]")
+_CAPABILITY_SEPARATOR = re.compile(r"[,;\n]")
 
 
 class CitedNeed(StrictBody):
@@ -121,24 +121,24 @@ def assess_saved_manual_lead(
             status = "missing"
         capabilities_by_name[normalized] = Capability(cited.requirement, status)
 
-    source = Source(
-        id=str(lead.id),
-        url=lead.source_url,
-        excerpt=lead.source_excerpt,
-        retrieved_at=lead.created_at,
-        origin="user_provided",
-    )
-    needs = tuple(
-        Need(
-            id=f"need-{index}",
-            requirement=item.requirement,
-            source_id=source.id,
-            locator=item.locator,
-            intent=item.intent,
-        )
-        for index, item in enumerate(request.needs, start=1)
-    )
     try:
+        source = Source(
+            id=str(lead.id),
+            url=lead.source_url,
+            excerpt=lead.source_excerpt,
+            retrieved_at=lead.created_at,
+            origin="user_provided",
+        )
+        needs = tuple(
+            Need(
+                id=f"need-{index}",
+                requirement=item.requirement,
+                source_id=source.id,
+                locator=item.locator,
+                intent=item.intent,
+            )
+            for index, item in enumerate(request.needs, start=1)
+        )
         assessment = assess(
             (source,), needs, tuple(capabilities_by_name.values()), launched=answers.stage == "live"
         )
