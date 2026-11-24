@@ -23,14 +23,14 @@ export function EvidenceGraph({
   const relation =
     selected === null ? null : assessment.relationships[selected];
   return (
-    <section className="evidence-graph" aria-label="Evidence relationship graph">
+    <section className="evidence-graph" aria-label="Evidence graph">
       <h4>Evidence graph</h4>
       <p className="crm-meta">
         Select a relationship to inspect its reasoning and original citation.
         Every connection comes from the assessment, not inferred graph links.
       </p>
       {assessment.relationships.length === 0 ? (
-        <p>No cited relationships yet. Add evidence to establish a connection.</p>
+        <p>No relationships yet. Add a cited requirement to begin.</p>
       ) : (
         <>
           <div className="evidence-graph-source">
@@ -86,13 +86,15 @@ export function EvidenceGraph({
         >
           <h4>{relationLabels[relation.relation]}</h4>
           <p>{relation.explanation}</p>
-          <blockquote className="crm-evidence">{lead.source_excerpt}</blockquote>
+          <blockquote className="crm-evidence">
+            {lead.source_excerpt}
+          </blockquote>
           <p className="crm-meta">
             Saved{" "}
             <time dateTime={lead.created_at}>
               {new Date(lead.created_at).toLocaleString()}
             </time>
-            . This excerpt was supplied by the founder, not independently retrieved.
+            . Founder-supplied excerpt; not independently retrieved.
           </p>
           <button
             type="button"
