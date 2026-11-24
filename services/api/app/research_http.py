@@ -13,7 +13,7 @@ from typing import Annotated, Literal
 from uuid import UUID, uuid4, uuid5
 
 from fastapi import APIRouter, Depends, Header, Response
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, Field, ValidationError, field_validator
 from sqlalchemy import select
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.orm import Session
@@ -22,7 +22,9 @@ from app.auth import VerifiedPrincipal, get_verified_principal
 from app.database import Database
 from app.evidence_engine import Assessment, Capability, EvidenceInputError, Need, Source, assess
 from app.evidence_http import AssessSavedLead, _declared_names
-from app.leads_contract import validate_idempotency_key
+from app.leads_contract import CreateLead, validate_idempotency_key
+from app.leads_http import CreatedLeadDTO
+from app.leads_store import LeadStore
 from app.models import ProductProfile, ProfileVersion, ResearchRun
 from app.profile_contract import ProfileAnswers
 from app.profile_store import ProfileStore
@@ -249,6 +251,36 @@ class ResearchStore:
             return _dto(row)
 
 
+    def save_signal(
+        self,
+        principal: VerifiedPrincipal,
+        workspace_id: UUID,
+        run_id: UUID,
+        signal_id: UUID,
+        key: str,
+    ) -> CreatedLeadDTO:
+        saved = self.read(principal, workspace_id, run_id)
+        item = next((item for item in saved.result.items if item.signal_id == signal_id), None)
+        if item is None:
+            raise WorkspaceNotFound()
+        try:
+            payload = CreateLead(
+                title=item.title, source_url=item.source_url, source_excerpt=item.excerpt
+            )
+        except ValidationError as exc:
+            raise ApiFailure("VALIDATION_FAILED", 422, "Invalid saved citation.") from exc
+        # Source fields and IDs are server-owned immutable records. The CRM
+        # store checks the owner again and writes the lead and event atomically.
+        result = LeadStore(self.database)._create(
+            principal,
+            workspace_id,
+            payload=payload,
+            key=key,
+            research_run_id=run_id,
+            research_signal_id=signal_id,
+        )
+        return CreatedLeadDTO.model_validate(result)
+
     def assess_signal(
         self,
         principal: VerifiedPrincipal,
@@ -383,3 +415,19 @@ def assess_signal(
 ) -> SignalAssessmentDTO:
     response.headers["Cache-Control"] = "no-store"
     return store.assess_signal(principal, workspace_id, run_id, signal_id, body)
+
+
+@router.post("/{run_id}/signals/{signal_id}/save", response_model=CreatedLeadDTO, status_code=201)
+def save_signal(
+    workspace_id: UUID,
+    run_id: UUID,
+    signal_id: UUID,
+    principal: Principal,
+    store: Store,
+    response: Response,
+    idempotency_key: Annotated[str, Header(alias="Idempotency-Key", min_length=8, max_length=128)],
+) -> CreatedLeadDTO:
+    saved = store.save_signal(principal, workspace_id, run_id, signal_id, idempotency_key)
+    response.status_code = 200 if saved.already_exists else 201
+    response.headers["Cache-Control"] = "no-store"
+    return saved
