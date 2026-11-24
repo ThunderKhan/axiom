@@ -75,6 +75,13 @@ jobs:
           node-version: '22'
       - name: Install locked Python package manager
         run: python -m pip install --disable-pip-version-check uv==0.10.0
+      - name: Emit pinned Ruff formatting diff for diagnosis
+        working-directory: services/api
+        run: |
+          uv sync --locked --all-groups
+          uv run --frozen ruff format app/evidence_http.py tests/test_api.py tests/test_evidence_http.py
+          git diff --no-ext-diff -- app/evidence_http.py tests/test_api.py tests/test_evidence_http.py
+          git restore -- app/evidence_http.py tests/test_api.py tests/test_evidence_http.py
       - name: Execute required application checks when code is present
         run: python ci/quality_gate.py application
       - name: Mandatory real PostgreSQL migration and RLS isolation gate
