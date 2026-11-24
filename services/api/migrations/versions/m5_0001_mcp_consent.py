@@ -41,7 +41,7 @@ def upgrade() -> None:
         sa.ForeignKeyConstraint(["workspace_id"], ["axiom.workspaces.id"], ondelete="RESTRICT"),
         sa.CheckConstraint(
             "jsonb_typeof(scopes) = 'array' AND jsonb_array_length(scopes) BETWEEN 1 AND 3 "
-            "AND scopes <@ '[\"research:run\",\"evidence:read\",\"crm:read\"]'::jsonb",
+            'AND scopes <@ \'["research:run","evidence:read","crm:read"]\'::jsonb',
             name="ck_mcp_grant_scopes",
         ),
         sa.CheckConstraint(

@@ -88,7 +88,8 @@ class Database:
                            AND c.relname IN (
                                'app_users', 'workspaces', 'workspace_create_idempotency',
                                'product_profiles', 'profile_versions',
-                               'leads', 'lead_events', 'scenario_comparisons', 'mcp_client_grants', 'research_runs'
+                               'leads', 'lead_events', 'scenario_comparisons',
+                               'mcp_client_grants', 'research_runs'
                            )
                            AND c.relkind = 'r'"""
                     )

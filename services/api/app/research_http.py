@@ -27,7 +27,12 @@ from app.public_source import SourceAccessBlocked, SourceAcquisitionFailed
 from app.source_http import get_source_registry
 from app.source_registry import ReviewedSourceRegistry, SourceRateLimited
 from app.workspace_http import ApiFailure, StrictBody, get_workspace_store
-from app.workspace_store import IdempotencyConflict, VersionConflict, WorkspaceNotFound, WorkspaceStore
+from app.workspace_store import (
+    IdempotencyConflict,
+    VersionConflict,
+    WorkspaceNotFound,
+    WorkspaceStore,
+)
 
 
 class DiscoverFeed(StrictBody):
