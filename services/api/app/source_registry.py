@@ -22,6 +22,7 @@ from app.public_source import (
 
 Purpose = Literal["research_preview", "competitor_preview"]
 Fetcher = Callable[[str], FetchedDocument]
+_PREVIEW_CONTENT_TYPES = frozenset({"text/html", "application/xhtml+xml", "text/plain"})
 
 
 class ReviewedSource(BaseModel):
@@ -124,10 +125,9 @@ class ReviewedSourceRegistry:
             with self._lock:
                 now = self._clock()
                 last = self._last_request.get(url)
-                if (
-                    (self._last_global is not None and now - self._last_global < 5)
-                    or (last is not None and now - last < review.minimum_interval_seconds)
-                ):
+                if self._last_global is not None and now - self._last_global < 5:
+                    raise SourceRateLimited()
+                if last is not None and now - last < review.minimum_interval_seconds:
                     raise SourceRateLimited()
                 # Failures count against the quota; there are no automatic retries.
                 self._last_request[url] = now
@@ -137,7 +137,7 @@ class ReviewedSourceRegistry:
                 raise SourceAcquisitionFailed()
             # The bounded normalizer treats source contents as inert text.
             # Do not expose XML/HTML markup or assume XML is an actual parsed feed.
-            if document.content_type not in {"text/html", "application/xhtml+xml", "text/plain"}:
+            if document.content_type not in _PREVIEW_CONTENT_TYPES:
                 raise SourceAccessBlocked()
             try:
                 record = normalize_fetched_document(document)
