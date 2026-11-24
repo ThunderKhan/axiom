@@ -67,6 +67,20 @@ function ComparisonDetails({ saved }: { saved: SavedComparison }) {
               </li>
             ))}
           </ul>
+          <h5>Saved assumptions</h5>
+          <ul>
+            {scenario.assumptions.features.map((feature, index) => (
+              <li key={index}>
+                {feature.action}: {feature.name}
+              </li>
+            ))}
+            {scenario.assumptions.pricing && (
+              <li>Pricing: {scenario.assumptions.pricing}</li>
+            )}
+            {scenario.assumptions.positioning && (
+              <li>Positioning: {scenario.assumptions.positioning}</li>
+            )}
+          </ul>
           <h5>Unsupported assumptions and limitations</h5>
           <ul>
             {[...scenario.unsupported_assumptions, ...scenario.limitations].map(
@@ -230,7 +244,8 @@ export function ScenarioPanel({
             Baseline:{" "}
             {retry?.payload.needs[0].requirement ?? baseline?.need.requirement}
             {" · Profile revision "}
-            {retry?.payload.expected_profile_revision ?? baseline?.profileRevision}
+            {retry?.payload.expected_profile_revision ??
+              baseline?.profileRevision}
           </p>
           {drafts.map((draft, index) => (
             <fieldset className="crm-form" key={index} disabled={locked}>
