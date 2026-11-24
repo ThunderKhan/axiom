@@ -11,6 +11,7 @@ from dataclasses import dataclass
 from http.client import HTTPException
 from typing import Any
 from urllib.error import HTTPError, URLError
+from urllib.parse import urlsplit
 from urllib.request import HTTPRedirectHandler, Request, build_opener
 from uuid import UUID
 
@@ -47,6 +48,16 @@ class VerifiedPrincipal:
 
     user_id: UUID
     session_id: UUID | None
+
+
+@dataclass(frozen=True, slots=True)
+class DelegatedPrincipal:
+    """Verified OAuth identity only; grants and workspace access remain separate."""
+
+    principal: VerifiedPrincipal
+    client_id: UUID
+    resource: str
+    scopes: frozenset[str]
 
 
 class _NoRedirects(HTTPRedirectHandler):
@@ -193,7 +204,7 @@ class JwtVerifier:
                 raise AuthFailure()
             return key
 
-    def verify(self, token: str) -> VerifiedPrincipal:
+    def _verified_claims(self, token: str, audience: str) -> dict[str, Any]:
         if len(token) > 16384 or not _TOKEN_PATTERN.fullmatch(token):
             raise AuthFailure()
         try:
@@ -215,7 +226,7 @@ class JwtVerifier:
                 key,
                 algorithms=[alg],
                 issuer=self._issuer,
-                audience=self._audience,
+                audience=audience,
                 options={"require": ["iss", "aud", "exp", "iat", "sub", "role"]},
                 leeway=_CLOCK_SKEW_SECONDS,
             )
@@ -224,12 +235,16 @@ class JwtVerifier:
         except (InvalidTokenError, TypeError, ValueError, OverflowError) as exc:
             raise AuthFailure() from exc
         # Exact string audience excludes ambiguous multi-audience tokens.
-        if claims.get("aud") != self._audience or claims.get("role") != "authenticated":
+        if claims.get("aud") != audience or claims.get("role") != "authenticated":
             raise AuthFailure()
         if claims.get("is_anonymous") is True or claims.get("type") not in (None, "access_token"):
             raise AuthFailure()
         if claims.get("token_use") not in (None, "access"):
             raise AuthFailure()
+        return claims
+
+    @staticmethod
+    def _principal(claims: Mapping[str, Any]) -> VerifiedPrincipal:
         try:
             subject = UUID(claims["sub"])
             session = claims.get("session_id")
@@ -239,6 +254,53 @@ class JwtVerifier:
         if subject.int == 0:
             raise AuthFailure()
         return VerifiedPrincipal(user_id=subject, session_id=session_id)
+
+    def verify(self, token: str) -> VerifiedPrincipal:
+        claims = self._verified_claims(token, self._audience)
+        # Delegated OAuth tokens can otherwise have the same default audience
+        # and role as first-party sessions. They never enter the browser API.
+        if "client_id" in claims:
+            raise AuthFailure()
+        return self._principal(claims)
+
+    def verify_delegated(self, token: str, resource: str) -> DelegatedPrincipal:
+        # Resource is trusted server configuration, never a tool argument.
+        # Only a separately issued resource-bound token is eligible.
+        try:
+            parsed = urlsplit(resource)
+            valid = (
+                parsed.scheme == "https"
+                and bool(parsed.hostname)
+                and parsed.username is None
+                and parsed.password is None
+                and parsed.port in (None, 443)
+                and parsed.path == "/mcp"
+                and not parsed.query
+                and not parsed.fragment
+                and resource != self._audience
+                and len(resource) <= 256
+            )
+        except ValueError as exc:
+            raise AuthFailure() from exc
+        if not valid:
+            raise AuthFailure()
+        claims = self._verified_claims(token, resource)
+        principal = self._principal(claims)
+        try:
+            client_id = UUID(claims["client_id"])
+        except (KeyError, ValueError, TypeError, AttributeError) as exc:
+            raise AuthFailure() from exc
+        if client_id.int == 0 or principal.session_id is None:
+            raise AuthFailure()
+        raw_scopes = claims.get("scope")
+        if (
+            not isinstance(raw_scopes, str)
+            or not 1 <= len(raw_scopes) <= 512
+            or not re.fullmatch(r"[a-zA-Z0-9:_-]+(?: [a-zA-Z0-9:_-]+)*", raw_scopes)
+        ):
+            raise AuthFailure()
+        scopes = frozenset(raw_scopes.split(" "))
+        return DelegatedPrincipal(principal, client_id, resource, scopes)
 
 
 def extract_bearer(request: FastAPIRequest) -> str:
