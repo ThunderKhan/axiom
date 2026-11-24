@@ -7,6 +7,7 @@ export type ManualNeed = Readonly<{
 }>;
 
 export type EvidenceAssessment = Readonly<{
+  confirmed_profile_revision: number;
   verdict: "research_further" | "skip" | "insufficient_evidence";
   intent: ManualNeed["intent"];
   compatibility: "supported" | "contradicted" | "partial" | "unknown";
@@ -120,6 +121,7 @@ export function parseManualAssessment(
     };
   });
   return {
+    confirmed_profile_revision: raw.confirmed_profile_revision as number,
     verdict: raw.verdict as EvidenceAssessment["verdict"],
     intent: raw.intent as EvidenceAssessment["intent"],
     compatibility: raw.compatibility as EvidenceAssessment["compatibility"],
