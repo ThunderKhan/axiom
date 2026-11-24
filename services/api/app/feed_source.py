@@ -3,13 +3,13 @@
 from __future__ import annotations
 
 import hashlib
+import re
 from dataclasses import dataclass
 from datetime import UTC, datetime
 from email.utils import parsedate_to_datetime
 from urllib.parse import urlsplit
 from xml.etree import ElementTree as ET
 
-from app.leads_contract import _validate_url
 from app.public_source import (
     MAX_BODY_BYTES,
     MAX_EXCERPT_CHARS,
@@ -35,19 +35,32 @@ class FeedItem:
 
 
 def _plain(element: ET.Element | None, maximum: int) -> str:
-    if element is None:
-        return ""
+    if element is None or len(element):
+        return ""  # Nested XML/XHTML content is not supported in this bounded slice.
     parser = _VisibleText()
-    parser.feed(" ".join(element.itertext()))
+    parser.feed(element.text or "")
     return " ".join(" ".join(parser.parts).split())[:maximum]
 
 
 def _citation(raw: str) -> str | None:
     value = raw.strip()
     try:
-        _validate_url(value)
         parsed = urlsplit(value)
-        if parsed.query or not parsed.hostname or "." not in parsed.hostname:
+        host = parsed.hostname or ""
+        if (
+            not value.isascii()
+            or len(value) > 2048
+            or any(ord(ch) <= 32 or ord(ch) == 127 for ch in value)
+            or "\\" in value
+            or parsed.scheme != "https"
+            or parsed.username is not None
+            or parsed.password is not None
+            or parsed.port not in (None, 443)
+            or parsed.query
+            or parsed.fragment
+            or not re.fullmatch(r"[a-z0-9-]+(?:\\.[a-z0-9-]+)*\\.[a-z]{2,63}", host)
+            or host.endswith((".local", ".localhost", ".internal", ".test", ".invalid"))
+        ):
             return None
         return value
     except (ValueError, UnicodeError):
