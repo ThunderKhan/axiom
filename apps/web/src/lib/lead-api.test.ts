@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 import { createLeadApi, LeadApiError } from "./lead-api.ts";
 import { InvalidLeadResponse } from "./lead-contract.ts";
+import { InvalidSourcePreview } from "./source-preview-contract.ts";
 
 const subject = "11111111-1111-4111-8111-111111111111";
 const workspace = "22222222-2222-4222-8222-222222222222";
@@ -221,5 +222,107 @@ describe("authenticated CRM API client", () => {
           !error.message.includes("secret-contract-value-8374"),
       );
     }
+  });
+});
+
+
+describe("reviewed source preview", () => {
+  const source = {
+    workspace_id: workspace,
+    source_url: lead.source_url,
+    source_id: "a".repeat(32),
+    source_family: "manual_url",
+    title: "Product",
+    excerpt: "Offline export is offered.",
+    origin: "live",
+    retrieved_at: "2026-11-24T06:00:00Z",
+    content_digest: "b".repeat(64),
+    publisher: "Fixture publisher",
+    policy_review_id: "fixture-only",
+    published_at: null,
+    persisted: false,
+    independent_fact_verification: false,
+  };
+
+  it("uses the authenticated source route and rejects forged provenance", async () => {
+    let response: unknown = source;
+    const api = createLeadApi(
+      "https://api.example.test",
+      subject,
+      async () => token,
+      async (url, options) => {
+        assert.equal(
+          String(url),
+          "https://api.example.test/api/v1/workspaces/" +
+            workspace +
+            "/research/public-url/preview",
+        );
+        assert.equal(options?.method, "POST");
+        assert.deepEqual(JSON.parse(String(options?.body)), {
+          url: lead.source_url,
+        });
+        assert.equal(options?.cache, "no-store");
+        return Response.json(response);
+      },
+    );
+    assert.equal(
+      (await api.previewSource(workspace, lead.source_url, signal)).excerpt,
+      source.excerpt,
+    );
+    for (const changes of [
+      { workspace_id: subject },
+      { origin: "seeded" },
+      { persisted: true },
+      { source_url: "https://example.org/other" },
+    ]) {
+      response = { ...source, ...changes };
+      await assert.rejects(
+        api.previewSource(workspace, lead.source_url, signal),
+        InvalidSourcePreview,
+      );
+    }
+  });
+
+  it("accepts only requested, observed claims and explicit unknowns", async () => {
+    const candidates = [
+      { kind: "features", locator: "Offline export" },
+    ] as const;
+    const claim = {
+      ...candidates[0],
+      text: "Offline export",
+      source_id: source.source_id,
+      status: "publisher_claim_observed",
+    };
+    let response: unknown = {
+      competitor_name: "Product",
+      source,
+      claims: [claim],
+      unknowns: ["pricing", "positioning"],
+    };
+    const api = createLeadApi(
+      "https://api.example.test",
+      subject,
+      async () => token,
+      async (_url, options) => {
+        assert.equal(JSON.parse(String(options?.body)).confirmed, true);
+        return Response.json(response);
+      },
+    );
+    const preview = () =>
+      api.previewCompetitor(
+        workspace,
+        lead.source_url,
+        "Product",
+        candidates,
+        signal,
+      );
+    assert.deepEqual((await preview()).unknowns, ["pricing", "positioning"]);
+    response = {
+      competitor_name: "Product",
+      source,
+      claims: [{ ...claim, text: "Free forever" }],
+      unknowns: ["pricing", "positioning"],
+    };
+    await assert.rejects(preview, InvalidSourcePreview);
   });
 });
