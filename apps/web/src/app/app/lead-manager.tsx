@@ -33,6 +33,8 @@ import {
   subscribeToSignOut,
 } from "../../lib/auth-sync";
 
+import { SourcePreviewPanel } from "./source-preview-panel";
+
 function safeMessage(error: unknown): string {
   if (error instanceof LeadApiError) {
     if (error.status === 401 || error.status === 403)
@@ -646,6 +648,7 @@ export function LeadManager({
       {state === "error" && <p role="alert">{notice}</p>}
       {state === "ready" && (
         <>
+          <SourcePreviewPanel api={api} workspaceId={workspaceId} />
           <div className="crm-layout">
             <div className="crm-list">
               <h4>Most recent saved leads</h4>
