@@ -13,7 +13,7 @@ from typing import Annotated, Literal
 from uuid import UUID, uuid4, uuid5
 
 from fastapi import APIRouter, Depends, Header, Response
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 from sqlalchemy import select
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.orm import Session
@@ -43,6 +43,13 @@ class DiscoverFeed(StrictBody):
     url: str = Field(min_length=10, max_length=2048)
     query: str = Field(default="", max_length=120)
     limit: int = Field(default=10, ge=1, le=20)
+
+    @field_validator("query")
+    @classmethod
+    def valid_query(cls, value: str) -> str:
+        if "\x00" in value or any(0xD800 <= ord(ch) <= 0xDFFF for ch in value):
+            raise ValueError("Invalid query characters")
+        return value
 
 
 class SignalDTO(BaseModel):
@@ -311,7 +318,9 @@ class ResearchStore:
                 (source,), needs, tuple(capabilities.values()), launched=answers.stage == "live"
             )
         except EvidenceInputError as exc:
-            raise ApiFailure("VALIDATION_FAILED", 422, "Citation does not match saved feed.") from exc
+            raise ApiFailure(
+                "VALIDATION_FAILED", 422, "Citation does not match saved feed."
+            ) from exc
         return SignalAssessmentDTO(
             workspace_id=workspace_id,
             run_id=run_id,
