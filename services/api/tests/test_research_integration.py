@@ -121,8 +121,40 @@ def test_persist_replay_reopen_and_deny_foreign_feed_runs(database: Database) ->
         )
         detail = route + "/" + saved["run_id"]
         assert client.get(detail).json() == saved
+        signal = saved["result"]["items"][0]["signal_id"]
+        assessment_route = detail + "/signals/" + signal + "/assessment"
+        need = {"requirement": "offline sync", "locator": "Offline sync", "intent": "buying"}
+        assessment = client.post(assessment_route, json={"needs": [need]})
+        assert assessment.status_code == 200
+        report = assessment.json()
+        assert report["assessment"]["verdict"] == "research_further"
+        assert report["assessment"]["intent"] == "unknown"
+        assert report["assessment"]["compatibility"] == "supported"
+        assert report["profile_revision"] == 1
+        assert report["persisted_assessment"] is False
+        assert report["article_independently_verified"] is False
+        fabricated = {**need, "locator": "invented offline sync phrase"}
+        assert client.post(assessment_route, json={"needs": [fabricated]}).status_code == 422
+        missing = detail + "/signals/" + str(uuid4()) + "/assessment"
+        assert client.post(missing, json={"needs": [need]}).status_code == 404
+        profiles.save(
+            owner,
+            workspace,
+            answers=ProfileAnswers(
+                stage="live",
+                name="Updated",
+                problem="Different",
+                audience="Students",
+                capabilities="export",
+                missing_capabilities="offline sync",
+            ),
+            expected_revision=2,
+        )
+        profiles.confirm(owner, workspace, expected_revision=3)
+        assert client.post(assessment_route, json={"needs": [need]}).json() == report
         app.dependency_overrides[get_verified_principal] = lambda: outsider
         assert client.get(detail).status_code == 404
+        assert client.post(assessment_route, json={"needs": [need]}).status_code == 404
     with database.transaction(outsider) as session:
         assert session.scalar(text("SELECT count(*) FROM axiom.research_runs")) == 0
     with pytest.raises(DBAPIError):

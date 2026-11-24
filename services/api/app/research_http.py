@@ -20,8 +20,11 @@ from sqlalchemy.orm import Session
 
 from app.auth import VerifiedPrincipal, get_verified_principal
 from app.database import Database
+from app.evidence_engine import Assessment, Capability, EvidenceInputError, Need, Source, assess
+from app.evidence_http import AssessSavedLead, _declared_names
 from app.leads_contract import validate_idempotency_key
 from app.models import ProductProfile, ProfileVersion, ResearchRun
+from app.profile_contract import ProfileAnswers
 from app.profile_store import ProfileStore
 from app.public_source import SourceAccessBlocked, SourceAcquisitionFailed
 from app.source_http import get_source_registry
@@ -81,6 +84,23 @@ class SavedResearchDTO(BaseModel):
     status: Literal["completed"] = "completed"
     created_at: datetime
     result: ResearchResult
+
+
+class SignalAssessmentDTO(BaseModel):
+    workspace_id: UUID
+    run_id: UUID
+    signal_id: UUID
+    profile_revision: int
+    profile_version_id: UUID
+    source_url: str
+    source_excerpt: str
+    retrieved_at: datetime
+    policy_review_id: str
+    feed_content_digest: str
+    source_origin: Literal["live"] = "live"
+    article_independently_verified: Literal[False] = False
+    persisted_assessment: Literal[False] = False
+    assessment: Assessment
 
 
 def _dto(row: ResearchRun) -> SavedResearchDTO:
@@ -228,6 +248,92 @@ class ResearchStore:
                 raise WorkspaceNotFound()
             return _dto(row)
 
+    def assess_signal(
+        self,
+        principal: VerifiedPrincipal,
+        workspace_id: UUID,
+        run_id: UUID,
+        signal_id: UUID,
+        request: AssessSavedLead,
+    ) -> SignalAssessmentDTO:
+        # A historical assessment uses the immutable profile recorded at retrieval,
+        # never a later profile or caller-supplied excerpt.
+        with self.database.transaction(principal) as session:
+            ProfileStore._owned(session, principal, workspace_id)
+            row = session.scalar(
+                select(ResearchRun).where(
+                    ResearchRun.workspace_id == workspace_id, ResearchRun.id == run_id
+                )
+            )
+            if row is None:
+                raise WorkspaceNotFound()
+            saved = _dto(row)
+            item = next((item for item in saved.result.items if item.signal_id == signal_id), None)
+            if item is None:
+                raise WorkspaceNotFound()
+            profile = session.scalar(
+                select(ProfileVersion).where(
+                    ProfileVersion.workspace_id == workspace_id,
+                    ProfileVersion.revision == row.profile_revision,
+                    ProfileVersion.id == saved.result.profile_version_id,
+                )
+            )
+            if profile is None:
+                raise RuntimeError("Stored research profile is inconsistent")
+            answers = ProfileAnswers.model_validate(profile.answers)
+
+        available = _declared_names(answers.capabilities)
+        missing = _declared_names(answers.missing_capabilities)
+        capabilities: dict[str, Capability] = {}
+        for cited in request.needs:
+            key = " ".join(cited.requirement.casefold().split())
+            status: Literal["available", "proposed", "missing", "unknown"] = "unknown"
+            if key in available and key not in missing:
+                status = "available" if answers.stage == "live" else "proposed"
+            elif key in missing and key not in available:
+                status = "missing"
+            capabilities[key] = Capability(cited.requirement, status)
+        try:
+            source = Source(
+                id=str(item.signal_id),
+                url=item.source_url,
+                excerpt=item.excerpt,
+                retrieved_at=saved.result.retrieved_at,
+                origin="live",
+            )
+            # Feed syndication is not evidence of buying intent. Even if the
+            # founder supplies an intent interpretation, do not promote it.
+            needs = tuple(
+                Need(
+                    id=f"need-{index}",
+                    requirement=cited.requirement,
+                    source_id=source.id,
+                    locator=cited.locator,
+                    intent="unknown",
+                )
+                for index, cited in enumerate(request.needs, start=1)
+            )
+            report = assess(
+                (source,), needs, tuple(capabilities.values()), launched=answers.stage == "live"
+            )
+        except EvidenceInputError as exc:
+            raise ApiFailure(
+                "VALIDATION_FAILED", 422, "Citation does not match saved feed."
+            ) from exc
+        return SignalAssessmentDTO(
+            workspace_id=workspace_id,
+            run_id=run_id,
+            signal_id=signal_id,
+            profile_revision=saved.profile_revision,
+            profile_version_id=saved.result.profile_version_id,
+            source_url=item.source_url,
+            source_excerpt=item.excerpt,
+            retrieved_at=saved.result.retrieved_at,
+            policy_review_id=saved.result.policy_review_id,
+            feed_content_digest=saved.result.feed_content_digest,
+            assessment=report,
+        )
+
 
 def get_research_store(
     workspaces: Annotated[WorkspaceStore, Depends(get_workspace_store)],
@@ -262,3 +368,17 @@ def read(
 ) -> SavedResearchDTO:
     response.headers["Cache-Control"] = "no-store"
     return store.read(principal, workspace_id, run_id)
+
+
+@router.post("/{run_id}/signals/{signal_id}/assessment", response_model=SignalAssessmentDTO)
+def assess_signal(
+    workspace_id: UUID,
+    run_id: UUID,
+    signal_id: UUID,
+    body: AssessSavedLead,
+    principal: Principal,
+    store: Store,
+    response: Response,
+) -> SignalAssessmentDTO:
+    response.headers["Cache-Control"] = "no-store"
+    return store.assess_signal(principal, workspace_id, run_id, signal_id, body)

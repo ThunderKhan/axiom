@@ -31,3 +31,15 @@ retention must be expressly compatible with the reviewed policy.
 Not implemented here: browser saved-run management, signal-to-CRM linkage,
 persisted assessment/competitor report, actual OAuth MCP transport or
 worker queues. No queued work or fake live evidence is claimed.
+
+
+## Retrieved-signal assessment
+
+POST /api/v1/workspaces/{workspace_id}/research/runs/{run_id}/signals/{signal_id}/assessment
+runs the existing evidence engine against the stored feed excerpt and its
+original immutable founder profile. Only exact cited requirements are
+accepted. Intent remains unknown; feed retrieval does not independently
+verify the article or demand. The assessment is recomputed, not persisted.
+The PostgreSQL fixture test checks invalid locators, missing signals,
+historical profile stability and foreign workspace denial. This is not
+yet CRM provenance linkage or deployed live acceptance.
