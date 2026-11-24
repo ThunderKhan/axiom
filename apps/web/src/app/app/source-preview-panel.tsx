@@ -56,11 +56,7 @@ function FeedDetails({ preview }: { preview: FeedPreview }) {
                 : "Unknown"}
             </p>
             <blockquote className="crm-evidence">{item.excerpt}</blockquote>
-            <a
-              href={item.source_url}
-              target="_blank"
-              rel="noopener noreferrer"
-            >
+            <a href={item.source_url} target="_blank" rel="noopener noreferrer">
               Open article citation
             </a>
           </li>
@@ -149,38 +145,40 @@ export function SourcePreviewPanel({
     setBusy(true);
     clearResult();
     try {
-      const next: Result =
-        mode === "feed"
-          ? {
-              kind: "feed",
-              preview: await api.previewFeed(
-                workspaceId,
-                requested,
-                query.trim(),
-                controller.signal,
-              ),
-            }
-          : mode === "source"
-          ? {
-              kind: "source",
-              source: await api.previewSource(
-                workspaceId,
-                requested,
-                controller.signal,
-              ),
-            }
-          : {
-              kind: "competitor",
-              preview: await api.previewCompetitor(
-                workspaceId,
-                requested,
-                name.trim(),
-                claimKinds
-                  .filter((kind) => phrases[kind].trim())
-                  .map((kind) => ({ kind, locator: phrases[kind].trim() })),
-                controller.signal,
-              ),
-            };
+      let next: Result;
+      if (mode === "feed") {
+        next = {
+          kind: "feed",
+          preview: await api.previewFeed(
+            workspaceId,
+            requested,
+            query.trim(),
+            controller.signal,
+          ),
+        };
+      } else if (mode === "source") {
+        next = {
+          kind: "source",
+          source: await api.previewSource(
+            workspaceId,
+            requested,
+            controller.signal,
+          ),
+        };
+      } else {
+        next = {
+          kind: "competitor",
+          preview: await api.previewCompetitor(
+            workspaceId,
+            requested,
+            name.trim(),
+            claimKinds
+              .filter((kind) => phrases[kind].trim())
+              .map((kind) => ({ kind, locator: phrases[kind].trim() })),
+            controller.signal,
+          ),
+        };
+      }
       if (!controller.signal.aborted) setResult(next);
     } catch (error) {
       if (!controller.signal.aborted) setMessage(failureMessage(error));
