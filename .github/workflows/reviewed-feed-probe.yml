@@ -1,0 +1,36 @@
+name: Reviewed public feed live probe
+
+# Separate evidence-only check: no secrets, no provider enablement, no arbitrary URL.
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - 'services/api/scripts/probe_nist_feed.py'
+      - '.github/workflows/reviewed-feed-probe.yml'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: reviewed-nist-feed-probe
+  cancel-in-progress: true
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.12'
+      - name: Install locked runtime
+        working-directory: services/api
+        run: |
+          python -m pip install --disable-pip-version-check uv==0.10.0
+          uv sync --locked --all-groups
+      - name: Single fixed public feed retrieval
+        working-directory: services/api
+        run: uv run --frozen python scripts/probe_nist_feed.py
