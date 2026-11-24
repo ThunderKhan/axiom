@@ -58,8 +58,8 @@ export function parseSourcePreview(
     !/^[a-f0-9]{32}$/.test(raw.source_id) ||
     !bounded(raw.content_digest, 64) ||
     !/^[a-f0-9]{64}$/.test(raw.content_digest) ||
-    !bounded(raw.title, 300) ||
-    !bounded(raw.excerpt, 1500) ||
+    !bounded(raw.title, 180) ||
+    !bounded(raw.excerpt, 500) ||
     !raw.excerpt.trim() ||
     !bounded(raw.retrieved_at, 64) ||
     !Number.isFinite(Date.parse(raw.retrieved_at)) ||
