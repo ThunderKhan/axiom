@@ -131,6 +131,7 @@ This does not supersede the approved M1 contract or authorize a release.
 | --- | --- | --- |
 | [30-WP04-REVIEWED-SOURCE-PREVIEW.md](30-WP04-REVIEWED-SOURCE-PREVIEW.md) | Owner-scoped, permission-gated source and competitor previews; actual retrieval provenance and explicit unknown claims | **Implementation candidate; no approved live provider, durable research or deployed acceptance** |
 | [31-P0-BROWSER-ACCEPTANCE.md](31-P0-BROWSER-ACCEPTANCE.md) | Explicit opt-in real-provider profile, CRM, graph and scenario browser acceptance procedure | **Test implementation only; hosted execution not performed** |
+| [32-WP12-MCP-CONSENT.md](32-WP12-MCP-CONSENT.md) | Delegated token scope checks and owner-scoped durable read-only consent/revocation | **Implementation candidate; OAuth broker, MCP transport, writes and external verification blocked** |
 
 ## Technical Designs Still In Review and Active Decision Register
 

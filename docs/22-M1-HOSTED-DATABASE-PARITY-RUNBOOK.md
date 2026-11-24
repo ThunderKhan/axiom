@@ -1,6 +1,6 @@
 # M1 — Hosted Supabase Postgres, RLS and Pooler Verification
 
-**Status:** OPERATOR PROCEDURE / NOT EXECUTED · **Scope:** hosted M1 parity and current M4 schema readiness · **Approval gate:** [Issue #29](https://github.com/ThunderKhan/axiom/issues/29)
+**Status:** OPERATOR PROCEDURE / NOT EXECUTED · **Scope:** hosted M1 parity and current M5 schema readiness · **Approval gate:** [Issue #29](https://github.com/ThunderKhan/axiom/issues/29)
 
 This runbook does **not** certify the hosted database. The successful
 [real-provider run #44850664291](https://github.com/ThunderKhan/axiom/actions/runs/44850664291)
@@ -96,7 +96,8 @@ The current version-controlled migration chain is `m1_0001_schema` (three M1 tab
 `m1_0002_rls` (seven M1 policies and minimum runtime grants), followed
 by `m2_0001_profiles` (two profile tables and five additional owner-scoped
 policies/grants), then `m3_0001_leads` (two CRM tables and five policies)
-and `m4_0001_scenarios` (one immutable comparison table and two policies).
+`m4_0001_scenarios` (one immutable comparison table and two policies),
+and `m5_0001_mcp_consent` (one grant table and three policies).
 **The Nov 21 M1 evidence was collected at the older
 three-table/seven-policy revision; it is historical, not a current-head pass.**
 Alembic must create/update its real `public.alembic_version`; **never
@@ -104,17 +105,18 @@ insert or fake `version_num` manually** or replay copied DDL and call
 it a migration.
 
 Verify, via **read-only** SQL, that:
-- revision equals the **exact current code head `m4_0001_scenarios`**
+- revision equals the **exact current code head `m5_0001_mcp_consent`**
   at the reviewed November 24 checkpoint; re-check `HEAD_REVISION` before execution;
-- exactly **eight** reviewed `axiom` application tables exist with RLS enabled;
-- exactly **nineteen** reviewed owner-scoped policies target `axiom_runtime`
+- exactly **nine** reviewed `axiom` application tables exist with RLS enabled;
+- exactly **twenty-two** reviewed owner-scoped policies target `axiom_runtime`
   and include correct `USING`/`WITH CHECK` clauses;
 - `axiom.current_subject()` exists, is `SECURITY INVOKER`, and is
   granted only as approved;
 - runtime can read only necessary tables and insert/update the
   explicitly permitted columns; it cannot CREATE, DELETE a workspace,
   or update `owner_user_id`; it cannot update/delete confirmed profile versions,
-  lead events or saved scenario comparisons;
+  lead events or saved scenario comparisons; MCP grants are immutable except
+  one-way revocation;
 - `anon` and `authenticated` cannot access `axiom` domain tables.
   
 Stop if role ownership, revision, policy count or grants differ.
@@ -194,8 +196,8 @@ only if all mandated acceptance gates pass. Otherwise label M1
 
 ## Historical WP-03 / M2 compatibility addendum — 23 November 2026
 
-The historical five-table expectation below is superseded by the M4 chain
-and eight-table/nineteen-policy checks in section 3. The M1 verifier checks
+The historical five-table expectation below is superseded by the M5 chain
+and nine-table/twenty-two-policy checks in section 3. The M1 verifier checks
 current schema readiness plus M1 isolation; it is not a substitute for
 current CRM/scenario domain and browser acceptance.
 

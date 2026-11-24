@@ -29,7 +29,7 @@ def test_read_scope_workspace_binding_and_revocation_are_checked_on_each_call() 
         False,
     )
     current: list[ClientGrant | None] = [valid]
-    access = McpAccess(lambda user, client, wid: current[0])
+    access = McpAccess(lambda actor, wid: current[0])
     leads = Mock(spec=LeadStore)
     leads.list.return_value = {"items": []}
     assert list_saved_leads(actor, workspace, access=access, leads=leads) == {"items": []}
@@ -66,4 +66,4 @@ def test_even_explicit_write_scope_cannot_enable_unreviewed_write_tool() -> None
         False,
     )
     with pytest.raises(McpAccessDenied):
-        McpAccess(lambda user, client, wid: grant).require(actor, workspace, "save_lead")
+        McpAccess(lambda actor, wid: grant).require(actor, workspace, "save_lead")
