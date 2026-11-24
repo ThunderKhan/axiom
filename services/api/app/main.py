@@ -16,6 +16,7 @@ from sqlalchemy.exc import SQLAlchemyError
 
 from app.auth import AuthFailure, JwtVerifier
 from app.database import Database
+from app.evidence_http import router as evidence_router
 from app.leads_http import router as leads_router
 from app.leads_store import InvalidLeadInput, LeadAlreadySaved
 from app.profile_http import router as profile_router
@@ -153,6 +154,7 @@ def create_app(settings: RuntimeSettings | None = None) -> FastAPI:
     application.include_router(router)
     application.include_router(profile_router)
     application.include_router(leads_router)
+    application.include_router(evidence_router)
     application.include_router(source_router)
 
     @application.get("/api/v1/health/live", response_model=Liveness, tags=["health"])

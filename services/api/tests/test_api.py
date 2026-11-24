@@ -25,6 +25,7 @@ def test_fastapi_import_and_versioned_openapi() -> None:
             "/api/v1/workspaces/{workspace_id}/leads",
             "/api/v1/workspaces/{workspace_id}/leads/{lead_id}",
             "/api/v1/workspaces/{workspace_id}/leads/{lead_id}/activity",
+            "/api/v1/workspaces/{workspace_id}/leads/{lead_id}/assessment",
             "/api/v1/workspaces/{workspace_id}/research/public-url/preview",
             "/api/v1/workspaces/{workspace_id}/competitors/preview",
         }
@@ -42,6 +43,9 @@ def test_fastapi_import_and_versioned_openapi() -> None:
             "delete",
         }
         assert set(paths["/api/v1/workspaces/{workspace_id}/leads/{lead_id}/activity"]) == {"get"}
+        assert set(paths["/api/v1/workspaces/{workspace_id}/leads/{lead_id}/assessment"]) == {
+            "post"
+        }
         assert set(paths["/api/v1/workspaces/{workspace_id}/research/public-url/preview"]) == {
             "post"
         }

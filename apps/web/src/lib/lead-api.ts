@@ -1,4 +1,9 @@
 import {
+  parseManualAssessment,
+  type EvidenceAssessment,
+  type ManualNeed,
+} from "./evidence-contract.ts";
+import {
   InvalidLeadResponse,
   parseCreatedLead,
   parseLead,
@@ -50,6 +55,7 @@ const allowedCodes = new Set([
   "VERSION_CONFLICT",
   "IDEMPOTENCY_CONFLICT",
   "LEAD_ALREADY_SAVED",
+  "PROFILE_INCOMPLETE",
   "DATABASE_UNAVAILABLE",
 ]);
 
@@ -223,6 +229,27 @@ export function createLeadApi(
           String(expectedVersion),
         "DELETE",
         signal,
+      );
+    },
+    /** Read-only computation; never fetches a website or writes a snapshot. */
+    async assess(
+      workspaceId: string,
+      lead: Lead,
+      needs: readonly ManualNeed[],
+      signal: AbortSignal,
+    ): Promise<EvidenceAssessment> {
+      if (lead.workspace_id !== workspaceId || needs.length > 8)
+        throw new InvalidLeadResponse();
+      const payload = { needs };
+      return parseManualAssessment(
+        await send(
+          pathFor(workspaceId, lead.id) + "/assessment",
+          "POST",
+          signal,
+          payload,
+        ),
+        workspaceId,
+        lead,
       );
     },
     async history(
