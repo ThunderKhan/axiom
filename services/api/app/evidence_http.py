@@ -19,7 +19,6 @@ from app.evidence_engine import (
     Capability,
     EvidenceInputError,
     Need,
-    Relationship,
     Source,
     Verdict,
     assess,
@@ -107,7 +106,7 @@ def assess_saved_manual_lead(
 
     available = _declared_names(answers.capabilities)
     missing = _declared_names(answers.missing_capabilities)
-    capabilities: list[Capability] = []
+    capabilities_by_name: dict[str, Capability] = {}
     for cited in request.needs:
         normalized = " ".join(cited.requirement.casefold().split())
         # Conflicting or undeclared founder input is Unknown, never auto-resolved.
@@ -116,7 +115,7 @@ def assess_saved_manual_lead(
             status = "available" if answers.stage == "live" else "proposed"
         elif normalized in missing and normalized not in available:
             status = "missing"
-        capabilities.append(Capability(cited.requirement, status))
+        capabilities_by_name[normalized] = Capability(cited.requirement, status)
 
     source = Source(
         id=str(lead.id),
@@ -136,7 +135,7 @@ def assess_saved_manual_lead(
         for index, item in enumerate(request.needs, start=1)
     )
     try:
-        assessment = assess((source,), needs, tuple(capabilities), launched=answers.stage == "live")
+        assessment = assess((source,), needs, tuple(capabilities_by_name.values()), launched=answers.stage == "live")
     except EvidenceInputError as exc:
         raise ApiFailure("VALIDATION_FAILED", 422, "Citation does not match saved source.") from exc
 
