@@ -186,10 +186,9 @@ export function ScenarioPanel({
       );
       if (controller.signal.aborted) return;
       setRetry(null);
-      setItems((previous) => [
-        saved,
-        ...previous.filter((item) => item.id !== saved.id),
-      ].slice(0, 5));
+      setItems((previous) =>
+        [saved, ...previous.filter((item) => item.id !== saved.id)].slice(0, 5),
+      );
       setSelected(saved.id);
       setNotice("Both alternatives and their frozen baseline were saved.");
     } catch (error) {
@@ -228,7 +227,7 @@ export function ScenarioPanel({
       {baseline ? (
         <form className="crm-form" onSubmit={(event) => void save(event)}>
           <p>
-            Baseline: {baseline.need.requirement} · Confirmed profile revision{" "}
+            Baseline: {baseline.need.requirement} · Profile revision{" "}
             {baseline.profileRevision}
           </p>
           {drafts.map((draft, index) => (
@@ -240,9 +239,7 @@ export function ScenarioPanel({
                   required
                   maxLength={80}
                   value={draft.name}
-                  onChange={(event) =>
-                    update(index, { name: event.target.value })
-                  }
+                  onChange={(e) => update(index, { name: e.target.value })}
                 />
               </label>
               <label>
