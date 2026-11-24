@@ -224,11 +224,13 @@ export function ScenarioPanel({
         Explore two named alternatives using fixed cited evidence. These are
         hypothetical capability changes, never commercial forecasts.
       </p>
-      {baseline ? (
+      {baseline || retry ? (
         <form className="crm-form" onSubmit={(event) => void save(event)}>
           <p>
-            Baseline: {baseline.need.requirement} · Profile revision{" "}
-            {baseline.profileRevision}
+            Baseline:{" "}
+            {retry?.payload.needs[0].requirement ?? baseline?.need.requirement}
+            {" · Profile revision "}
+            {retry?.payload.expected_profile_revision ?? baseline?.profileRevision}
           </p>
           {drafts.map((draft, index) => (
             <fieldset className="crm-form" key={index} disabled={locked}>
