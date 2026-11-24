@@ -26,7 +26,7 @@ from sqlalchemy.dialects.postgresql import UUID as PgUUID
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 
 SCHEMA = "axiom"
-HEAD_REVISION = "m6_0001_research_runs"
+HEAD_REVISION = "m7_0001_lead_provenance"
 # PostgreSQL's U& literal enumerates Python str.strip() whitespace codepoints.
 _TRIM = (
     r"U&'\0009\000A\000B\000C\000D\001C\001D\001E\001F\0020\0085\0"
@@ -202,7 +202,18 @@ class Lead(Base):
         CheckConstraint(
             "NOT follow_up_done OR follow_up_at IS NOT NULL", name="ck_leads_followup_state"
         ),
-        CheckConstraint("source_origin = 'user_provided'", name="ck_leads_origin"),
+        CheckConstraint(
+            "(source_origin = 'user_provided' AND research_run_id IS NULL "
+            "AND research_signal_id IS NULL) OR (source_origin = 'live' "
+            "AND research_run_id IS NOT NULL AND research_signal_id IS NOT NULL)",
+            name="ck_leads_origin",
+        ),
+        ForeignKeyConstraint(
+            ["workspace_id", "research_run_id"],
+            ["axiom.research_runs.workspace_id", "axiom.research_runs.id"],
+            name="fk_leads_research_run",
+            ondelete="RESTRICT",
+        ),
         CheckConstraint(
             "char_length(create_key) BETWEEN 8 AND 128 "
             "AND create_key ~ '^[A-Za-z0-9][A-Za-z0-9_-]*$'",
@@ -229,6 +240,8 @@ class Lead(Base):
     source_origin: Mapped[str] = mapped_column(
         String(30), nullable=False, server_default=text("'user_provided'")
     )
+    research_run_id: Mapped[UUID | None] = mapped_column(PgUUID(as_uuid=True))
+    research_signal_id: Mapped[UUID | None] = mapped_column(PgUUID(as_uuid=True))
     stage: Mapped[str] = mapped_column(String(20), nullable=False, server_default=text("'spotted'"))
     note: Mapped[str] = mapped_column(Text, nullable=False, server_default=text("''"))
     follow_up_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
@@ -414,6 +427,7 @@ class ResearchRun(Base):
             ondelete="RESTRICT",
         ),
         UniqueConstraint("workspace_id", "create_key", name="uq_research_run_key"),
+        UniqueConstraint("workspace_id", "id", name="uq_research_run_workspace_id"),
         CheckConstraint(
             "char_length(create_key) BETWEEN 8 AND 128 "
             "AND create_key ~ '^[A-Za-z0-9][A-Za-z0-9_-]*$'",
