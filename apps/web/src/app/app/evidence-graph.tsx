@@ -23,10 +23,7 @@ export function EvidenceGraph({
   const relation =
     selected === null ? null : assessment.relationships[selected];
   return (
-    <section
-      className="evidence-graph"
-      aria-label="Evidence relationship graph"
-    >
+    <section className="evidence-graph" aria-label="Evidence relationship graph">
       <h4>Evidence graph</h4>
       <p className="crm-meta">
         Select a relationship to inspect its reasoning and original citation.
@@ -95,8 +92,7 @@ export function EvidenceGraph({
             <time dateTime={lead.created_at}>
               {new Date(lead.created_at).toLocaleString()}
             </time>
-            . This excerpt was supplied by the founder, not independently
-            retrieved.
+            . This excerpt was supplied by the founder, not independently retrieved.
           </p>
           <button
             type="button"
