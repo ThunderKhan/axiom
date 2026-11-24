@@ -15,6 +15,14 @@ from fastapi import APIRouter, Depends
 from pydantic import BaseModel, Field, field_validator
 
 from app.auth import VerifiedPrincipal, get_verified_principal
+from app.counterfactual import (
+    Comparison,
+    FeatureAssumption,
+    FrozenEvidence,
+    Scenario,
+    ScenarioInputError,
+    compare_scenarios,
+)
 from app.evidence_engine import (
     Capability,
     EvidenceInputError,
@@ -52,6 +60,37 @@ class CitedNeed(StrictBody):
 
 class AssessSavedLead(StrictBody):
     needs: list[CitedNeed] = Field(min_length=0, max_length=8)
+
+
+class FeatureEdit(StrictBody):
+    name: str = Field(min_length=1, max_length=120)
+    action: Literal["add", "remove"]
+
+
+class ScenarioEdit(StrictBody):
+    name: str = Field(min_length=1, max_length=80)
+    features: list[FeatureEdit] = Field(min_length=1, max_length=8)
+    pricing: str | None = Field(default=None, max_length=300)
+    positioning: str | None = Field(default=None, max_length=300)
+
+
+class CompareSavedLead(AssessSavedLead):
+    expected_lead_version: int = Field(gt=0, le=9223372036854775807)
+    expected_profile_revision: int = Field(gt=0, le=9223372036854775807)
+    scenarios: list[ScenarioEdit] = Field(min_length=2, max_length=8)
+
+
+class ScenarioPreviewDTO(BaseModel):
+    workspace_id: UUID
+    lead_id: UUID
+    lead_version: int
+    confirmed_profile_revision: int
+    source_url: str
+    source_origin: Literal["user_provided"] = "user_provided"
+    source_recorded_at: datetime
+    persisted_comparison: Literal[False] = False
+    live_source_verified: Literal[False] = False
+    comparison: Comparison
 
 
 class RelationshipDTO(BaseModel):
@@ -93,13 +132,13 @@ def _declared_names(value: str) -> set[str]:
     }
 
 
-def assess_saved_manual_lead(
+def manual_evidence_snapshot(
     workspace_id: UUID,
     lead: LeadDTO,
     profile: ProfileStateDTO,
     request: AssessSavedLead,
-) -> EvidenceReportDTO:
-    """Produce a traceable, nonpersistent report from the *current* owned records."""
+) -> FrozenEvidence:
+    """Build evidence only from authorized server records and validated citations."""
     if lead.workspace_id != workspace_id or lead.source_origin != "user_provided":
         raise ApiFailure("NOT_FOUND", 404, "Workspace resource not found.")
     if profile.confirmed is None:
@@ -139,11 +178,28 @@ def assess_saved_manual_lead(
             )
             for index, item in enumerate(request.needs, start=1)
         )
-        assessment = assess(
-            (source,), needs, tuple(capabilities_by_name.values()), launched=answers.stage == "live"
+        return FrozenEvidence(
+            profile_revision=profile.confirmed.revision,
+            launched=answers.stage == "live",
+            sources=(source,),
+            needs=needs,
+            capabilities=tuple(capabilities_by_name.values()),
         )
-    except EvidenceInputError as exc:
+    except (EvidenceInputError, ScenarioInputError) as exc:
         raise ApiFailure("VALIDATION_FAILED", 422, "Citation does not match saved source.") from exc
+
+
+def assess_saved_manual_lead(
+    workspace_id: UUID,
+    lead: LeadDTO,
+    profile: ProfileStateDTO,
+    request: AssessSavedLead,
+) -> EvidenceReportDTO:
+    """Produce a traceable, nonpersistent report from the current owned records."""
+    snapshot = manual_evidence_snapshot(workspace_id, lead, profile, request)
+    assessment = assess(
+        snapshot.sources, snapshot.needs, snapshot.capabilities, launched=snapshot.launched
+    )
 
     # The founder entered both the text and the intent. Never promote this to a
     # verified acquisition signal even if declared feature coverage would fit.
@@ -158,7 +214,7 @@ def assess_saved_manual_lead(
         workspace_id=workspace_id,
         lead_id=lead.id,
         lead_version=lead.version,
-        confirmed_profile_revision=profile.confirmed.revision,
+        confirmed_profile_revision=snapshot.profile_revision,
         source_url=lead.source_url,
         source_origin="user_provided",
         source_recorded_at=lead.created_at,
@@ -217,3 +273,45 @@ def assess_saved_lead(
     lead = LeadDTO.model_validate(leads.read(principal, workspace_id, lead_id))
     profile = ProfileStateDTO.model_validate(profiles.read(principal, workspace_id))
     return assess_saved_manual_lead(workspace_id, lead, profile, payload)
+
+
+@router.post("/{lead_id}/scenario-comparison/preview", response_model=ScenarioPreviewDTO)
+def preview_scenarios(
+    workspace_id: UUID,
+    lead_id: UUID,
+    payload: CompareSavedLead,
+    principal: Principal,
+    leads: Leads,
+    profiles: Profiles,
+) -> ScenarioPreviewDTO:
+    """Compare alternatives without accepting a fabricated baseline or persisting results."""
+    lead = LeadDTO.model_validate(leads.read(principal, workspace_id, lead_id))
+    profile = ProfileStateDTO.model_validate(profiles.read(principal, workspace_id))
+    snapshot = manual_evidence_snapshot(workspace_id, lead, profile, payload)
+    if (
+        lead.version != payload.expected_lead_version
+        or snapshot.profile_revision != payload.expected_profile_revision
+    ):
+        raise ApiFailure("VERSION_CONFLICT", 409, "Refresh the baseline before comparing.")
+    try:
+        alternatives = tuple(
+            Scenario(
+                name=item.name,
+                features=tuple(FeatureAssumption(edit.name, edit.action) for edit in item.features),
+                pricing=item.pricing,
+                positioning=item.positioning,
+            )
+            for item in payload.scenarios
+        )
+        comparison = compare_scenarios(snapshot, alternatives)
+    except (ScenarioInputError, EvidenceInputError) as exc:
+        raise ApiFailure("VALIDATION_FAILED", 422, "Invalid scenario assumptions.") from exc
+    return ScenarioPreviewDTO(
+        workspace_id=workspace_id,
+        lead_id=lead.id,
+        lead_version=lead.version,
+        confirmed_profile_revision=snapshot.profile_revision,
+        source_url=lead.source_url,
+        source_recorded_at=lead.created_at,
+        comparison=comparison,
+    )
