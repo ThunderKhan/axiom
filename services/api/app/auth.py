@@ -254,7 +254,6 @@ class JwtVerifier:
             raise AuthFailure()
         return VerifiedPrincipal(user_id=subject, session_id=session_id)
 
-
     def verify(self, token: str) -> VerifiedPrincipal:
         claims = self._verified_claims(token, self._audience)
         # Delegated OAuth tokens can otherwise have the same default audience

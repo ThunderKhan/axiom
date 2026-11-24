@@ -440,6 +440,7 @@ def test_truncated_chunked_jwks_response_is_safe_503(rsa_key, monkeypatch) -> No
     assert response.json()["error"]["retryable"] is True
     assert response.json()["request_id"].startswith("req_")
 
+
 def test_delegated_tokens_require_distinct_resource_and_client(rsa_key) -> None:
     service = verifier(rsa_key)
     resource = "https://api.example.org/mcp"
