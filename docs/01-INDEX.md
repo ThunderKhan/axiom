@@ -101,6 +101,12 @@ This does not supersede the approved M1 contract or authorize a release.
 | --- | --- | --- |
 | [25-EVIDENCE-DECISION-CORE.md](25-EVIDENCE-DECISION-CORE.md) | Deterministic four-verdict source-linked domain evaluation and tests | **Implementation in review; no live-source or graph UI acceptance** |
 
+## WP-08 counterfactual comparison (verification pending)
+
+| Document | Purpose | Status |
+| --- | --- | --- |
+| [29-WP08-COUNTERFACTUAL-CORE.md](29-WP08-COUNTERFACTUAL-CORE.md) | Frozen-evidence comparison and authenticated manual-source HTTP preview | **Implementation candidate; durable scenarios and deployed browser acceptance incomplete** |
+
 ## WP-09 founder CRM browser integration (verification pending)
 
 | Document | Purpose | Status |

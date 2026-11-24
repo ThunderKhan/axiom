@@ -227,3 +227,73 @@ def test_http_reads_both_resources_under_same_verified_principal() -> None:
         app.dependency_overrides[get_verified_principal] = lambda: bob
         denied = client.post(route, json={"needs": []})
         assert denied.status_code == 404
+
+
+def test_http_scenario_preview_uses_owned_versioned_baseline() -> None:
+    wid = uuid4()
+    saved = lead(wid)
+    confirmed = profile()
+    alice = VerifiedPrincipal(uuid4(), None)
+    bob = VerifiedPrincipal(uuid4(), None)
+
+    class Leads:
+        def read(
+            self, principal: VerifiedPrincipal, workspace: UUID, lid: UUID
+        ) -> dict[str, object]:
+            if principal != alice or workspace != wid or lid != saved.id:
+                raise WorkspaceNotFound()
+            return saved.model_dump()
+
+    class Profiles:
+        def read(self, principal: VerifiedPrincipal, workspace: UUID) -> dict[str, object]:
+            if principal != alice or workspace != wid:
+                raise WorkspaceNotFound()
+            return confirmed.model_dump()
+
+    app = create_app(RuntimeSettings())
+    app.dependency_overrides[get_lead_store] = lambda: Leads()
+    app.dependency_overrides[get_profile_store] = lambda: Profiles()
+    app.dependency_overrides[get_verified_principal] = lambda: alice
+    route = f"/api/v1/workspaces/{wid}/leads/{saved.id}/scenario-comparison/preview"
+    body = {
+        "needs": [{"requirement": "offline sync", "locator": "offline sync", "intent": "buying"}],
+        "expected_lead_version": 2,
+        "expected_profile_revision": 1,
+        "scenarios": [
+            {
+                "name": "Remove offline",
+                "features": [{"name": "offline sync", "action": "remove"}],
+                "pricing": "Lower price",
+            },
+            {
+                "name": "Explore export",
+                "features": [{"name": "export", "action": "add"}],
+                "positioning": "Students",
+            },
+        ],
+    }
+    with TestClient(app) as client:
+        response = client.post(route, json=body)
+        assert response.status_code == 200
+        result = response.json()
+        assert result["persisted_comparison"] is False
+        assert result["live_source_verified"] is False
+        assert result["source_origin"] == "user_provided"
+        comparison = result["comparison"]
+        assert comparison["baseline_verdict"] == "research_further"
+        assert len(comparison["scenarios"]) == 2
+        assert comparison["scenarios"][0]["changes"][0]["after"] == "missing"
+        assert comparison["scenarios"][1]["changes"] == []
+        assert client.post(route, json=body).json() == result
+        assert client.post(route, json={**body, "expected_lead_version": 1}).status_code == 409
+        assert client.post(route, json={**body, "expected_profile_revision": 2}).status_code == 409
+        assert client.post(route, json={**body, "source_origin": "live"}).status_code == 422
+        too_few = client.post(route, json={**body, "scenarios": body["scenarios"][:1]})
+        assert too_few.status_code == 422
+        saved = saved.model_copy(
+            update={"version": 3, "source_excerpt": "The previously cited phrase is gone"}
+        )
+        assert client.post(route, json=body).status_code == 409
+        assert client.post(route, json={**body, "expected_lead_version": 3}).status_code == 422
+        app.dependency_overrides[get_verified_principal] = lambda: bob
+        assert client.post(route, json=body).status_code == 404
