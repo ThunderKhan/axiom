@@ -112,9 +112,10 @@ def test_persist_replay_reopen_and_deny_foreign_feed_runs(database: Database) ->
         assert replay.status_code == 200
         assert replay.json() == saved
         assert calls == [URL]
-        assert client.post(
-            route, json={**payload, "query": "other"}, headers=headers
-        ).status_code == 409
+        assert (
+            client.post(route, json={**payload, "query": "other"}, headers=headers).status_code
+            == 409
+        )
         detail = route + "/" + saved["run_id"]
         assert client.get(detail).json() == saved
         app.dependency_overrides[get_verified_principal] = lambda: outsider

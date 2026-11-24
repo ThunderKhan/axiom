@@ -107,9 +107,7 @@ class ResearchStore:
         return _dto(row)
 
     @staticmethod
-    def _current_profile(
-        session: Session, workspace_id: UUID, profile_version_id: UUID
-    ) -> int:
+    def _current_profile(session: Session, workspace_id: UUID, profile_version_id: UUID) -> int:
         revision = session.scalar(
             select(ProfileVersion.revision)
             .join(ProductProfile, ProductProfile.workspace_id == ProfileVersion.workspace_id)
