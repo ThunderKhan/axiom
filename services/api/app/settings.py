@@ -10,6 +10,8 @@ from urllib.parse import urlsplit
 from pydantic import Field, SecretStr, field_validator, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
+from app.source_registry import ReviewedSource
+
 _PROJECT_HOST = re.compile(r"[a-z0-9][a-z0-9-]{0,62}\.supabase\.co\Z")
 
 
@@ -29,6 +31,14 @@ class RuntimeSettings(BaseSettings):
     auth_audience: str | None = None
     auth_jwks_url: str | None = None
     jwks_cache_max_seconds: int = Field(default=300, ge=1, le=300)
+    reviewed_sources: tuple[ReviewedSource, ...] = Field(default=(), max_length=32)
+
+    @field_validator("reviewed_sources")
+    @classmethod
+    def unique_reviewed_urls(cls, value: tuple[ReviewedSource, ...]) -> tuple[ReviewedSource, ...]:
+        if len({entry.url for entry in value}) != len(value):
+            raise ValueError("Reviewed source URLs must be unique")
+        return value
 
     @property
     def auth_configured(self) -> bool:
