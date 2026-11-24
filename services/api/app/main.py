@@ -21,6 +21,8 @@ from app.leads_store import InvalidLeadInput, LeadAlreadySaved
 from app.profile_http import router as profile_router
 from app.profile_store import ProfileIncomplete
 from app.settings import RuntimeSettings, load_settings
+from app.source_http import router as source_router
+from app.source_registry import ReviewedSourceRegistry
 from app.workspace_cursor import InvalidCursor
 from app.workspace_http import ApiFailure, router
 from app.workspace_store import (
@@ -61,6 +63,7 @@ def create_app(settings: RuntimeSettings | None = None) -> FastAPI:
     application = FastAPI(title="Axiom API", version="0.2.0", lifespan=lifespan)
     application.state.jwt_verifier = JwtVerifier(resolved) if resolved.auth_configured else None
     application.state.database = database
+    application.state.source_registry = ReviewedSourceRegistry(resolved.reviewed_sources)
     application.add_middleware(
         CORSMiddleware,
         allow_origins=resolved.cors_origins.split(","),
@@ -150,6 +153,7 @@ def create_app(settings: RuntimeSettings | None = None) -> FastAPI:
     application.include_router(router)
     application.include_router(profile_router)
     application.include_router(leads_router)
+    application.include_router(source_router)
 
     @application.get("/api/v1/health/live", response_model=Liveness, tags=["health"])
     def liveness() -> Liveness:
