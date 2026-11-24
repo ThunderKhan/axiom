@@ -25,6 +25,8 @@ def test_fastapi_import_and_versioned_openapi() -> None:
             "/api/v1/workspaces/{workspace_id}/leads",
             "/api/v1/workspaces/{workspace_id}/leads/{lead_id}",
             "/api/v1/workspaces/{workspace_id}/leads/{lead_id}/activity",
+            "/api/v1/workspaces/{workspace_id}/research/public-url/preview",
+            "/api/v1/workspaces/{workspace_id}/competitors/preview",
         }
         workspace = schema.json()["paths"]["/api/v1/workspaces"]
         assert set(workspace) == {"get", "post"}
@@ -40,6 +42,10 @@ def test_fastapi_import_and_versioned_openapi() -> None:
             "delete",
         }
         assert set(paths["/api/v1/workspaces/{workspace_id}/leads/{lead_id}/activity"]) == {"get"}
+        assert set(paths["/api/v1/workspaces/{workspace_id}/research/public-url/preview"]) == {
+            "post"
+        }
+        assert set(paths["/api/v1/workspaces/{workspace_id}/competitors/preview"]) == {"post"}
 
 
 def test_liveness_is_genuine_http_response() -> None:
