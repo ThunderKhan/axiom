@@ -39,7 +39,10 @@ const report = {
   verdict: "research_further",
   intent: "buying",
   compatibility: "supported",
-  reason_codes: ["SOLUTION_INTENT_AND_DECLARED_COVERAGE", "USER_PROVIDED_SOURCE_UNVERIFIED"],
+  reason_codes: [
+    "SOLUTION_INTENT_AND_DECLARED_COVERAGE",
+    "USER_PROVIDED_SOURCE_UNVERIFIED",
+  ],
   supported_need_ids: ["need-1"],
   hypothetical_need_ids: [],
   missing_need_ids: [],
@@ -76,7 +79,10 @@ describe("manual source report boundary", () => {
       { ...report, source_recorded_at: "2026-11-24T07:00:00Z" },
       { ...report, source_url: "https://other.example.org" },
       { ...report, reason_codes: ["SOLUTION_INTENT_AND_DECLARED_COVERAGE"] },
-      { ...report, relationships: [{ ...report.relationships[0], source_id: workspace }] },
+      {
+        ...report,
+        relationships: [{ ...report.relationships[0], source_id: workspace }],
+      },
       { ...report, supported_need_ids: ["need-999"] },
     ]) {
       assert.throws(
@@ -102,7 +108,10 @@ describe("manual source report boundary", () => {
         assert.equal(
           String(url),
           "https://api.example.test/api/v1/workspaces/" +
-            workspace + "/leads/" + leadId + "/assessment",
+            workspace +
+            "/leads/" +
+            leadId +
+            "/assessment",
         );
         assert.equal(options?.method, "POST");
         assert.equal(options?.credentials, "omit");
@@ -127,7 +136,13 @@ describe("manual source report boundary", () => {
     const outcome = await api.assess(
       workspace,
       lead,
-      [{ requirement: "offline sync", locator: "offline sync", intent: "buying" }],
+      [
+        {
+          requirement: "offline sync",
+          locator: "offline sync",
+          intent: "buying",
+        },
+      ],
       new AbortController().signal,
     );
     assert.equal(outcome.verdict, "research_further");
