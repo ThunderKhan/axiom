@@ -317,9 +317,7 @@ class ScenarioComparison(Base):
             ondelete="RESTRICT",
             name="fk_scenario_comparison_profile",
         ),
-        UniqueConstraint(
-            "workspace_id", "create_key", name="uq_scenario_comparison_workspace_key"
-        ),
+        UniqueConstraint("workspace_id", "create_key", name="uq_scenario_comparison_workspace_key"),
         CheckConstraint("lead_version >= 1", name="ck_scenario_comparison_lead_version"),
         CheckConstraint("profile_revision >= 1", name="ck_scenario_comparison_profile_revision"),
         CheckConstraint(
