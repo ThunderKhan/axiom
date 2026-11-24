@@ -125,6 +125,12 @@ This does not supersede the approved M1 contract or authorize a release.
 | --- | --- | --- |
 | [28-WP07-MANUAL-EVIDENCE-REPORT.md](28-WP07-MANUAL-EVIDENCE-REPORT.md) | Owner-scoped, read-only assessment of persisted user-provided leads against confirmed founder declarations; explicit unverified source labels and outstanding live/graph/scenario gates | **Implementation candidate; P0 live and browser acceptance incomplete** |
 
+## WP-04 / WP-06 reviewed public source and competitor previews (verification pending)
+
+| Document | Purpose | Status |
+| --- | --- | --- |
+| [30-WP04-REVIEWED-SOURCE-PREVIEW.md](30-WP04-REVIEWED-SOURCE-PREVIEW.md) | Owner-scoped, permission-gated source and competitor previews; actual retrieval provenance and explicit unknown claims | **Implementation candidate; no approved live provider, durable research or deployed acceptance** |
+
 ## Technical Designs Still In Review and Active Decision Register
 
 **Draft** implementation designs still require final schema, model or selected infrastructure evidence. **The complete Edviro-source-derived design direction and ten-value Axiom palette are now approved**; the landing page should be built by reusing and adapting the clone's actual code. **Scoped approval** of MCP, source policies and capacity design does not certify their provider integration or tested performance. The active decision register is a governance record, not blanket approval of open ADRs.
