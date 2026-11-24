@@ -53,6 +53,21 @@ rate limit returns 429; upstream failure returns 502. No arbitrary scraping,
 redirects, XML feed parsing, AI instructions, outbound outreach or secret
 transmission to source websites.
 
+## Workspace browser integration
+
+The reviewed-source panel is mounted only inside the authorized workspace's
+ready CRM state and reuses its verified bearer-token client. It accepts an
+exact HTTPS URL or confirmed named competitor with optional exact feature,
+pricing and positioning phrases. The client rejects mismatched workspace IDs,
+URLs, unverified provenance and inconsistent claim/unknown responses. React
+renders retrieved text as inert text, not HTML. Request cancellation and
+workspace/sign-out unmounting discard stale results.
+
+Source-blocked, rate-limited and unavailable outcomes remain explicit; no
+automatic retry or fabricated preview is introduced. Results are intentionally
+not saved or copied into the manual-source CRM as verified live evidence.
+No reviewed URL is enabled by this UI.
+
 ## Release evidence still required
 
 Tests use an injected deterministic transport, clearly identified as fixtures;
@@ -61,5 +76,5 @@ validation, quotas and observed versus unknown competitor claims. The existing
 network-boundary tests verify SSRF behavior. Required repository CI and review
 must pass. Actual approved source acquisition, two permitted source families,
 durable source/signal/report storage, real discovery ranking, browser
-integration and deployment verification remain release-blocking. This is not
+acceptance and deployment verification remain release-blocking. This is not
 the full approved asynchronous discovery/teardown contract.
