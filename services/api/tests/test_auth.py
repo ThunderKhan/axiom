@@ -89,6 +89,8 @@ def test_accepts_signed_supabase_shaped_claims(rsa_key) -> None:
         {"session_id": "not-a-uuid"},
         {"type": "id_token"},
         {"token_use": "refresh"},
+        {"client_id": "4b9cb24a-9073-41fc-892e-1255348cb067"},
+        {"client_id": None},
     ],
 )
 def test_disallowed_user_claims(rsa_key, change: dict[str, object]) -> None:
@@ -437,3 +439,31 @@ def test_truncated_chunked_jwks_response_is_safe_503(rsa_key, monkeypatch) -> No
     assert response.json()["error"]["code"] == "AUTH_UNAVAILABLE"
     assert response.json()["error"]["retryable"] is True
     assert response.json()["request_id"].startswith("req_")
+
+def test_delegated_tokens_require_distinct_resource_and_client(rsa_key) -> None:
+    service = verifier(rsa_key)
+    resource = "https://api.example.org/mcp"
+    client_id = str(uuid4())
+    delegated = token(rsa_key, aud=resource, client_id=client_id)
+    verified = service.verify_delegated(delegated, resource)
+    assert verified.principal.user_id == UUID(SUB)
+    assert verified.client_id == UUID(client_id)
+    assert verified.resource == resource
+    with pytest.raises(AuthFailure):
+        service.verify(delegated)
+    with pytest.raises(AuthFailure):
+        service.verify(token(rsa_key, client_id=client_id))
+    for invalid in (
+        token(rsa_key),
+        token(rsa_key, aud=resource),
+        token(rsa_key, aud=resource, client_id="not-a-uuid"),
+        token(rsa_key, aud=resource, client_id=client_id, session_id=None),
+        token(rsa_key, aud=resource, client_id=client_id, exp=1),
+        token(rsa_key, aud=[resource, "authenticated"], client_id=client_id),
+    ):
+        with pytest.raises(AuthFailure):
+            service.verify_delegated(invalid, resource)
+    with pytest.raises(AuthFailure):
+        service.verify_delegated(token(rsa_key, client_id=client_id), "authenticated")
+    with pytest.raises(AuthFailure):
+        service.verify_delegated(delegated, "https://other.example.org/mcp")
