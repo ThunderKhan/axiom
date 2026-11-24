@@ -63,9 +63,7 @@ def profile(
         draft_step=14,
         answers=answers,
         confirmed_revision=1,
-        confirmed=ConfirmedProfileDTO(
-            id=uuid4(), revision=1, answers=answers, confirmed_at=NOW
-        ),
+        confirmed=ConfirmedProfileDTO(id=uuid4(), revision=1, answers=answers, confirmed_at=NOW),
     )
 
 
@@ -100,14 +98,10 @@ def test_missing_or_proposed_capability_does_not_become_positive_fit() -> None:
     )
     assert missing.verdict == Verdict.SKIP
     assert missing.missing_need_ids == ["need-1"]
-    hypothetical = assess_saved_manual_lead(
-        wid, saved, profile(stage="idea"), request()
-    )
+    hypothetical = assess_saved_manual_lead(wid, saved, profile(stage="idea"), request())
     assert hypothetical.verdict == Verdict.RESEARCH
     assert hypothetical.hypothetical_need_ids == ["need-1"]
-    contradictory = assess_saved_manual_lead(
-        wid, saved, profile(missing="offline sync"), request()
-    )
+    contradictory = assess_saved_manual_lead(wid, saved, profile(missing="offline sync"), request())
     assert contradictory.verdict == Verdict.RESEARCH
     assert contradictory.unknown_need_ids == ["need-1"]
 
@@ -136,9 +130,7 @@ def test_whitespace_only_saved_source_returns_validation_failure() -> None:
 def test_no_needs_abstains_and_duplicate_capability_names_are_safe() -> None:
     wid = uuid4()
     saved = lead(wid)
-    empty = assess_saved_manual_lead(
-        wid, saved, profile(), AssessSavedLead(needs=[])
-    )
+    empty = assess_saved_manual_lead(wid, saved, profile(), AssessSavedLead(needs=[]))
     assert empty.verdict == Verdict.INSUFFICIENT
     both = AssessSavedLead.model_validate(
         {
@@ -176,8 +168,14 @@ def test_foreign_workspace_unconfirmed_and_nonmatching_citations_denied() -> Non
     [
         [{"requirement": "offline sync", "locator": "offline sync", "intent": "fabricated"}],
         [{"requirement": " offline\nsync", "locator": "offline sync", "intent": "buying"}],
-        [{"requirement": "offline sync", "locator": "offline sync", "intent": "buying",
-          "source_origin": "live"}],
+        [
+            {
+                "requirement": "offline sync",
+                "locator": "offline sync",
+                "intent": "buying",
+                "source_origin": "live",
+            }
+        ],
         [{"requirement": "offline sync", "locator": "offline sync", "intent": "buying"}] * 9,
     ],
 )
@@ -217,8 +215,11 @@ def test_http_reads_both_resources_under_same_verified_principal() -> None:
         assert response.json()["source_origin"] == "user_provided"
         invalid = client.post(
             route,
-            json={"needs": [{"requirement": "offline sync", "locator": "unrelated",
-                             "intent": "buying"}]},
+            json={
+                "needs": [
+                    {"requirement": "offline sync", "locator": "unrelated", "intent": "buying"}
+                ]
+            },
         )
         assert invalid.status_code == 422
         forged = client.post(route, json={"needs": [], "live_source_verified": True})
