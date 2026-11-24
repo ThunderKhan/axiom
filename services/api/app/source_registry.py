@@ -141,7 +141,7 @@ class ReviewedSourceRegistry:
                 raise SourceAccessBlocked()
             try:
                 record = normalize_fetched_document(document)
-            except (ValueError, UnicodeError) as exc:
+            except (ValueError, UnicodeError, AssertionError) as exc:
                 raise SourceAcquisitionFailed() from exc
             if not record.excerpt.strip():
                 raise SourceAcquisitionFailed()
