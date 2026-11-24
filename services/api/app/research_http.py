@@ -248,7 +248,6 @@ class ResearchStore:
                 raise WorkspaceNotFound()
             return _dto(row)
 
-
     def assess_signal(
         self,
         principal: VerifiedPrincipal,
