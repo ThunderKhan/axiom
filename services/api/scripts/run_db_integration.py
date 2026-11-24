@@ -89,7 +89,11 @@ def main() -> int:
     if revision is None:
         run("uv", "run", "--frozen", "alembic", "upgrade", "m1_0001_schema", env=env)
     elif revision not in (
-        "m1_0001_schema", "m1_0002_rls", "m2_0001_profiles", "m3_0001_leads", HEAD_REVISION
+        "m1_0001_schema",
+        "m1_0002_rls",
+        "m2_0001_profiles",
+        "m3_0001_leads",
+        HEAD_REVISION,
     ):
         raise RuntimeError("Unexpected migration state in isolated test database")
     run("uv", "run", "--frozen", "alembic", "upgrade", "head", env=env)
