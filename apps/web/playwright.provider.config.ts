@@ -17,6 +17,10 @@ if (missing.length > 0) {
 
 const workspaceEnabled = process.env.E2E_WORKSPACE_API_READY === "1";
 const acceptanceEnabled = process.env.E2E_M1_ACCEPTANCE === "1";
+const p0Enabled = process.env.E2E_P0_ACCEPTANCE === "1";
+if (p0Enabled && !acceptanceEnabled) {
+  throw new Error("P0 acceptance requires explicit M1 provider acceptance");
+}
 if (acceptanceEnabled && !workspaceEnabled) {
   throw new Error("M1 acceptance must include real workspace provider tests");
 }
