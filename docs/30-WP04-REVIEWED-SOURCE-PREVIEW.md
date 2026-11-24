@@ -126,3 +126,5 @@ A successful probe cannot satisfy the two-family live research gate.
 feed at https://www.nist.gov/news-events/news/rss.xml (same public-information
 policy and reviewed robots rules). This is a separate candidate, not a second
 source family; no retention or deployment permission is granted.
+
+**Actual transport evidence:** [run 45383594767](https://github.com/ThunderKhan/axiom/actions/runs/45383594767), head `06d276e3da113dfd7d02966d06365e31a3ce9a01`, passed with 10 usable general-news feed entries. No content was retained or displayed, no buying intent was inferred, and no deployed registry or storage permission is implied.
