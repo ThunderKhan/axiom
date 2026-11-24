@@ -45,7 +45,10 @@ def lead(workspace_id: UUID) -> LeadDTO:
 
 
 def profile(
-    *, stage: Literal["idea", "live"] = "live", capabilities: str = "offline sync", missing: str = ""
+    *,
+    stage: Literal["idea", "live"] = "live",
+    capabilities: str = "offline sync",
+    missing: str = "",
 ) -> ProfileStateDTO:
     answers = ProfileAnswers(
         stage=stage,
