@@ -371,11 +371,10 @@ test("M1 genuine JWT and two-user cross-tenant API acceptance", async ({
           .getByLabel("Qualitative pricing hypothesis")
           .first()
           .fill("Lower price");
+        await lab.getByLabel("Positioning hypothesis").last().fill("Students");
         await lab
-          .getByLabel("Positioning hypothesis")
-          .last()
-          .fill("Students");
-        await lab.getByRole("button", { name: "Save two alternatives" }).click();
+          .getByRole("button", { name: "Save two alternatives" })
+          .click();
         await expect(lab).toContainText(
           "Both alternatives and their frozen baseline were saved.",
         );
