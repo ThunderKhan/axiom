@@ -446,13 +446,13 @@ class _VisibleText(HTMLParser):
         self.parts: list[str] = []
 
     def handle_starttag(self, tag: str, attrs: list[tuple[str, str | None]]) -> None:
-        if tag in {"script", "style", "svg", "noscript"}:
+        if tag in {"script", "style", "svg", "noscript", "template"}:
             self._hidden += 1
         elif tag == "title":
             self._title = True
 
     def handle_endtag(self, tag: str) -> None:
-        if tag in {"script", "style", "svg", "noscript"}:
+        if tag in {"script", "style", "svg", "noscript", "template"}:
             self._hidden = max(0, self._hidden - 1)
         elif tag == "title":
             self._title = False
