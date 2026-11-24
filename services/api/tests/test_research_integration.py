@@ -96,6 +96,9 @@ def test_persist_replay_reopen_and_deny_foreign_feed_runs(database: Database) ->
         assert client.post(route, json=payload, headers=headers).status_code == 404
         assert calls == []
         app.dependency_overrides[get_verified_principal] = lambda: owner
+        invalid = client.post(route, json={**payload, "query": "\x00"}, headers=headers)
+        assert invalid.status_code == 422
+        assert calls == []
         blocked = client.post(
             route, json={**payload, "url": "https://example.org/other"}, headers=headers
         )
