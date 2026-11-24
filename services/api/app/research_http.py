@@ -31,7 +31,7 @@ from app.workspace_store import IdempotencyConflict, VersionConflict, WorkspaceN
 
 
 class DiscoverFeed(StrictBody):
-    profile_version_id: UUID
+    profile_version_id: UUID = Field(strict=False)
     url: str = Field(min_length=10, max_length=2048)
     query: str = Field(default="", max_length=120)
     limit: int = Field(default=10, ge=1, le=20)
