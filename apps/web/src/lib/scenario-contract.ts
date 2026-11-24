@@ -164,6 +164,16 @@ export function parseSavedComparison(
   )
     throw new InvalidScenarioResponse();
   const baseline = coverage(data.baseline_requirements, lead.id);
+  if (
+    request &&
+    (baseline.length !== request.needs.length ||
+      baseline.some(
+        (need, index) =>
+          need.need_id !== "need-" + String(index + 1) ||
+          need.requirement !== request.needs[index].requirement.trim(),
+      ))
+  )
+    throw new InvalidScenarioResponse();
   const fingerprint = data.baseline_fingerprint;
   const scenarios = data.scenarios.map((item: unknown) => {
     if (

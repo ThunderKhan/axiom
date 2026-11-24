@@ -11,6 +11,12 @@ import type {
 } from "../../lib/scenario-contract";
 
 type Api = ReturnType<typeof createLeadApi>;
+export type ScenarioRetry = {
+  key: string;
+  payload: ScenarioRequest;
+  lead: Lead;
+};
+
 type Baseline = { need: ManualNeed; profileRevision: number };
 type Draft = {
   name: string;
@@ -100,11 +106,15 @@ export function ScenarioPanel({
   workspaceId,
   lead,
   baseline,
+  retry,
+  setRetry,
 }: {
   api: Api;
   workspaceId: string;
   lead: Lead;
   baseline: Baseline | null;
+  retry: ScenarioRetry | null;
+  setRetry: (attempt: ScenarioRetry | null) => void;
 }) {
   const [drafts, setDrafts] = useState<Draft[]>([
     initialDraft("Add capability", "add"),
@@ -115,10 +125,6 @@ export function ScenarioPanel({
   const [notice, setNotice] = useState("");
   const [busy, setBusy] = useState(false);
   const pending = useRef<AbortController | null>(null);
-  const [retry, setRetry] = useState<{
-    key: string;
-    payload: ScenarioRequest;
-  } | null>(null);
   useEffect(() => () => pending.current?.abort(), []);
 
   const update = (index: number, patch: Partial<Draft>) => {
@@ -181,6 +187,7 @@ export function ScenarioPanel({
       }
       attempt = {
         key: crypto.randomUUID(),
+        lead,
         payload: {
           needs: [baseline.need],
           expected_lead_version: lead.version,
@@ -197,7 +204,7 @@ export function ScenarioPanel({
     try {
       const saved = await api.saveComparison(
         workspaceId,
-        lead,
+        attempt.lead,
         attempt.payload,
         attempt.key,
         controller.signal,
@@ -251,7 +258,13 @@ export function ScenarioPanel({
             {retry?.payload.expected_profile_revision ??
               baseline?.profileRevision}
           </p>
-          {drafts.map((draft, index) => (
+          {retry && (
+            <p role="status">
+              Pending save: {retry.payload.scenarios.map((s) => s.name).join(" / ")}.
+              The original request is retained for this lead.
+            </p>
+          )}
+          {!retry && drafts.map((draft, index) => (
             <fieldset className="crm-form" key={index} disabled={locked}>
               <legend>Alternative {index + 1}</legend>
               <label>

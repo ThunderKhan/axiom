@@ -34,7 +34,7 @@ import {
 } from "../../lib/auth-sync";
 
 import { SourcePreviewPanel } from "./source-preview-panel";
-import { ScenarioPanel } from "./scenario-panel";
+import { ScenarioPanel, type ScenarioRetry } from "./scenario-panel";
 import { EvidenceGraph } from "./evidence-graph";
 
 function safeMessage(error: unknown): string {
@@ -66,15 +66,22 @@ function toLocalInput(iso: string | null): string {
 
 type Api = ReturnType<typeof createLeadApi>;
 
+type RetryProps = {
+  retry: ScenarioRetry | null;
+  setRetry: (attempt: ScenarioRetry | null) => void;
+};
+
 function ManualEvidenceReport({
   lead,
   workspaceId,
   api,
+  retry,
+  setRetry,
 }: {
   lead: Lead;
   workspaceId: string;
   api: Api;
-}) {
+} & RetryProps) {
   const [requirement, setRequirement] = useState("");
   const [locator, setLocator] = useState("");
   const [intent, setIntent] = useState<ManualNeed["intent"]>("unknown");
@@ -217,6 +224,8 @@ function ManualEvidenceReport({
         </div>
       )}
       <ScenarioPanel
+        retry={retry}
+        setRetry={setRetry}
         api={api}
         workspaceId={workspaceId}
         lead={lead}
@@ -239,13 +248,15 @@ function LeadDetail({
   api,
   onSaved,
   onArchived,
+  retry,
+  setRetry,
 }: {
   lead: Lead;
   workspaceId: string;
   api: Api;
   onSaved: (lead: Lead) => void;
   onArchived: (id: string) => void;
-}) {
+} & RetryProps) {
   const [stage, setStage] = useState<LeadStage>(lead.stage);
   const [note, setNote] = useState(lead.note);
   const initialFollowUpLocal = toLocalInput(lead.follow_up_at);
@@ -448,7 +459,13 @@ function LeadDetail({
           </button>
         </div>
       </form>
-      <ManualEvidenceReport lead={lead} workspaceId={workspaceId} api={api} />
+      <ManualEvidenceReport
+        lead={lead}
+        workspaceId={workspaceId}
+        api={api}
+        retry={retry}
+        setRetry={setRetry}
+      />
       {message && (
         <p className="workspace-notice" role="status">
           {message}
@@ -483,6 +500,9 @@ export function LeadManager({
   workspaceId: string;
 }) {
   const [items, setItems] = useState<Lead[]>([]);
+  const [scenarioRetries, setScenarioRetries] = useState<
+    Record<string, ScenarioRetry>
+  >({});
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [state, setState] = useState<"loading" | "ready" | "error" | "blocked">(
     "loading",
@@ -561,6 +581,7 @@ export function LeadManager({
       active.current?.abort();
       setItems([]);
       setSelectedId(null);
+      setScenarioRetries({});
       setState("blocked");
     };
     const unsub = subscribeToSignOut(clear);
@@ -696,6 +717,16 @@ export function LeadManager({
                 lead={selected}
                 workspaceId={workspaceId}
                 api={api}
+                retry={scenarioRetries[selected.id] ?? null}
+                setRetry={(attempt) => {
+                  const id = selected.id;
+                  setScenarioRetries((previous) => {
+                    const next = { ...previous };
+                    if (attempt) next[id] = attempt;
+                    else delete next[id];
+                    return next;
+                  });
+                }}
                 onSaved={(changed) => {
                   setItems((records) =>
                     records.map((row) =>
