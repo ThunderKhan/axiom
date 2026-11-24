@@ -41,9 +41,9 @@ def test_fastapi_import_and_versioned_openapi() -> None:
             "delete",
         }
         assert set(paths["/api/v1/workspaces/{workspace_id}/leads/{lead_id}/activity"]) == {"get"}
-        assert set(
-            paths["/api/v1/workspaces/{workspace_id}/leads/{lead_id}/assessment"]
-        ) == {"post"}
+        assert set(paths["/api/v1/workspaces/{workspace_id}/leads/{lead_id}/assessment"]) == {
+            "post"
+        }
 
 
 def test_liveness_is_genuine_http_response() -> None:
