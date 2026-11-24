@@ -50,6 +50,12 @@ def test_fastapi_import_and_versioned_openapi() -> None:
             "post"
         }
         assert set(paths["/api/v1/workspaces/{workspace_id}/competitors/preview"]) == {"post"}
+        for route in (
+            "/api/v1/workspaces/{workspace_id}/research/public-url/preview",
+            "/api/v1/workspaces/{workspace_id}/competitors/preview",
+        ):
+            assert "409" in paths[route]["post"]["responses"]
+
 
 
 def test_liveness_is_genuine_http_response() -> None:
