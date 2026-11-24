@@ -23,6 +23,7 @@ import {
   type LeadStage,
 } from "../../lib/lead-contract";
 import { publicApiBaseUrl } from "../../lib/public-api";
+import type { EvidenceAssessment, ManualNeed } from "../../lib/evidence-contract";
 import { createBrowserAuthClient } from "../../lib/supabase/browser";
 import {
   subscribeToLocalSignOutStarted,
@@ -57,6 +58,141 @@ function toLocalInput(iso: string | null): string {
 }
 
 type Api = ReturnType<typeof createLeadApi>;
+
+function ManualEvidenceReport({
+  lead,
+  workspaceId,
+  api,
+}: {
+  lead: Lead;
+  workspaceId: string;
+  api: Api;
+}) {
+  const [requirement, setRequirement] = useState("");
+  const [locator, setLocator] = useState("");
+  const [intent, setIntent] = useState<ManualNeed["intent"]>("unknown");
+  const [assessment, setAssessment] = useState<EvidenceAssessment | null>(null);
+  const [status, setStatus] = useState("");
+  const [busy, setBusy] = useState(false);
+  const pending = useRef<AbortController | null>(null);
+
+  useEffect(() => {
+    return () => pending.current?.abort();
+  }, []);
+
+  const evaluate = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    if (busy) return;
+    const requested = requirement.trim();
+    const cited = locator.trim();
+    if (!requested || !cited || requested.length > 120 || cited.length > 200) {
+      setStatus("Enter a bounded requirement and exact phrase from the saved excerpt.");
+      return;
+    }
+    const controller = new AbortController();
+    pending.current?.abort();
+    pending.current = controller;
+    setAssessment(null);
+    setStatus("");
+    setBusy(true);
+    try {
+      const report = await api.assess(
+        workspaceId,
+        lead,
+        [{ requirement: requested, locator: cited, intent }],
+        controller.signal,
+      );
+      if (!controller.signal.aborted) {
+        setAssessment(report);
+        setStatus("Read-only assessment complete. Nothing was saved or sent.");
+      }
+    } catch (error) {
+      if (!controller.signal.aborted) {
+        setStatus(
+          error instanceof LeadApiError && error.code === "PROFILE_INCOMPLETE"
+            ? "Confirm this workspace's product profile before assessing evidence."
+            : error instanceof LeadApiError && error.code === "VALIDATION_FAILED"
+              ? "The required phrase must appear in the saved source excerpt."
+              : "The report could not be verified. Review the source and try again.",
+        );
+      }
+    } finally {
+      if (!controller.signal.aborted) setBusy(false);
+    }
+  };
+
+  return (
+    <section className="crm-history" aria-label="Manual evidence report">
+      <h4>Evidence assessment</h4>
+      <p className="crm-meta">
+        Inspect a phrase from this saved citation against your confirmed product
+        capabilities. Your citation and intent are not independently verified.
+      </p>
+      <form className="crm-form" onSubmit={(event) => void evaluate(event)}>
+        <label htmlFor="evidence-requirement">Required capability</label>
+        <input
+          id="evidence-requirement"
+          required
+          maxLength={120}
+          value={requirement}
+          onChange={(event) => setRequirement(event.target.value)}
+          disabled={busy}
+          placeholder="Use an exact capability from your profile"
+        />
+        <label htmlFor="evidence-locator">Exact phrase in the saved excerpt</label>
+        <input
+          id="evidence-locator"
+          required
+          maxLength={200}
+          value={locator}
+          onChange={(event) => setLocator(event.target.value)}
+          disabled={busy}
+        />
+        <label htmlFor="evidence-intent">Intent (your interpretation)</label>
+        <select
+          id="evidence-intent"
+          value={intent}
+          disabled={busy}
+          onChange={(event) => setIntent(event.target.value as ManualNeed["intent"])}
+        >
+          <option value="unknown">Unknown</option>
+          <option value="discussion">General discussion</option>
+          <option value="seeking_solution">Seeking a solution</option>
+          <option value="buying">Buying intent (unverified)</option>
+        </select>
+        <button className="workspace-secondary" type="submit" disabled={busy}>
+          {busy ? "Assessing…" : "Assess saved citation"}
+        </button>
+      </form>
+      {status && <p role="status" className="workspace-notice">{status}</p>}
+      {assessment && (
+        <div aria-label="Assessment report">
+          <p><strong>Outcome:</strong> {assessment.verdict.replaceAll("_", " ")}</p>
+          <p className="crm-meta">
+            Manual source · Report not persisted · No live evidence verified
+          </p>
+          <h4>Source-linked relationships</h4>
+          {assessment.relationships.length === 0 && <p>No sourced needs linked.</p>}
+          <ul>
+            {assessment.relationships.map((relation, index) => (
+              <li key={index}>
+                {relation.need_id}: {relation.relation.replaceAll("_", " ")}
+                {relation.capability ? " · " + relation.capability : ""}
+                {" — " + relation.explanation}
+              </li>
+            ))}
+          </ul>
+          <h4>Reasoned report</h4>
+          <ul>
+            {assessment.report_lines.map((line, index) => (
+              <li key={index}>{line}</li>
+            ))}
+          </ul>
+        </div>
+      )}
+    </section>
+  );
+}
 
 function LeadDetail({
   lead,
@@ -273,6 +409,7 @@ function LeadDetail({
           </button>
         </div>
       </form>
+      <ManualEvidenceReport lead={lead} workspaceId={workspaceId} api={api} />
       {message && (
         <p className="workspace-notice" role="status">
           {message}
